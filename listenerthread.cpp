@@ -5,27 +5,32 @@ ListenerThread::ListenerThread()
 
 }
 
-ListenerThread::ListenerThread(QObject *parent, QPlainTextEdit *log, QTcpSocket *socket)
-    : QThread(parent), socket(socket) {
+ListenerThread::ListenerThread(QObject *parent, QPlainTextEdit *log, qintptr socketDescriptor, QMutex *m, QMap<QString, QSharedPointer<Packet>> *packetsMap)
+    : QThread(parent)/*, socket(socket) */{
 
-    connect(this->parent(), SIGNAL(sig_start()),this, SLOT(sendStart()));
+//    connect(parent, SIGNAL(sig_start()),this, SLOT(sendStart()));
 
-    this->socket = socket;
+
+//    this->socket = new QTcpSocket();
+    this->socketDescriptor = socketDescriptor;
     this->log = log;
-
+    this->mutex = m;
+    this->packetsMap = packetsMap;
 }
 
 void ListenerThread::run(){
-    clientSetup(socket);
+    socket = new QTcpSocket();
+    socket->setSocketDescriptor(socketDescriptor);
+    clientSetup();
+    connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
+    exec();
+    //aspetta start dal server --> da rivedere
+//    while(1){
 
-    //aspetta start dal server
-    while(1){
-
-    }
+//    }
 }
 
 void ListenerThread::sendStart(){
-    connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
 
     qDebug().noquote() << "invio start";
     socket->write("START\r\n");
@@ -34,7 +39,7 @@ void ListenerThread::sendStart(){
 
 void ListenerThread::readFromClient(){
     QString line, firstWord, hash, timestamp, mac, signal, microsec_str, esp, ssid;
-//    Packet* pkt;// = new Packet();
+    Packet* pkt;// = new Packet();
     QStringList sl, tsSplit, macList;
 //    Packet p;
 
@@ -70,25 +75,28 @@ void ListenerThread::readFromClient(){
             QString key = hash + "-" + mac + "-" + esp;
             QString shortKey = hash + "-" + mac;
 
-
-//            if(this->packetsMap.find(key) == this->packetsMap.end()){
-//                //insert new packet
-//                pkt = new Packet(hash, mac, timestamp, signal, esp, "ssid");
-//                this->packetsMap[key] = QSharedPointer<Packet>(pkt);
+            mutex->lock();
+//            if(this->packetsMap->find(key) == this->packetsMap->end()){
+            //controllare se funziona
+            if (packetsMap->contains(key)) {
+                //insert new packet
+                pkt = new Packet(hash, mac, timestamp, signal, esp, "ssid");
+                (*packetsMap)[key] = QSharedPointer<Packet>(pkt);
 
 //                //update area packet count
-//                if(this->areaPacketsMap.find(shortKey) != this->areaPacketsMap.end()){
+//                if(this->areaPacketsMap->find(shortKey) != this->areaPacketsMap->end()){
 //                    this->areaPacketsMap[shortKey] ++;
 //                }
 //                else{
 //                    this->areaPacketsMap[shortKey] = 1;
 //                }
 //            }
+            mutex->unlock();
         }
-//    }
+    }
 }
 
-void ListenerThread::clientSetup(QTcpSocket *socket){
+void ListenerThread::clientSetup(){
     QStringList sl;
     QString line, clientId, hello2Client, mac, helloFromClient;
     const char* msg;
@@ -114,3 +122,5 @@ void ListenerThread::clientSetup(QTcpSocket *socket){
     qDebug().noquote() << "Client mac: " << mac + "\n";
 
 }
+
+

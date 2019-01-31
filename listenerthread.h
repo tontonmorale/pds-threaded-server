@@ -6,6 +6,8 @@
 #include <QTcpSocket>
 #include <QEventLoop>
 #include <QPlainTextEdit>
+#include <QMutex>
+#include "packet.h"
 
 using namespace std;
 
@@ -15,9 +17,9 @@ class ListenerThread : public QThread
 
 public:
     ListenerThread();
-    ListenerThread(QObject *parent, QPlainTextEdit *log, QTcpSocket *socket);
+    ListenerThread(QObject *parent, QPlainTextEdit *log, qintptr socketDescriptor, QMutex* mutex, QMap<QString, QSharedPointer<Packet>> *packetsMap);
     void run() override;
-    void clientSetup(QTcpSocket *socket);
+    void clientSetup();
 
 
 public slots:
@@ -26,8 +28,10 @@ public slots:
 
 
 private:
+    QMutex* mutex;
+    QMap<QString, QSharedPointer<Packet>> *packetsMap;
     QTcpSocket *socket;
-    int socketDescriptor;
+    qintptr socketDescriptor;
     QPlainTextEdit *log;
 };
 

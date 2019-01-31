@@ -5,7 +5,8 @@
 #include <listenerthread.h>
 #include <QEventLoop>
 #include <QPlainTextEdit>
-
+#include <QMutex>
+#include "packet.h"
 
 class MyServer : public QTcpServer
 {
@@ -19,11 +20,18 @@ signals:
     void sig_start();
 
 public slots:
-    void onClientConnection();
+//    void onClientConnection();
 
 private:
-    void onClientConnection(qintptr socketDescriptor);
+    QMutex* mutex;
+//    void onClientConnection(qintptr socketDescriptor);
     QPlainTextEdit *log;
+    QMap<QString, QSharedPointer<Packet>> packetsMap;
+
+protected:
+    void incomingConnection(qintptr socketDescriptor);
 };
+
+
 
 #endif // MYSERVER_H
