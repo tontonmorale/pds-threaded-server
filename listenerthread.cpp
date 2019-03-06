@@ -23,11 +23,9 @@ void ListenerThread::run(){
     socket->setSocketDescriptor(socketDescriptor);
     clientSetup();
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
+    emit ready();
     exec();
-    //aspetta start dal server --> da rivedere
-//    while(1){
 
-//    }
 }
 
 void ListenerThread::sendStart(){

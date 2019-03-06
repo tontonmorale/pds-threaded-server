@@ -19,6 +19,9 @@ public:
     ~MainWindow();
     bool showWindow;
 
+public slots:
+    void serverError();
+
 private:
     Ui::MainWindow *ui;
     MyServer server;

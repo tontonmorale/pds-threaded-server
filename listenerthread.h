@@ -26,6 +26,9 @@ public slots:
     void readFromClient();
     void sendStart();
 
+signals:
+    void ready();
+
 
 private:
     QMutex* mutex;

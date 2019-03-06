@@ -14,10 +14,15 @@ MainWindow::MainWindow(QWidget *parent) :
         showWindow = false;
         return;
     }
+    connect(server, SIGNAL(acceptError()), this, SLOT(serverError()));
 
     server.setLog(ui->log);
     ui->log->insertPlainText("Server started\nip: 192.168.1.172\nport: 9999\n\n");
 
+}
+
+void MainWindow::serverError(){
+    qDebug().noquote() << "errore server";
 }
 
 MainWindow::~MainWindow()

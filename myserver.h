@@ -21,6 +21,7 @@ signals:
 
 public slots:
 //    void onClientConnection();
+    void startToClients();
 
 private:
     QMutex* mutex;
