@@ -1,41 +1,49 @@
-#include "listenerthread.h"
+#include "listenerobj.h"
 
-ListenerThread::ListenerThread()
+ListenerObj::ListenerObj()
 {
 
 }
 
-ListenerThread::ListenerThread(QObject *parent, QPlainTextEdit *log, qintptr socketDescriptor, QMutex *m, QMap<QString, QSharedPointer<Packet>> *packetsMap)
-    : QThread(parent)/*, socket(socket) */{
+ListenerObj::ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor, QMutex *m, QMap<QString, QSharedPointer<Packet>> *packetsMap)
+    : socketDescriptor(socketDescriptor) {
 
 //    connect(parent, SIGNAL(sig_start()),this, SLOT(sendStart()));
-
-
-//    this->socket = new QTcpSocket();
-    this->socketDescriptor = socketDescriptor;
     this->log = log;
     this->mutex = m;
     this->packetsMap = packetsMap;
+
+//    connect(parent, SIGNAL(sig_start()), this, SLOT(sendStart()), Qt::QueuedConnection);
+//    connect(this, SIGNAL(ready()), parent, SLOT(startToClients()), Qt::QueuedConnection);
+//    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
 }
 
-void ListenerThread::run(){
+void ListenerObj::process(){
     socket = new QTcpSocket();
-    socket->setSocketDescriptor(socketDescriptor);
+//    socket->setSocketDescriptor(socketDescriptor);
+//    QTcpSocket socket;
+    if(!socket->setSocketDescriptor(socketDescriptor)){
+        qDebug().noquote() << "errore set sock descriptor\n";
+        return;
+    }
+
     clientSetup();
+
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
     emit ready();
-    exec();
-
 }
 
-void ListenerThread::sendStart(){
+void ListenerObj::sendStart(){
 
     qDebug().noquote() << "invio start";
+    qDebug().noquote() << socket->thread();
+    qDebug().noquote() << QThread::currentThread();
+    qDebug().noquote() << this->thread();
     socket->write("START\r\n");
 //    socketTimerMap[socket]->start(MAX_WAIT+5000);
 }
 
-void ListenerThread::readFromClient(){
+void ListenerObj::readFromClient(){
     QString line, firstWord, hash, timestamp, mac, signal, microsec_str, esp, ssid;
     Packet* pkt;// = new Packet();
     QStringList sl, tsSplit, macList;
@@ -94,7 +102,7 @@ void ListenerThread::readFromClient(){
     }
 }
 
-void ListenerThread::clientSetup(){
+void ListenerObj::clientSetup(){
     QStringList sl;
     QString line, clientId, hello2Client, mac, helloFromClient;
     const char* msg;

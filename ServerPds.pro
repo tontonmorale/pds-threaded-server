@@ -32,14 +32,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     myserver.cpp \
-    listenerthread.cpp \
-    packet.cpp
+    packet.cpp \
+    listenerobj.cpp
 
 HEADERS += \
         mainwindow.h \
     myserver.h \
-    listenerthread.h \
-    packet.h
+    packet.h \
+    listenerobj.h
 
 FORMS += \
         mainwindow.ui

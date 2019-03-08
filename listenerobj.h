@@ -1,5 +1,5 @@
-#ifndef LISTENERTHREAD_H
-#define LISTENERTHREAD_H
+#ifndef LISTENEROBJ_H
+#define LISTENEROBJ_H
 
 #include <QThread>
 #include <iostream>
@@ -11,23 +11,24 @@
 
 using namespace std;
 
-class ListenerThread : public QThread
+class ListenerObj : public QObject
 {
     Q_OBJECT
 
 public:
-    ListenerThread();
-    ListenerThread(QObject *parent, QPlainTextEdit *log, qintptr socketDescriptor, QMutex* mutex, QMap<QString, QSharedPointer<Packet>> *packetsMap);
-    void run() override;
-    void clientSetup();
-
+    ListenerObj();
+    ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor, QMutex* mutex, QMap<QString, QSharedPointer<Packet>> *packetsMap);
+//    void clientSetup(QTcpSocket *socket);
+    void clientSetup();    
 
 public slots:
+    void process();
     void readFromClient();
     void sendStart();
 
 signals:
     void ready();
+    void finished();
 
 
 private:
@@ -38,4 +39,4 @@ private:
     QPlainTextEdit *log;
 };
 
-#endif // LISTENERTHREAD_H
+#endif // LISTENEROBJ_H

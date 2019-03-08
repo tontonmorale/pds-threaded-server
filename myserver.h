@@ -2,7 +2,7 @@
 #define MYSERVER_H
 
 #include <QTcpServer>
-#include <listenerthread.h>
+#include <listenerobj.h>
 #include <QEventLoop>
 #include <QPlainTextEdit>
 #include <QMutex>
@@ -13,7 +13,7 @@ class MyServer : public QTcpServer
     Q_OBJECT
 
 public:
-    MyServer();
+    MyServer(QObject *parent = 0);
     void setLog(QPlainTextEdit* log);
 
 signals:
@@ -30,7 +30,7 @@ private:
     QMap<QString, QSharedPointer<Packet>> packetsMap;
 
 protected:
-    void incomingConnection(qintptr socketDescriptor);
+    void incomingConnection(qintptr socketDescriptor) override;
 };
 
 
