@@ -5,8 +5,11 @@ ListenerObj::ListenerObj()
 
 }
 
-ListenerObj::ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor, QMutex *m, QMap<QString, QSharedPointer<Packet>> *packetsMap)
-    : socketDescriptor(socketDescriptor) {
+ListenerObj::ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor,
+                         QMutex *m,
+                         QMap<QString, QSharedPointer<Packet>> *packetsMap,
+                         shared_ptr<QMap<QString, Esp>> espMap)
+    : socketDescriptor(socketDescriptor), espMap(espMap) {
 
 //    connect(parent, SIGNAL(sig_start()),this, SLOT(sendStart()));
     this->log = log;
@@ -18,7 +21,7 @@ ListenerObj::ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor, QMutex *
 //    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
 }
 
-void ListenerObj::process(){
+void ListenerObj::start(){
     socket = new QTcpSocket();
 //    socket->setSocketDescriptor(socketDescriptor);
 //    QTcpSocket socket;
@@ -34,11 +37,6 @@ void ListenerObj::process(){
 }
 
 void ListenerObj::sendStart(){
-
-    qDebug().noquote() << "invio start";
-    qDebug().noquote() << socket->thread();
-    qDebug().noquote() << QThread::currentThread();
-    qDebug().noquote() << this->thread();
     socket->write("START\r\n");
 //    socketTimerMap[socket]->start(MAX_WAIT+5000);
 }
@@ -104,29 +102,62 @@ void ListenerObj::readFromClient(){
 
 void ListenerObj::clientSetup(){
     QStringList sl;
-    QString line, clientId, hello2Client, mac, helloFromClient;
+    QString line, clientId, hello2Client, mac, helloFromClient, id;
     const char* msg;
 
-    qDebug().noquote() << "NEW CONNECTION\nClient number: 1"; /*QString::number(this->connectedClients);*/
+    qDebug().noquote() << "New connection";
+
+    // --- vecchia versione ---
 
     //new client, send hello and esp id
 //    clientId = QString("%1").arg(connectedClients, 2, 10, QChar('0'));
-    clientId = QString("%1").arg(1, 2, 10, QChar('0'));
+//    clientId = QString("%1").arg(1, 2, 10, QChar('0'));
 
-    hello2Client = "CIAO " + clientId;
-    qDebug().noquote() << "Message to client: " + hello2Client;
-    hello2Client = hello2Client + "\r\n";
+//    hello2Client = "CIAO " + clientId;
+//    qDebug().noquote() << "Message to client: " + hello2Client;
+//    hello2Client = hello2Client + "\r\n";
+//    msg = hello2Client.toStdString().c_str();
+//    socket->write(msg);
+//    socket->waitForReadyRead();
+//    helloFromClient = QString(socket->readLine());
+
+//    helloFromClient.remove('\r');
+//    helloFromClient.remove('\n');
+//    qDebug().noquote() << "Received from client: " << helloFromClient;
+//    mac = QString(helloFromClient).split(" ").at(3);
+//    qDebug().noquote() << "Client mac: " << mac + "\n";
+
+    // --- vecchia versione ---
+
+
+    // --- nuova versione ---
+
+    socket->waitForReadyRead();
+    helloFromClient = QString(socket->readLine()); // dovrei aver ricevuto: "ciao sono <mac>"
+    mac = helloFromClient.split(" ").at(2);
+    if(mac == nullptr){
+        closeConnection();
+    }
+    id = espMap->find(mac)->getId();
+    if(id == nullptr){
+        closeConnection();
+    }
+    hello2Client = "ciao ti chiami " + id +"\r\n";
     msg = hello2Client.toStdString().c_str();
     socket->write(msg);
-    socket->waitForReadyRead();
-    helloFromClient = QString(socket->readLine());
 
-    helloFromClient.remove('\r');
-    helloFromClient.remove('\n');
-    qDebug().noquote() << "Received from client: " << helloFromClient;
-    mac = QString(helloFromClient).split(" ").at(3);
-    qDebug().noquote() << "Client mac: " << mac + "\n";
+    // --- nuova versione ---
 
+
+}
+
+void ListenerObj::closeConnection(){
+    socket->disconnect();
+    emit finished();
+}
+
+ListenerObj::~ListenerObj(){
+    delete socket;
 }
 
 

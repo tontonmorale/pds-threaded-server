@@ -16,11 +16,14 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+    void serverInit();
     ~MainWindow();
-    bool showWindow;
+
+signals:
+    void error(QString message);
 
 public slots:
-    void serverError();
+    void fatalError(QString message);
 
 private:
     Ui::MainWindow *ui;

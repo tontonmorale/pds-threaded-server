@@ -33,13 +33,15 @@ SOURCES += \
         mainwindow.cpp \
     myserver.cpp \
     packet.cpp \
-    listenerobj.cpp
+    listenerobj.cpp \
+    esp.cpp
 
 HEADERS += \
         mainwindow.h \
     myserver.h \
     packet.h \
-    listenerobj.h
+    listenerobj.h \
+    esp.h
 
 FORMS += \
         mainwindow.ui
@@ -48,3 +50,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    esp.txt

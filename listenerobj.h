@@ -8,6 +8,7 @@
 #include <QPlainTextEdit>
 #include <QMutex>
 #include "packet.h"
+#include "esp.h"
 
 using namespace std;
 
@@ -17,12 +18,17 @@ class ListenerObj : public QObject
 
 public:
     ListenerObj();
-    ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor, QMutex* mutex, QMap<QString, QSharedPointer<Packet>> *packetsMap);
+    ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor,
+                QMutex* mutex,
+                QMap<QString, QSharedPointer<Packet>> *packetsMap,
+                shared_ptr<QMap<QString, Esp>> espMap);
 //    void clientSetup(QTcpSocket *socket);
-    void clientSetup();    
+    void clientSetup();
+    void closeConnection();
+    ~ListenerObj();
 
 public slots:
-    void process();
+    void start();
     void readFromClient();
     void sendStart();
 
@@ -37,6 +43,7 @@ private:
     QTcpSocket *socket;
     qintptr socketDescriptor;
     QPlainTextEdit *log;
+    shared_ptr<QMap<QString, Esp>> espMap;
 };
 
 #endif // LISTENEROBJ_H

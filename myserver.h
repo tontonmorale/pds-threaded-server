@@ -7,6 +7,7 @@
 #include <QPlainTextEdit>
 #include <QMutex>
 #include "packet.h"
+#include "esp.h"
 
 class MyServer : public QTcpServer
 {
@@ -15,9 +16,12 @@ class MyServer : public QTcpServer
 public:
     MyServer(QObject *parent = 0);
     void setLog(QPlainTextEdit* log);
+    void confFromFile();
+    void init();
 
 signals:
     void sig_start();
+    void error(QString message);
 
 public slots:
 //    void onClientConnection();
@@ -28,6 +32,7 @@ private:
 //    void onClientConnection(qintptr socketDescriptor);
     QPlainTextEdit *log;
     QMap<QString, QSharedPointer<Packet>> packetsMap;
+    shared_ptr<QMap<QString, Esp>> espMap;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

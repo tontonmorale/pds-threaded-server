@@ -12,7 +12,7 @@ public:
    QString getEsp();
    int getSignal();
 private:
-    QString esp;
+    QString espId;
     QString hash;
     QString mac;
     QString timestamp;

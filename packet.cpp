@@ -6,8 +6,8 @@ Packet::Packet(){
 
 }
 
-Packet::Packet(QString hash, QString mac, QString timestamp, QString signal, QString esp, QString ssid) {
-    this->esp = esp;
+Packet::Packet(QString hash, QString mac, QString timestamp, QString signal, QString espId, QString ssid) {
+    this->espId = espId;
     this->hash = hash;
     this->mac = mac;
     this->timestamp = timestamp;
@@ -24,7 +24,7 @@ QString Packet::getMac() {
 }
 
 QString Packet::getEsp() {
-    return this->esp;
+    return this->espId;
 }
 
 int Packet::getSignal() {
