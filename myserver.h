@@ -20,19 +20,23 @@ public:
     void init();
 
 signals:
-    void sig_start();
+    void start2Clients();
     void error(QString message);
 
 public slots:
 //    void onClientConnection();
     void startToClients();
+    void printToLog(QString message);
 
 private:
     QMutex* mutex;
 //    void onClientConnection(qintptr socketDescriptor);
     QPlainTextEdit *log;
     QMap<QString, QSharedPointer<Packet>> packetsMap;
-    shared_ptr<QMap<QString, Esp>> espMap;
+    QMap<QString, Esp> *espMap;
+    int connectedClients;
+    int totClients;
+    QList<ListenerObj*> *objList;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

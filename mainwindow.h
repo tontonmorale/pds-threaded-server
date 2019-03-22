@@ -17,6 +17,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     void serverInit();
+    void printToLog(QString message);
     ~MainWindow();
 
 signals:

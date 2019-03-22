@@ -5,34 +5,28 @@ ListenerObj::ListenerObj()
 
 }
 
-ListenerObj::ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor,
+ListenerObj::ListenerObj(qintptr socketDescriptor,
                          QMutex *m,
                          QMap<QString, QSharedPointer<Packet>> *packetsMap,
-                         shared_ptr<QMap<QString, Esp>> espMap)
+                         QMap<QString, Esp> *espMap)
     : socketDescriptor(socketDescriptor), espMap(espMap) {
 
 //    connect(parent, SIGNAL(sig_start()),this, SLOT(sendStart()));
-    this->log = log;
     this->mutex = m;
-    this->packetsMap = packetsMap;
-
-//    connect(parent, SIGNAL(sig_start()), this, SLOT(sendStart()), Qt::QueuedConnection);
-//    connect(this, SIGNAL(ready()), parent, SLOT(startToClients()), Qt::QueuedConnection);
-//    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    this->packetsMap = packetsMap;    
 }
 
-void ListenerObj::start(){
+void ListenerObj::work(){
     socket = new QTcpSocket();
-//    socket->setSocketDescriptor(socketDescriptor);
-//    QTcpSocket socket;
     if(!socket->setSocketDescriptor(socketDescriptor)){
-        qDebug().noquote() << "errore set sock descriptor\n";
+        emit log("Errore set sock descriptor\n");
         return;
     }
 
     clientSetup();
 
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
+//    qDebug() << "manda ready al server";
     emit ready();
 }
 
@@ -42,17 +36,18 @@ void ListenerObj::sendStart(){
 }
 
 void ListenerObj::readFromClient(){
-    QString line, firstWord, hash, timestamp, mac, signal, microsec_str, esp, ssid;
+    QString line, firstWord, hash, timestamp, mac, signal, microsec_str, espId, ssid;
     Packet* pkt;// = new Packet();
     QStringList sl, tsSplit, macList;
 //    Packet p;
 
 //    socketTimerMap[conn]->start(MAX_WAIT+5000);
 
-//    while ( socket->canReadLine() ) {
+    while ( socket->canReadLine() ) {
         line = QString(socket->readLine());
+        line.remove('\r');
         line.remove('\n');
-        qDebug().noquote() << line + "\n";
+        emit log(line);
 
         firstWord = line.split(" ").at(0);
 
@@ -70,22 +65,20 @@ void ListenerObj::readFromClient(){
             mac = sl.at(2);
             signal = sl.at(3);
             timestamp = sl.at(4);
-            esp = sl.at(5);
+            espId = sl.at(5);
 
 //            tsSplit = timestamp.split(':');
 //            microsec_long = (tsSplit.at(0)).toLongLong()*1000000 + (tsSplit.at(1)).toLongLong();
 //            microsec_str = QString::number(microsec_long);
 
-            QString key = hash + "-" + mac + "-" + esp;
+            QString key = hash + "-" + mac + "-" + espId;
             QString shortKey = hash + "-" + mac;
 
             mutex->lock();
-//            if(this->packetsMap->find(key) == this->packetsMap->end()){
-            //controllare se funziona
-            if (packetsMap->contains(key)) {
-                //insert new packet
-                pkt = new Packet(hash, mac, timestamp, signal, esp, "ssid");
-                (*packetsMap)[key] = QSharedPointer<Packet>(pkt);
+
+            //insert new packet
+            pkt = new Packet(hash, mac, timestamp, signal, espId, "ssid");
+            (*packetsMap)[key] = QSharedPointer<Packet>(pkt);
 
 //                //update area packet count
 //                if(this->areaPacketsMap->find(shortKey) != this->areaPacketsMap->end()){
@@ -94,7 +87,6 @@ void ListenerObj::readFromClient(){
 //                else{
 //                    this->areaPacketsMap[shortKey] = 1;
 //                }
-//            }
             mutex->unlock();
         }
     }
@@ -105,7 +97,7 @@ void ListenerObj::clientSetup(){
     QString line, clientId, hello2Client, mac, helloFromClient, id;
     const char* msg;
 
-    qDebug().noquote() << "New connection";
+    emit log("---New connection---\n");
 
     // --- vecchia versione ---
 
@@ -131,10 +123,11 @@ void ListenerObj::clientSetup(){
 
 
     // --- nuova versione ---
-
     socket->waitForReadyRead();
     helloFromClient = QString(socket->readLine()); // dovrei aver ricevuto: "ciao sono <mac>"
     mac = helloFromClient.split(" ").at(2);
+    mac.remove('\r');
+    mac.remove('\n');
     if(mac == nullptr){
         closeConnection();
     }
@@ -142,7 +135,8 @@ void ListenerObj::clientSetup(){
     if(id == nullptr){
         closeConnection();
     }
-    hello2Client = "ciao ti chiami " + id +"\r\n";
+    emit log("client mac: " + mac + "\nsending start...\n");
+    hello2Client = "ciao " + id +"\r\n";
     msg = hello2Client.toStdString().c_str();
     socket->write(msg);
 

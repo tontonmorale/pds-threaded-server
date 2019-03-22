@@ -29,6 +29,10 @@ void MainWindow::fatalError(QString message){
     exit(-1);
 }
 
+void MainWindow::printToLog(QString message){
+    ui->log->insertPlainText(message);
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;

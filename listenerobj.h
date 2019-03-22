@@ -18,23 +18,24 @@ class ListenerObj : public QObject
 
 public:
     ListenerObj();
-    ListenerObj(QPlainTextEdit *log, qintptr socketDescriptor,
+    ListenerObj(qintptr socketDescriptor,
                 QMutex* mutex,
                 QMap<QString, QSharedPointer<Packet>> *packetsMap,
-                shared_ptr<QMap<QString, Esp>> espMap);
+                QMap<QString, Esp> *espMap);
 //    void clientSetup(QTcpSocket *socket);
     void clientSetup();
     void closeConnection();
     ~ListenerObj();
 
 public slots:
-    void start();
+    void work();
     void readFromClient();
     void sendStart();
 
 signals:
     void ready();
     void finished();
+    void log(QString message);
 
 
 private:
@@ -42,7 +43,6 @@ private:
     QMap<QString, QSharedPointer<Packet>> *packetsMap;
     QTcpSocket *socket;
     qintptr socketDescriptor;
-    QPlainTextEdit *log;
     shared_ptr<QMap<QString, Esp>> espMap;
 };
 
