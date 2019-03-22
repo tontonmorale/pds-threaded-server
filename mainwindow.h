@@ -17,7 +17,6 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     void serverInit();
-    void printToLog(QString message);
     ~MainWindow();
 
 signals:
@@ -25,6 +24,7 @@ signals:
 
 public slots:
     void fatalError(QString message);
+    void printToLog(QString message);
 
 private:
     Ui::MainWindow *ui;

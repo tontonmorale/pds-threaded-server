@@ -22,16 +22,17 @@ public:
 signals:
     void start2Clients();
     void error(QString message);
+    void log(QString message);
 
 public slots:
 //    void onClientConnection();
     void startToClients();
-    void printToLog(QString message);
+    void emitLog(QString message);
 
 private:
     QMutex* mutex;
 //    void onClientConnection(qintptr socketDescriptor);
-    QPlainTextEdit *log;
+//    QPlainTextEdit *log;
     QMap<QString, QSharedPointer<Packet>> packetsMap;
     QMap<QString, Esp> *espMap;
     int connectedClients;

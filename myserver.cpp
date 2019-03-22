@@ -1,3 +1,4 @@
+#include "mainwindow.h"
 #include "myserver.h"
 #include <fstream>
 #include <memory>
@@ -18,7 +19,7 @@ void MyServer::init(){
 }
 
 void MyServer::setLog(QPlainTextEdit* log){
-    this->log = log;
+//    this->log = log;
 }
 
 void MyServer::incomingConnection(qintptr socketDescriptor){
@@ -34,7 +35,7 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
     connect(obj, SIGNAL(ready()), this, SLOT(startToClients()));
     connect(this, SIGNAL(start2Clients()), obj, SLOT(sendStart()));
-    connect(obj, &ListenerObj::log, parent, &MyServer::printToLog
+    connect(obj, &ListenerObj::log, this, &MyServer::emitLog
 //            ,Qt::QueuedConnection
             );
 
@@ -52,8 +53,8 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
 }
 
-void MyServer::printToLog(QString message){
-    log->insertPlainText(message);
+void MyServer::emitLog(QString message){
+//    emit log(message);
 }
 
 void MyServer::startToClients(){
@@ -62,14 +63,15 @@ void MyServer::startToClients(){
     if(connectedClients==totClients
 //            && connectedClients>=3
             ){
-        log->insertPlainText("Start to clients\n");
+//        log->insertPlainText("Start to clients\n");
+        qDebug() << "Start to clients\n";
         emit start2Clients();
     }
 }
 
 void MyServer::confFromFile(){
     ifstream inputFile;
-    int i;
+    int i, nClients;
     string id, mac, x_str, y_str;
     QString qmac;
     double x_double, y_double;
@@ -82,13 +84,15 @@ void MyServer::confFromFile(){
     }
     if(i>=3){
         // --- emettere segnale di errore
-        emit error("Impossibile aprire il file degli esp");
-        log->insertPlainText("Errore apertura file");
+        qDebug() << "Errore apertura file";
+//        emit error("Impossibile aprire il file degli esp");
+
+//        log->insertPlainText("Errore apertura file");
         return;
     }
 
-    inputFile >> totClients;
-    for(i=0; i< totClients; i++){
+    inputFile >> nClients; // --- nClients è da sostituire con totClients ---
+    for(i=0; i< nClients; i++){ // --- nClients è da sostituire con totClients ---
         inputFile >> id >> mac >> x_str >> y_str;
         x_double = stod(x_str.c_str());
         y_double = stod(y_str.c_str());

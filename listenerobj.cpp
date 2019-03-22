@@ -45,9 +45,11 @@ void ListenerObj::readFromClient(){
 
     while ( socket->canReadLine() ) {
         line = QString(socket->readLine());
+
         line.remove('\r');
         line.remove('\n');
-        emit log(line);
+        qDebug() << line;
+//        emit log(line);
 
         firstWord = line.split(" ").at(0);
 
@@ -97,7 +99,8 @@ void ListenerObj::clientSetup(){
     QString line, clientId, hello2Client, mac, helloFromClient, id;
     const char* msg;
 
-    emit log("---New connection---\n");
+    qDebug() << "---New connection---\n";
+//    emit log("---New connection---\n");
 
     // --- vecchia versione ---
 
@@ -135,7 +138,8 @@ void ListenerObj::clientSetup(){
     if(id == nullptr){
         closeConnection();
     }
-    emit log("client mac: " + mac + "\nsending start...\n");
+    qDebug() << "client mac: " + mac + "\nsending start...\n";
+//    emit log("client mac: " + mac + "\nsending start...\n");
     hello2Client = "ciao " + id +"\r\n";
     msg = hello2Client.toStdString().c_str();
     socket->write(msg);
