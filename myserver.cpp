@@ -11,7 +11,7 @@ MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), t
 //    connect(this, SIGNAL(newConnection()), this, SLOT(incomingConnection(socketDescriptor)));
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
-    objList = new QList<ListenerThread*>();
+    listenerThreadList = new QList<ListenerThread*>();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
