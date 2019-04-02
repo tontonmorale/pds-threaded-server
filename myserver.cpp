@@ -6,28 +6,22 @@ using namespace std;
 
 #define ESP_FILE_PATH "C:/Users/tonio/Desktop/ServerPds/esp.txt"
 
-MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0){
+MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), totClients(0) {
 //    connect(this, SIGNAL(newConnection()), this, SLOT(incomingConnection(socketDescriptor)));
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
     objList = new QList<ListenerObj*>();
-    totClients = 1;
+    packetsMap = new QMap<QString, QSharedPointer<Packet>>();
+    packetsDetectionMap = new QMap<QString, int>;
 }
 
 void MyServer::init(){
     confFromFile();
 }
 
-void MyServer::setLog(QPlainTextEdit* log){
-//    this->log = log;
-}
-
 void MyServer::incomingConnection(qintptr socketDescriptor){
-//    QTcpSocket *socket = this->nextPendingConnection();
-//    socket -> deleteLater();
-
     QThread *thread = new QThread();
-    ListenerObj *obj = new ListenerObj(socketDescriptor, mutex, &packetsMap, espMap);
+    ListenerObj *obj = new ListenerObj(socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
 
     obj->moveToThread(thread);
 
@@ -35,9 +29,8 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
     connect(obj, SIGNAL(ready()), this, SLOT(startToClients()));
     connect(this, SIGNAL(start2Clients()), obj, SLOT(sendStart()));
-    connect(obj, &ListenerObj::log, this, &MyServer::emitLog
-//            ,Qt::QueuedConnection
-            );
+    connect(obj, &ListenerObj::log, this, &MyServer::emitLog);
+    connect(obj, SIGNAL(endPackets()), this, SLOT(createElaborateThread()));
 
     connect(obj, SIGNAL(finished()), thread, SLOT(quit()));
     connect(obj, SIGNAL(finished()), obj, SLOT(deleteLater()));
@@ -47,24 +40,62 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
     thread->start();
 
+}
 
+void MyServer::createElaborateThread(){
+    QMutex mutex;
+    mutex.lock();
+    endPkClients ++;
+    if(endPkClients<totClients){
+        return;
+    }
 
-    //--------------------
+    // tutti i client hanno mandato i pacchetti
+    endPkClients = 0;
+    //insert in peopleMap if packet received by all clients
+    QMap<QString, int>::iterator i;
+    for(i=packetsDetectionMap->begin(); i!=packetsDetectionMap->end(); i++){
+        // se dispositivo rilevato da tutti i client
+        if(i.value() >= totClients){
+
+            QString shortKey = i.key();
+            QString mac = shortKey.split('-').at(1);
+
+            //if mac is not in peopleMap
+            if(this->peopleMap.find(mac) == this->peopleMap.end()){
+
+                Person p = Person(mac);
+                updatePacketsSet(p, shortKey);
+                //insert new person in peopleMap
+                peopleMap[mac] = p;
+            }
+            else{
+                //check if mac already considered in current minute
+                int count = this->peopleMap[mac].getMinCount();
+                if(count < this->currMinute){
+                    Person p = this->peopleMap[mac];
+                    this->peopleMap[mac].setMinCount(count+1);
+                    updatePacketsSet(this->peopleMap[mac], shortKey);
+                }
+            }
+        }
+    }
 
 }
 
 void MyServer::emitLog(QString message){
-//    emit log(message);
+    emit log(message);
 }
 
 void MyServer::startToClients(){
     // manda start se tutti i client sono connessi
-    connectedClients++;
+    connectedClients++; // --- da rivedere per poterla richiamare anche ai 5 minuti successivi
     if(connectedClients==totClients
 //            && connectedClients>=3
             ){
-//        log->insertPlainText("Start to clients\n");
         qDebug() << "Start to clients\n";
+        endPkClients = 0;
+        emit log("\n[server] sending start...\n");
         emit start2Clients();
     }
 }
@@ -85,9 +116,7 @@ void MyServer::confFromFile(){
     if(i>=3){
         // --- emettere segnale di errore
         qDebug() << "Errore apertura file";
-//        emit error("Impossibile aprire il file degli esp");
-
-//        log->insertPlainText("Errore apertura file");
+        emit error("Impossibile aprire il file degli esp");
         return;
     }
 

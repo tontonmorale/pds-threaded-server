@@ -34,14 +34,16 @@ SOURCES += \
     myserver.cpp \
     packet.cpp \
     listenerobj.cpp \
-    esp.cpp
+    esp.cpp \
+    person.cpp
 
 HEADERS += \
         mainwindow.h \
     myserver.h \
     packet.h \
     listenerobj.h \
-    esp.h
+    esp.h \
+    person.h
 
 FORMS += \
         mainwindow.ui

@@ -21,10 +21,12 @@ public:
     ListenerObj(qintptr socketDescriptor,
                 QMutex* mutex,
                 QMap<QString, QSharedPointer<Packet>> *packetsMap,
+                QMap<QString, int> *packetsDetectionMap,
                 QMap<QString, Esp> *espMap);
 //    void clientSetup(QTcpSocket *socket);
     void clientSetup();
     void closeConnection();
+    void newPacket(QString line);
     ~ListenerObj();
 
 public slots:
@@ -36,11 +38,13 @@ signals:
     void ready();
     void finished();
     void log(QString message);
+    void endPackets();
 
 
 private:
     QMutex* mutex;
     QMap<QString, QSharedPointer<Packet>> *packetsMap;
+    QMap<QString, int> *packetsDetectionMap;
     QTcpSocket *socket;
     qintptr socketDescriptor;
     shared_ptr<QMap<QString, Esp>> espMap;

@@ -6,6 +6,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     connect(this, &MainWindow::error, this, &MainWindow::fatalError);
     connect(&server, &MyServer::error, this, &MainWindow::fatalError);
+    connect(&server, &MyServer::log, this, &MainWindow::printToLog);
     ui = new Ui::MainWindow;
     ui->setupUi(this);
 }
@@ -13,14 +14,13 @@ MainWindow::MainWindow(QWidget *parent) :
 void MainWindow::serverInit(){
     // server init
     server.init();
-    server.setLog(ui->log);
 
     if (!server.listen(QHostAddress("192.168.1.172"), 9999)) {
         emit error("Errore avvio del server");
         return;
     }
 
-    ui->log->insertPlainText("Server started\nip: 192.168.1.172\nport: 9999\n\n");
+    ui->log->appendPlainText("--- Server started ---\nip: 192.168.1.172\nport: 9999\n");
 }
 
 void MainWindow::fatalError(QString message){
@@ -30,7 +30,7 @@ void MainWindow::fatalError(QString message){
 }
 
 void MainWindow::printToLog(QString message){
-    ui->log->insertPlainText(message);
+    ui->log->appendPlainText(message);
 }
 
 MainWindow::~MainWindow()

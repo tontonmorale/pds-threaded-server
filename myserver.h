@@ -15,7 +15,6 @@ class MyServer : public QTcpServer
 
 public:
     MyServer(QObject *parent = 0);
-    void setLog(QPlainTextEdit* log);
     void confFromFile();
     void init();
 
@@ -28,15 +27,19 @@ public slots:
 //    void onClientConnection();
     void startToClients();
     void emitLog(QString message);
+    void createElaborateThread();
 
 private:
     QMutex* mutex;
 //    void onClientConnection(qintptr socketDescriptor);
 //    QPlainTextEdit *log;
-    QMap<QString, QSharedPointer<Packet>> packetsMap;
+    QMap<QString, QSharedPointer<Packet>> *packetsMap;
+    QMap<QString, int> *packetsDetectionMap;
     QMap<QString, Esp> *espMap;
+    QMap<QString, Person> *peopleMap;
     int connectedClients;
     int totClients;
+    int endPkClients;
     QList<ListenerObj*> *objList;
 
 protected:
