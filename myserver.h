@@ -17,11 +17,13 @@ public:
     MyServer(QObject *parent = 0);
     void confFromFile();
     void init();
+    void SendToDB();
 
 signals:
     void start2Clients();
     void error(QString message);
     void log(QString message);
+    void DBsignal(QMap<QString, Person> *peopleMap);
 
 public slots:
 //    void onClientConnection();

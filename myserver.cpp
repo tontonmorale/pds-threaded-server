@@ -134,5 +134,24 @@ void MyServer::confFromFile(){
     inputFile.close();
 }
 
+void MyServer::SendToDB() {
+    QThread *thread = new QThread();
+    DBThread *dbthread = new DBThread(&peopleMap);
+    dbthread->moveToThread(thread);
+
+    connect(thread, SIGNAL(started()), dbthread, SLOT(send()));
+
+//    connect(dbthread, SIGNAL(ready()), this, SLOT(startToClients()));
+//    connect(this, SIGNAL(start2Clients()), dbthread, SLOT(sendStart()));
+//    connect(dbthread, &ListenerObj::log, this, &MyServer::emitLog
+//            ,Qt::QueuedConnection
+//            );
+
+    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    thread->start();
+//    emit DBsignal(&peopleMap);
+}
 
 
