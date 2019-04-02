@@ -4,9 +4,9 @@
 #include <memory>
 using namespace std;
 
-#define ESP_FILE_PATH "C:/Users/tonio/Desktop/ServerPds/esp.txt"
+#define ESP_FILE_PATH "C:/Users/raffy/Downloads/PDS_progetto/pds-threaded-server/esp.txt"
 
-MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), totClients(0) {
+MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), totClients(1) {
 //    connect(this, SIGNAL(newConnection()), this, SLOT(incomingConnection(socketDescriptor)));
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
@@ -14,10 +14,14 @@ MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), t
     packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
+    DBinitialized = false;
 }
 
 void MyServer::init(){
     confFromFile();
+    DBThread dbthread(peopleMap, DBinitialized);
+    if (dbthread.initialized)
+        this->DBinitialized = true;
 }
 
 void MyServer::incomingConnection(qintptr socketDescriptor){
@@ -152,7 +156,7 @@ void MyServer::confFromFile(){
 
 void MyServer::SendToDB() {
     QThread *thread = new QThread();
-    DBThread *dbthread = new DBThread(peopleMap);
+    DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
     dbthread->moveToThread(thread);
 
     connect(thread, SIGNAL(started()), dbthread, SLOT(send()));
