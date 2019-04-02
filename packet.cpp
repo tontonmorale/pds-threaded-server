@@ -31,3 +31,6 @@ int Packet::getSignal() {
     return this->signal;
 }
 
+QString Packet::getTimestamp() {
+    return this->timestamp;
+}

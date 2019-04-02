@@ -10,6 +10,7 @@ public:
    QString getHash();
    QString getMac();
    QString getEsp();
+   QString getTimestamp();
    int getSignal();
 private:
     QString espId;

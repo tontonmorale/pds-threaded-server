@@ -9,6 +9,7 @@
 #include "packet.h"
 #include "person.h"
 #include "esp.h"
+#include "dbthread.h"
 
 class MyServer : public QTcpServer
 {

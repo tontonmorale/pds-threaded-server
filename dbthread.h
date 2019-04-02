@@ -24,7 +24,8 @@ public:
     DBThread(QMap<QString, Person> *peopleMap);
 
 public slots:
-    void send();
+    void send();   
+    bool init();
 
 signals:
     void finished();

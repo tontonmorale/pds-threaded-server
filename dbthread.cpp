@@ -52,6 +52,50 @@ DBThread::DBThread(QMap<QString, Person> *peopleMap)
 
 }
 
+    bool DBThread::init() {
+
+    if (!dbConnect())
+        return false; //gestione mancata connessione da fare
+
+    QSqlQuery query;
+    QString queryString;
+
+    //query per creazione tabella timestamp
+    queryString = "CREATE TABLE IF NOT EXISTS timestamps ("
+            "timestamp VARCHAR(255) NOT NULL, "
+            "count INT, "
+            "PRIMARY KEY (timestamp)"
+            ") ENGINE = InnoDB;";
+
+    qDebug().noquote() << "query: " + queryString;
+
+    if (query.exec(queryString)) {
+        qDebug() << "Query di creazione tabella timestamp andata a buon fine";
+    }
+    else{
+        qDebug() << "Query di creazione tabella timestamp fallita";
+        return false;
+    }
+
+    //LPStats = long period statistics
+    queryString = "CREATE TABLE IF NOT EXISTS LPStats ("
+            "timestamp VARCHAR(255) NOT NULL, "
+            "mac VARCHAR(255) NOT NULL, "
+            "PRIMARY KEY (timestamp, mac)"
+            ") ENGINE = InnoDB;";
+
+    qDebug().noquote() << "query: " + queryString;
+
+    if (query.exec(queryString)) {
+        qDebug() << "Query di creazione tabella timestamp andata a buon fine";
+    }
+    else{
+        qDebug() << "Query di creazione tabella timestamp fallita";
+        return false;
+    }
+    return true;
+}
+
 void DBThread::send()
 {
     QSqlQuery query;

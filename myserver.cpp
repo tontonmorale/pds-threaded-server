@@ -68,15 +68,15 @@ void MyServer::createElaborateThread(){
                 Person p = Person(mac);
                 updatePacketsSet(p, shortKey);
                 //insert new person in peopleMap
-                peopleMap[mac] = p;
+                (*peopleMap)[mac] = p;
             }
             else{
                 //check if mac already considered in current minute
                 int count = (*peopleMap)[mac].getMinCount();
                 if(count < this->currMinute){
-                    Person p = this->peopleMap[mac];
-                    this->peopleMap[mac].setMinCount(count+1);
-                    updatePacketsSet(this->peopleMap[mac], shortKey);
+                    Person p = (*peopleMap)[mac];
+                    (*peopleMap)[mac].setMinCount(count+1);
+                    updatePacketsSet((*peopleMap)[mac], shortKey);
                 }
             }
         }
@@ -152,7 +152,7 @@ void MyServer::confFromFile(){
 
 void MyServer::SendToDB() {
     QThread *thread = new QThread();
-    DBThread *dbthread = new DBThread(&peopleMap);
+    DBThread *dbthread = new DBThread(peopleMap);
     dbthread->moveToThread(thread);
 
     connect(thread, SIGNAL(started()), dbthread, SLOT(send()));
