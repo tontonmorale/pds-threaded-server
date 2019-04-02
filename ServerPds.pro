@@ -35,7 +35,8 @@ SOURCES += \
     packet.cpp \
     listenerobj.cpp \
     esp.cpp \
-    person.cpp
+    person.cpp \
+    dbthread.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -43,7 +44,8 @@ HEADERS += \
     packet.h \
     listenerobj.h \
     esp.h \
-    person.h
+    person.h \
+    dbthread.h
 
 FORMS += \
         mainwindow.ui
