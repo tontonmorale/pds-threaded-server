@@ -13,6 +13,7 @@ MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), t
     objList = new QList<ListenerObj*>();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap = new QMap<QString, int>;
+    peopleMap = new QMap<QString, Person>;
 }
 
 void MyServer::init(){
@@ -62,7 +63,7 @@ void MyServer::createElaborateThread(){
             QString mac = shortKey.split('-').at(1);
 
             //if mac is not in peopleMap
-            if(this->peopleMap.find(mac) == this->peopleMap.end()){
+            if(peopleMap->find(mac) == peopleMap->end()){
 
                 Person p = Person(mac);
                 updatePacketsSet(p, shortKey);
@@ -71,7 +72,7 @@ void MyServer::createElaborateThread(){
             }
             else{
                 //check if mac already considered in current minute
-                int count = this->peopleMap[mac].getMinCount();
+                int count = (*peopleMap)[mac].getMinCount();
                 if(count < this->currMinute){
                     Person p = this->peopleMap[mac];
                     this->peopleMap[mac].setMinCount(count+1);
@@ -81,6 +82,21 @@ void MyServer::createElaborateThread(){
         }
     }
 
+}
+
+void MyServer::updatePacketsSet(Person &p, QString shortKey){
+    QMap<QString, QSharedPointer<Packet>>::iterator itLow, i;
+    int n;
+    itLow = packetsMap->lowerBound(shortKey);
+
+    p.clearPacketsSet();
+
+    for(i=itLow, n=0; n<totClients; i++, n++)
+        p.insertPacket(i.value());
+
+    //check if set contains n=MAX_CLIENTS packets
+//    if(packetsSet.size()!=MAX_CLIENTS)
+//        continue;
 }
 
 void MyServer::emitLog(QString message){
