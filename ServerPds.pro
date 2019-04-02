@@ -33,19 +33,21 @@ SOURCES += \
         mainwindow.cpp \
     myserver.cpp \
     packet.cpp \
-    listenerobj.cpp \
     esp.cpp \
     person.cpp \
-    dbthread.cpp
+    dbthread.cpp \
+    elaboratethread.cpp \
+    listenerthread.cpp
 
 HEADERS += \
         mainwindow.h \
     myserver.h \
     packet.h \
-    listenerobj.h \
     esp.h \
     person.h \
-    dbthread.h
+    dbthread.h \
+    elaboratethread.h \
+    listenerthread.h
 
 FORMS += \
         mainwindow.ui

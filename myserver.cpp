@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "myserver.h"
+#include "elaboratethread.h"
 #include <fstream>
 #include <memory>
 using namespace std;
@@ -10,7 +11,7 @@ MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), t
 //    connect(this, SIGNAL(newConnection()), this, SLOT(incomingConnection(socketDescriptor)));
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
-    objList = new QList<ListenerObj*>();
+    objList = new QList<ListenerThread*>();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
@@ -22,7 +23,7 @@ void MyServer::init(){
 
 void MyServer::incomingConnection(qintptr socketDescriptor){
     QThread *thread = new QThread();
-    ListenerObj *obj = new ListenerObj(socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
+    ListenerThread *obj = new ListenerThread(socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
 
     obj->moveToThread(thread);
 
@@ -30,14 +31,14 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
     connect(obj, SIGNAL(ready()), this, SLOT(startToClients()));
     connect(this, SIGNAL(start2Clients()), obj, SLOT(sendStart()));
-    connect(obj, &ListenerObj::log, this, &MyServer::emitLog);
+    connect(obj, &ListenerThread::log, this, &MyServer::emitLog);
     connect(obj, SIGNAL(endPackets()), this, SLOT(createElaborateThread()));
 
     connect(obj, SIGNAL(finished()), thread, SLOT(quit()));
     connect(obj, SIGNAL(finished()), obj, SLOT(deleteLater()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 
-    objList->append(obj);
+    listenerThreadList->append(obj);
 
     thread->start();
 
@@ -45,58 +46,33 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
 void MyServer::createElaborateThread(){
     QMutex mutex;
+
+    // controlla se tutte le schede hanno finito di inviare al minuto corrente
     mutex.lock();
     endPkClients ++;
     if(endPkClients<totClients){
         return;
     }
 
-    // tutti i client hanno mandato i pacchetti
+    // ricevuto end file da tutte
     endPkClients = 0;
-    //insert in peopleMap if packet received by all clients
-    QMap<QString, int>::iterator i;
-    for(i=packetsDetectionMap->begin(); i!=packetsDetectionMap->end(); i++){
-        // se dispositivo rilevato da tutti i client
-        if(i.value() >= totClients){
+    mutex.unlock();
 
-            QString shortKey = i.key();
-            QString mac = shortKey.split('-').at(1);
+    QThread *thread = new QThread();
+    ElaborateThread *et = new ElaborateThread(packetsMap, packetsDetectionMap, totClients);
 
-            //if mac is not in peopleMap
-            if(peopleMap->find(mac) == peopleMap->end()){
+    et->moveToThread(thread);
 
-                Person p = Person(mac);
-                updatePacketsSet(p, shortKey);
-                //insert new person in peopleMap
-                (*peopleMap)[mac] = p;
-            }
-            else{
-                //check if mac already considered in current minute
-                int count = (*peopleMap)[mac].getMinCount();
-                if(count < this->currMinute){
-                    Person p = (*peopleMap)[mac];
-                    (*peopleMap)[mac].setMinCount(count+1);
-                    updatePacketsSet((*peopleMap)[mac], shortKey);
-                }
-            }
-        }
-    }
+    connect(thread, SIGNAL(started()), et, SLOT(work()));
 
-}
+    connect(et, &ElaborateThread::log, this, &MyServer::emitLog);
 
-void MyServer::updatePacketsSet(Person &p, QString shortKey){
-    QMap<QString, QSharedPointer<Packet>>::iterator itLow, i;
-    int n;
-    itLow = packetsMap->lowerBound(shortKey);
+    connect(et, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(et, SIGNAL(finished()), et, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 
-    p.clearPacketsSet();
+    thread->start();
 
-    for(i=itLow, n=0; n<totClients; i++, n++)
-        p.insertPacket(i.value());
-
-    //check if set contains n=MAX_CLIENTS packets
-//    if(packetsSet.size()!=MAX_CLIENTS)
-//        continue;
 }
 
 void MyServer::emitLog(QString message){

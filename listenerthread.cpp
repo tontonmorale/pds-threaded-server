@@ -1,11 +1,11 @@
-#include "listenerobj.h"
+#include "listenerthread.h"
 
-ListenerObj::ListenerObj()
+ListenerThread::ListenerThread()
 {
 
 }
 
-ListenerObj::ListenerObj(qintptr socketDescriptor,
+ListenerThread::ListenerThread(qintptr socketDescriptor,
                          QMutex *mutex,
                          QMap<QString, QSharedPointer<Packet>> *packetsMap,
                          QMap<QString, int> *packetsDetectionMap,
@@ -17,7 +17,7 @@ ListenerObj::ListenerObj(qintptr socketDescriptor,
       espMap(espMap){
 }
 
-void ListenerObj::work(){
+void ListenerThread::work(){
     socket = new QTcpSocket();
     if(!socket->setSocketDescriptor(socketDescriptor)){
         emit log("Errore set sock descriptor\n");
@@ -31,7 +31,7 @@ void ListenerObj::work(){
     emit ready();
 }
 
-void ListenerObj::clientSetup(){
+void ListenerThread::clientSetup(){
     QStringList sl;
     QString line, clientId, hello2Client, mac, helloFromClient, id;
     const char* msg;
@@ -56,12 +56,12 @@ void ListenerObj::clientSetup(){
     socket->write(msg);
 }
 
-void ListenerObj::sendStart(){
+void ListenerThread::sendStart(){
     socket->write("START\r\n");
 //    socketTimerMap[socket]->start(MAX_WAIT+5000);
 }
 
-void ListenerObj::readFromClient(){
+void ListenerThread::readFromClient(){
     QString line, firstWord, hash, timestamp, mac, signal, microsec_str, espId, ssid;
     QStringList sl, tsSplit, macList;
 //    Packet p;
@@ -87,7 +87,7 @@ void ListenerObj::readFromClient(){
     }
 }
 
-void ListenerObj::newPacket(QString line){
+void ListenerThread::newPacket(QString line){
     QString hash, timestamp, mac, signal, microsec_str, espId, ssid, key, shortKey;
     Packet pkt;
     QStringList sl, tsSplit, macList;
@@ -128,12 +128,12 @@ void ListenerObj::newPacket(QString line){
     // --- update packets ---
 }
 
-void ListenerObj::closeConnection(){
+void ListenerThread::closeConnection(){
     socket->disconnect();
     emit finished();
 }
 
-ListenerObj::~ListenerObj(){
+ListenerThread::~ListenerThread(){
     delete socket;
 }
 
