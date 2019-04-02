@@ -44,7 +44,9 @@ private:
     int connectedClients;
     int totClients;
     int endPkClients;
+    int currMinute;
     QList<ListenerThread*> *listenerThreadList;
+    bool DBinitialized;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

@@ -5,54 +5,17 @@ DBThread::DBThread()
 
 }
 
-DBThread::DBThread(QMap<QString, Person> *peopleMap)
+DBThread::DBThread(QMap<QString, Person> *peopleMap, bool initialized)
 {
-    //crea init e controlla se è gia stata fatta con booleano
     this->peopleMap=peopleMap;
 
-    if (!dbConnect())
-        return; //gestione mancata connessione da fare
-
-    QSqlQuery query;
-    QString queryString;
-
-    //query per creazione tabella timestamp
-    queryString = "CREATE TABLE IF NOT EXISTS timestamps ("
-            "timestamp VARCHAR(255) NOT NULL, "
-            "count INT, "
-            "PRIMARY KEY (timestamp)"
-            ") ENGINE = InnoDB;";
-
-    qDebug().noquote() << "query: " + queryString;
-
-    if (query.exec(queryString)) {
-        qDebug() << "Query di creazione tabella timestamp andata a buon fine";
+    if (!initialized)
+    {
+        this->initialized = init();
     }
-    else{
-        qDebug() << "Query di creazione tabella timestamp fallita";
-        return;
-    }
-
-    //LPStats = long period statistics
-    queryString = "CREATE TABLE IF NOT EXISTS LPStats ("
-            "timestamp VARCHAR(255) NOT NULL, "
-            "mac VARCHAR(255) NOT NULL, "
-            "PRIMARY KEY (timestamp, mac)"
-            ") ENGINE = InnoDB;";
-
-    qDebug().noquote() << "query: " + queryString;
-
-    if (query.exec(queryString)) {
-        qDebug() << "Query di creazione tabella timestamp andata a buon fine";
-    }
-    else{
-        qDebug() << "Query di creazione tabella timestamp fallita";
-        return;
-    }
-
 }
 
-    bool DBThread::init() {
+bool DBThread::init() {
 
     if (!dbConnect())
         return false; //gestione mancata connessione da fare
@@ -61,7 +24,7 @@ DBThread::DBThread(QMap<QString, Person> *peopleMap)
     QString queryString;
 
     //query per creazione tabella timestamp
-    queryString = "CREATE TABLE IF NOT EXISTS timestamps ("
+    queryString = "CREATE TABLE IF NOT EXISTS Timestamps ("
             "timestamp VARCHAR(255) NOT NULL, "
             "count INT, "
             "PRIMARY KEY (timestamp)"
@@ -70,7 +33,7 @@ DBThread::DBThread(QMap<QString, Person> *peopleMap)
     qDebug().noquote() << "query: " + queryString;
 
     if (query.exec(queryString)) {
-        qDebug() << "Query di creazione tabella timestamp andata a buon fine";
+        qDebug() << "Query di creazione tabella Timestamps andata a buon fine";
     }
     else{
         qDebug() << "Query di creazione tabella timestamp fallita";
@@ -100,29 +63,7 @@ void DBThread::send()
 {
     QSqlQuery query;
     QString queryString;
-/*
-    if (!dbConnect())
-        return;
 
-
-
-    //query per creazione tabella timestamp
-    queryString = "CREATE TABLE IF NOT EXISTS timestamps ("
-            "timestamp VARCHAR(255) NOT NULL, "
-            "count INT, "
-            "PRIMARY KEY (timestamp)"
-            ") ENGINE = InnoDB;";
-
-    qDebug().noquote() << "query: " + queryString;
-
-    if (query.exec(queryString)) {
-        qDebug() << "Query di creazione tabella timestamp andata a buon fine";
-    }
-    else{
-        qDebug() << "Query di creazione tabella timestamp fallita";
-        return;
-    }
-*/
     //inserisco la nuova entry timestamp-numero di persone rilevate a quel timestamp nella tabella timestamp
     QMap<QString, Person>::iterator pm = this->peopleMap->begin();
     QSet<QSharedPointer<Packet>> ps = pm.value().getPacketsSet();
@@ -133,7 +74,7 @@ void DBThread::send()
     QString Timestamp = tsSplit.at(0) + tsSplit.at(1);
     qDebug().noquote() << "Timestamp delle persone nella peopleMap: " + Timestamp;
 
-    queryString = "INSERT INTO timestamps (timestamp, count) "
+    queryString = "INSERT INTO Timestamps (timestamp, count) "
                               "VALUES ('" + Timestamp + "', " + QString::number(peopleMap->count()) + ");";
 
     qDebug().noquote() << "query: " + queryString;
@@ -182,3 +123,52 @@ bool DBThread::dbConnect() {
         return false;
     }
 }
+
+//NOTA: assumo che il begintime e l'endtime siano timestamp correttamente costruiti a partire da data e ora prese in input dall'utente
+void DBThread::GetTimestampsFromDB(QString begintime, QString endtime) {
+    QSqlQuery query;
+    QString queryString;
+
+    queryString = "SELECT * "
+                  "FROM Timestamps "
+                  "WHERE timestamp > " + begintime + " AND timestamp < " + endtime + ";";
+
+    qDebug().noquote() << "query: " + queryString;
+    if (query.exec(queryString)) {
+        //disegna grafico con persone ricevute dal db
+    }
+    else{
+        qDebug() << "Query di select dalla tabella Timestamps fallita";
+        return;
+    }
+}
+
+
+void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
+    QSqlQuery query;
+    QString queryString;
+
+    queryString = "SELECT mac, COUNT(*) "
+                  "FROM LPStats "
+                  "WHERE timestamp > " + begintime + " AND timestamp < " + endtime +
+                  "GROUP BY mac"
+                  "ORDER BY COUNT(*);";
+
+    qDebug().noquote() << "query: " + queryString;
+    if (query.exec(queryString)) {
+        //disegna grafico con persone ricevute dal db
+    }
+    else{
+        qDebug() << "Query di select dalla tabella Timestamps fallita";
+        return;
+    }
+}
+
+
+
+
+
+
+
+
+

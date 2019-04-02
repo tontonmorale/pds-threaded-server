@@ -21,7 +21,10 @@ class DBThread : public QObject
 
 public:
     DBThread();
-    DBThread(QMap<QString, Person> *peopleMap);
+    DBThread(QMap<QString, Person> *peopleMap, bool initialized);
+    bool initialized;
+    void GetTimestampsFromDB(QString begintime, QString endtime);
+    void GetLPSFromDB(QString begintime, QString endtime);
 
 public slots:
     void send();   
