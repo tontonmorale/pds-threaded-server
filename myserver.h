@@ -7,6 +7,7 @@
 #include <QPlainTextEdit>
 #include <QMutex>
 #include "packet.h"
+#include "person.h"
 #include "esp.h"
 
 class MyServer : public QTcpServer
@@ -30,6 +31,7 @@ public slots:
     void startToClients();
     void emitLog(QString message);
     void createElaborateThread();
+    void updatePacketsSet(Person &p, QString shortKey);
 
 private:
     QMutex* mutex;
