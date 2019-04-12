@@ -12,13 +12,13 @@
 
 using namespace std;
 
-class ListenerObj : public QObject
+class ListenerThread : public QObject
 {
     Q_OBJECT
 
 public:
-    ListenerObj();
-    ListenerObj(qintptr socketDescriptor,
+    ListenerThread();
+    ListenerThread(qintptr socketDescriptor,
                 QMutex* mutex,
                 QMap<QString, QSharedPointer<Packet>> *packetsMap,
                 QMap<QString, int> *packetsDetectionMap,
@@ -27,7 +27,7 @@ public:
     void clientSetup();
     void closeConnection();
     void newPacket(QString line);
-    ~ListenerObj();
+    ~ListenerThread();
 
 public slots:
     void work();

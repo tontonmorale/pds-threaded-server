@@ -2,7 +2,7 @@
 #define MYSERVER_H
 
 #include <QTcpServer>
-#include <listenerobj.h>
+#include <listenerthread.h>
 #include <QEventLoop>
 #include <QPlainTextEdit>
 #include <QMutex>
@@ -32,7 +32,6 @@ public slots:
     void startToClients();
     void emitLog(QString message);
     void createElaborateThread();
-    void updatePacketsSet(Person &p, QString shortKey);
 
 private:
     QMutex* mutex;
@@ -46,7 +45,7 @@ private:
     int totClients;
     int endPkClients;
     int currMinute;
-    QList<ListenerObj*> *objList;
+    QList<ListenerThread*> *listenerThreadList;
     bool DBinitialized;
 
 protected:
