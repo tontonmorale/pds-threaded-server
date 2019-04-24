@@ -12,14 +12,14 @@ ElaborateThread::ElaborateThread(QMap<QString, QSharedPointer<Packet>> *packetsM
                                  int connectedClients,
                                  QMap<QString, Person> *peopleMap,
                                  int currMinute,
-                                 QList<Esp> *espList,
+                                 QMap<QString, Esp> *espMap,
                                  QPointF maxEspCoords):
     packetsMap(packetsMap),
     packetsDetectionMap(packetsDetectionMap),
     peopleMap(peopleMap),
     currMinute(currMinute),
     connectedClients(connectedClients),
-    espList(espList),
+    espMap(espMap),
     maxEspCoords(maxEspCoords)
 {
 
@@ -67,8 +67,7 @@ void ElaborateThread::manageCurrentMinute(){
 //---------------------------------------------
 
 void ElaborateThread::manageLastMinute() {
-
-
+    QList<QPointF> devicesCoords;
 
     //calcolo posizione dispositivi solo se almeno 3 client connessi
     if(connectedClients < 3){
@@ -76,7 +75,9 @@ void ElaborateThread::manageLastMinute() {
         return;
     }
 
-    calculateDevicesPosition();
+    // --- TODO: manda la lista al thread che disegna la mappa ---------------
+    devicesCoords = calculateDevicesPosition();
+    // -----------------------------------------------------------------------
 
     //conta le persone nell'area e disegna grafico
     this->currTimeSlot ++;
@@ -104,9 +105,14 @@ QList<QPointF> ElaborateThread::calculateDevicesPosition(){
     QList<QPointF> devicesCoords;
     QPointF posA, posB, posC;
     Esp espA, espB, espC;
-    espA = (*espList)[0];
-    espB = (*espList)[1];
-    espC = (*espList)[2];
+    QMap<QString, Esp>::iterator it;
+
+    it = espMap->begin();
+    espA = it.value();
+    it++;
+    espB = it.value();
+    it++;
+    espC = it.value();
     posA = espA.getPosition();
     posB = espB.getPosition();
     posC = espC.getPosition();
@@ -146,7 +152,6 @@ QList<QPointF> ElaborateThread::calculateDevicesPosition(){
         //se punto nell'area delimitata dagli esp
         if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y()))
             devicesCoords.append(pos);
-        }
     }
     return devicesCoords;
 }

@@ -18,9 +18,11 @@ private:
     QMap<QString, Person> *peopleMap;
     int currMinute;
     int connectedClients;
-    QList<Esp> *espList;
+    QMap<QString, Esp> *espMap;
     QPointF maxEspCoords;
     QList<QPointF> calculateDevicesPosition();
+    void manageCurrentMinute();
+    void manageLastMinute();
 
 public:
     ElaborateThread();
@@ -32,10 +34,6 @@ public:
                     QMap<QString, Esp> *espMap,
                     QPointF maxEspCoords);
     void updatePacketsSet(Person &p, QString shortKey);
-
-protected:
-    void manageCurrentMinute();
-    void manageLastMinute();
 
 public slots:
     void work();
