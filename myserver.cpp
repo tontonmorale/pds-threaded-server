@@ -18,8 +18,26 @@ MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), t
     DBinitialized = false;
 }
 
+QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
+    double x_max = 0, y_max = 0;
+    QPointF pos;
+    for(QMap<QString, Esp>::iterator i=espMap->begin(); i!=espMap->end(); i++) {
+        double x = i.value().getPosition().x();
+        double y = i.value().getPosition().y();
+        if (x > x_max)
+            x_max = x;
+        if (y > y_max)
+            y_max = y;
+    }
+    pos.setX(x_max);
+    pos.setY(y_max);
+
+    return pos;
+}
+
 void MyServer::init(){
     confFromFile();
+    maxEspCoords = setMaxEspCoords(espMap);
     DBThread dbthread(peopleMap, DBinitialized);
     if (dbthread.initialized)
         this->DBinitialized = true;
@@ -63,7 +81,7 @@ void MyServer::createElaborateThread(){
     mutex.unlock();
 
     QThread *thread = new QThread();
-    ElaborateThread *et = new ElaborateThread(packetsMap, packetsDetectionMap, totClients);
+    ElaborateThread *et = new ElaborateThread(packetsMap, packetsDetectionMap, connectedClients, peopleMap, currMinute, espMap, maxEspCoords);
 
     et->moveToThread(thread);
 

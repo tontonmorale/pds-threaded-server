@@ -4,12 +4,16 @@ Esp::Esp(){
 
 }
 
-Esp::Esp(QString id, QString mac, QPointF coord){
+Esp::Esp(QString id, QString mac, QPointF pos){
     this->id = id;
     this->mac = mac;
-    this->coord = coord;
+    this->position = pos;
 }
 
 QString Esp::getId(){
     return this->id;
+}
+
+QPointF Esp::getPosition(){
+    return this->position;
 }

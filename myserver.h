@@ -47,6 +47,8 @@ private:
     int currMinute;
     QList<ListenerThread*> *listenerThreadList;
     bool DBinitialized;
+    QPointF maxEspCoords;
+    QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

@@ -37,7 +37,8 @@ SOURCES += \
     person.cpp \
     dbthread.cpp \
     elaboratethread.cpp \
-    listenerthread.cpp
+    listenerthread.cpp \
+    utility.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -47,7 +48,8 @@ HEADERS += \
     person.h \
     dbthread.h \
     elaboratethread.h \
-    listenerthread.h
+    listenerthread.h \
+    utility.h
 
 FORMS += \
         mainwindow.ui
