@@ -79,22 +79,6 @@ void ElaborateThread::manageLastMinute() {
     devicesCoords = calculateDevicesPosition();
     // -----------------------------------------------------------------------
 
-    //conta le persone nell'area e disegna grafico
-    this->currTimeSlot ++;
-    QPointF point = QPointF(this->currTimeSlot * TIME_SLOT, peopleMap.size());
-    this->peopleCounter.append(point);
-    this->window->setWidget("time", peopleCounter, max);
-    //disegna persone nella mappa
-    this->window->setWidget("map", points, max);
-    this->window->show();
-
-    //delete previous packets
-    peopleMap->clear();
-
-    this->currMinute = 0;
-    //send start to clients
-    startToClients();
-
     this->currMinute++;
     this->packetsMap.clear();
     this->areaPacketsMap.clear();

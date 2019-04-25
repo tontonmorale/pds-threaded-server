@@ -116,7 +116,7 @@ void MyServer::startToClients(){
 
 void MyServer::confFromFile(){
     ifstream inputFile;
-    int i, nClients;
+    int i;
     string id, mac, x_str, y_str;
     QString qmac;
     double x_double, y_double;
@@ -128,14 +128,14 @@ void MyServer::confFromFile(){
         }
     }
     if(i>=3){
-        // --- emettere segnale di errore
+        // segnale di errore
         qDebug() << "Errore apertura file";
         emit error("Impossibile aprire il file degli esp");
         return;
     }
 
-    inputFile >> nClients; // --- nClients è da sostituire con totClients ---
-    for(i=0; i< nClients; i++){ // --- nClients è da sostituire con totClients ---
+    inputFile >> totClients; // --- nClients è da sostituire con totClients ---
+    for(i=0; i< totClients; i++){ // --- nClients è da sostituire con totClients ---
         inputFile >> id >> mac >> x_str >> y_str;
         x_double = stod(x_str.c_str());
         y_double = stod(y_str.c_str());
@@ -150,6 +150,8 @@ void MyServer::confFromFile(){
 
 void MyServer::SendToDB() {
     QThread *thread = new QThread();
+
+    // --- TODO: dbthread, per contare le persone nell'area, non deve usare peopleMap ma la lista di coordinate dall'elaborate thread
     DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
     dbthread->moveToThread(thread);
 
