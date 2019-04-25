@@ -33,6 +33,44 @@ void MainWindow::printToLog(QString message){
     ui->log->appendPlainText(message);
 }
 
+//disegna grafico del numero di mac rilevati nel periodo specificato
+void MainWindow::printOldCountMap() {
+    //prendi begin time ed end time dalle tendine che ci sono sul grafico
+    QList<QPointF> list = server.DrawOldCountMap(begintime, endtime);
+    ui->gridLayout->addWidget(createTimeChartGroup(list), 0, 0);
+
+}
+
+QGroupBox* MainWindow::createTimeChartGroup(QList<QPointF> points)
+{
+    QGroupBox *groupBox = new QGroupBox(tr("Temporal chart"));
+
+    QLineSeries *series = new QLineSeries();
+
+    for(QList<QPointF>::iterator i=points.begin(); i!=points.end(); i++)
+        *series << *i;
+
+    QChart *chart = new QChart();
+    chart->legend()->hide();
+    chart->addSeries(series);
+    chart->createDefaultAxes();
+    chart->setTitle("Number of people in area");
+
+    QValueAxis *axisX = new QValueAxis;
+    axisX->setRange(0, 60);
+    axisX->setTickCount(13);
+    chart->setAxisX(axisX, series);
+
+
+    QChartView *chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+    QHBoxLayout *layout = new QHBoxLayout;
+    layout->addWidget(chartView);
+    groupBox->setLayout(layout);
+
+    return groupBox;
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;

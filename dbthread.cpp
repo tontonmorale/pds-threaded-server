@@ -125,9 +125,10 @@ bool DBThread::dbConnect() {
 }
 
 //NOTA: assumo che il begintime e l'endtime siano timestamp correttamente costruiti a partire da data e ora prese in input dall'utente
-void DBThread::GetTimestampsFromDB(QString begintime, QString endtime) {
+void DBThread::GetTimestampsFromDB(QString begintime, QString endtime, QList<QPointF> *peopleCounter) {
     QSqlQuery query;
     QString queryString;
+    QMap<QString, int> *oldCountMap = nullptr;
 
     queryString = "SELECT * "
                   "FROM Timestamps "
@@ -135,7 +136,21 @@ void DBThread::GetTimestampsFromDB(QString begintime, QString endtime) {
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
-        //disegna grafico con persone ricevute dal db
+        int i = 0, j = 1;
+        //popolo la mappa delle persone
+        while (query.next()) {
+            oldCountMap->insert(query.value(i).toString(), query.value(j).toInt());
+            i += 2;
+            j += 2;
+        }
+        //setto la lista di punti con persone ricevute dal db
+        QPointF point;
+        for (QMap<QString, int>::iterator i = oldCountMap->begin(); i != oldCountMap->end(); i++) {
+            point = QPointF(i.key().toInt(), i.value()); //Verifica che funziona la conversione da timestamp stringa a timestamp intero
+            peopleCounter->append(point);
+        }
+        return;
+
     }
     else{
         qDebug() << "Query di select dalla tabella Timestamps fallita";
@@ -143,6 +158,15 @@ void DBThread::GetTimestampsFromDB(QString begintime, QString endtime) {
     }
 }
 
+//QList<QPointF> DBThread::drawOldContMap(QList<QPointF> *peopleCounter) {
+//    QPointF point;
+//    QList<QPointF> peopleCounter;
+//    for (QMap<QString, int>::iterator i = oldCountMap->begin(); i != oldCountMap->end(); i++) {
+//        point = QPointF(i.key().toInt(), i.value()); //Verifica che funziona la conversione da timestamp stringa a timestamp intero
+//        peopleCounter.append(point);
+//    }
+//    return peopleCounter;
+//}
 
 void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
     QSqlQuery query;
@@ -156,6 +180,8 @@ void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
+        //popolo la mappa delle persone
+
         //disegna grafico con persone ricevute dal db
     }
     else{
@@ -163,7 +189,6 @@ void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
         return;
     }
 }
-
 
 
 

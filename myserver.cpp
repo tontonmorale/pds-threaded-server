@@ -170,4 +170,34 @@ void MyServer::SendToDB() {
 //    emit DBsignal(&peopleMap);
 }
 
+void MyServer::DrawOldCountMap(QString begintime, QString endtime) {
+    QThread *thread = new QThread();
+    DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
+    QList<QPointF> *peopleCounter;
+    dbthread->moveToThread(thread);
+
+    connect(thread, SIGNAL(started()), dbthread, SLOT(&DBThread::GetTimestampsFromDB));
+
+    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    thread->start();
+
+}
+
+
+void MyServer::Connects(QString slot) {
+    QThread *thread = new QThread();
+    DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
+    dbthread->moveToThread(thread);
+    if (slot.compare("DrawOldCountMap")==0) {
+        connect(thread, SIGNAL(started()), dbthread, SLOT(&DBThread::GetTimestampsFromDB));
+    }
+    else if (slot.compare("SendToDB")==0) {
+        connect(thread, SIGNAL(started()), dbthread, SLOT(send()));
+    }
+    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+}
 

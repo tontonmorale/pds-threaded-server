@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
+<<<<<<< HEAD
+<!-- Written by QtCreator 4.8.2, 2019-04-24T22:08:11. -->
+=======
 <!-- Written by QtCreator 4.9.0, 2019-04-25T09:51:59. -->
+>>>>>>> 673c35028a0632b25bc8ed238273817624792cf4
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -307,8 +311,7 @@
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">ServerPds</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">ServerPds2</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:C:/Users/tonio/Desktop/pds-threaded-server/ServerPds.pro</value>
-    <value type="QString" key="Qt4ProjectManager.Qt4RunConfiguration.ProFile">ServerPds.pro</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:C:/Users/raffy/Desktop/pds-server-master/pds-threaded-server/ServerPds.pro</value>
     <value type="QString" key="RunConfiguration.Arguments"></value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
