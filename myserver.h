@@ -20,6 +20,8 @@ public:
     void confFromFile();
     void init();
     void SendToDB();
+    void DrawOldCountMap(QString begintime, QString endtime);
+    void Connects(QString slot);
 
 signals:
     void start2Clients();
