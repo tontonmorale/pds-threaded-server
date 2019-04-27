@@ -7,15 +7,20 @@ using namespace std;
 
 #define ESP_FILE_PATH "C:/Users/raffy/Downloads/PDS_progetto/pds-threaded-server/esp.txt"
 
-MyServer::MyServer(QObject *parent): QTcpServer (parent), connectedClients(0), totClients(1) {
-//    connect(this, SIGNAL(newConnection()), this, SLOT(incomingConnection(socketDescriptor)));
+MyServer::MyServer(QObject *parent):
+    QTcpServer (parent),
+    connectedClients(0),
+    totClients(1),
+    currMinute(0),
+    DBinitialized(false) {
+
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
     listenerThreadList = new QList<ListenerThread*>();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
-    DBinitialized = false;
+    devicesCoords = new QList<QPointF>;
 }
 
 QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
@@ -45,72 +50,70 @@ void MyServer::init(){
 
 void MyServer::incomingConnection(qintptr socketDescriptor){
     QThread *thread = new QThread();
-    ListenerThread *obj = new ListenerThread(socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
+    ListenerThread *lt = new ListenerThread(socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
 
-    obj->moveToThread(thread);
-
-    connect(thread, SIGNAL(started()), obj, SLOT(work()));
-
-    connect(obj, SIGNAL(ready()), this, SLOT(startToClients()));
-    connect(this, SIGNAL(start2Clients()), obj, SLOT(sendStart()));
-    connect(obj, &ListenerThread::log, this, &MyServer::emitLog);
-    connect(obj, SIGNAL(endPackets()), this, SLOT(createElaborateThread()));
-
-    connect(obj, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(obj, SIGNAL(finished()), obj, SLOT(deleteLater()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-
-    listenerThreadList->append(obj);
-
+    lt->moveToThread(thread);
+    lt->signalsConnection(thread, this);
+    listenerThreadList->append(lt);
     thread->start();
-
 }
 
 void MyServer::createElaborateThread(){
     QMutex mutex;
 
-    // controlla se tutte le schede hanno finito di inviare al minuto corrente
+    // controlla se ricevuto endPackets da tutte le schede
     mutex.lock();
     endPkClients ++;
     if(endPkClients<totClients){
         return;
     }
 
-    // ricevuto end file da tutte
+    // ricevuto end file da tutte le schede
     endPkClients = 0;
     mutex.unlock();
 
     QThread *thread = new QThread();
-    ElaborateThread *et = new ElaborateThread(packetsMap, packetsDetectionMap, connectedClients, peopleMap, currMinute, espMap, maxEspCoords);
-
+    ElaborateThread *et = new ElaborateThread(packetsMap, packetsDetectionMap, connectedClients,
+                                              peopleMap, currMinute, espMap, maxEspCoords, devicesCoords);
     et->moveToThread(thread);
-
-    connect(thread, SIGNAL(started()), et, SLOT(work()));
-
-    connect(et, &ElaborateThread::log, this, &MyServer::emitLog);
-
-    connect(et, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(et, SIGNAL(finished()), et, SLOT(deleteLater()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-
+    et->signalsConnection(thread, this);
     thread->start();
 
+    // inizio prossimo minuto
+    startToClients();
 }
 
 void MyServer::emitLog(QString message){
     emit log(message);
 }
 
-void MyServer::startToClients(){
-    // manda start se tutti i client sono connessi
-    connectedClients++; // --- da rivedere per poterla richiamare anche ai 5 minuti successivi
+void MyServer::readyFromClient(){
+    connectedClients++;
     if(connectedClients==totClients
 //            && connectedClients>=3
             ){
+        currMinute = 0;
+        startToClients();
+    }
+
+}
+
+void MyServer::startToClients(){
+    // manda start se:
+    //  -inizialmente tutti i client sono connessi
+    //  -le volte successive se almeno 3 client connessi
+    if(connectedClients==totClients
+//            && connectedClients>=3
+            )
+    {
         qDebug() << "Start to clients\n";
         endPkClients = 0;
         emit log("\n[server] sending start...\n");
+        currMinute++;
         emit start2Clients();
+    }
+    else {
+        // todo: meno di 3 client connessi => ?????
     }
 }
 
@@ -148,6 +151,17 @@ void MyServer::confFromFile(){
     inputFile.close();
 }
 
+void MyServer::dataForDb(){
+    // todo: passare dati al thread che gestisce il db
+//    SendToDB(*devicesCoords);
+
+    // pulisce le strutture dati per il time slot successivo
+    packetsMap->clear();
+    packetsDetectionMap->clear();
+    peopleMap->clear();
+    devicesCoords->clear();
+}
+
 void MyServer::SendToDB() {
     QThread *thread = new QThread();
 
@@ -155,7 +169,7 @@ void MyServer::SendToDB() {
     DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
     dbthread->moveToThread(thread);
 
-    connect(thread, SIGNAL(started()), dbthread, SLOT(send()));
+    dbthread->signalsConnection(thread, this);
 
 //    connect(dbthread, SIGNAL(ready()), this, SLOT(startToClients()));
 //    connect(this, SIGNAL(start2Clients()), dbthread, SLOT(sendStart()));
@@ -163,9 +177,6 @@ void MyServer::SendToDB() {
 //            ,Qt::QueuedConnection
 //            );
 
-    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     thread->start();
 //    emit DBsignal(&peopleMap);
 }
@@ -185,7 +196,6 @@ void MyServer::DrawOldCountMap(QString begintime, QString endtime) {
 
 }
 
-
 void MyServer::Connects(QString slot) {
     QThread *thread = new QThread();
     DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
@@ -201,3 +211,12 @@ void MyServer::Connects(QString slot) {
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
 
+MyServer::~MyServer() {
+//    espMap = new QMap<QString, Esp>();
+//    mutex = new QMutex();
+//    listenerThreadList = new QList<ListenerThread*>();
+//    packetsMap = new QMap<QString, QSharedPointer<Packet>>();
+//    packetsDetectionMap = new QMap<QString, int>;
+//    peopleMap = new QMap<QString, Person>;
+//    devicesCoords = new QList<QPointF>;
+}

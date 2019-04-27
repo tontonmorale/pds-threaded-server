@@ -9,6 +9,7 @@
 #include <QMutex>
 #include "packet.h"
 #include "esp.h"
+#include "myserver.h"
 
 using namespace std;
 
@@ -27,6 +28,7 @@ public:
     void clientSetup();
     void closeConnection();
     void newPacket(QString line);
+    void signalsConnection(QThread *thread, MyServer *server);
     ~ListenerThread();
 
 public slots:

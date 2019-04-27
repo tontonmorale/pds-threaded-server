@@ -13,25 +13,44 @@ ElaborateThread::ElaborateThread(QMap<QString, QSharedPointer<Packet>> *packetsM
                                  QMap<QString, Person> *peopleMap,
                                  int currMinute,
                                  QMap<QString, Esp> *espMap,
-                                 QPointF maxEspCoords):
+                                 QPointF maxEspCoords,
+                                 QList<QPointF> *devicesCoords):
     packetsMap(packetsMap),
     packetsDetectionMap(packetsDetectionMap),
     peopleMap(peopleMap),
     currMinute(currMinute),
     connectedClients(connectedClients),
     espMap(espMap),
-    maxEspCoords(maxEspCoords)
+    maxEspCoords(maxEspCoords),
+    devicesCoords(devicesCoords)
 {
 
 }
 
 void ElaborateThread::work() {
-
+    // minuto attuale
     manageCurrentMinute();
 
-    if(currMinute >= MAX_MINUTES)
+    // ultimo minuto
+    if(currMinute >= MAX_MINUTES){
+        currMinute = 0;
+        emit ready(); // manda start alle schede per nuovo timeslot
         manageLastMinute();
+        emit timeSlotEnd(); // manda dati time slot corrente al thread che si occupa del db e alla gui
+    }
+}
 
+void ElaborateThread::signalsConnection(QThread *thread, MyServer *server){
+
+    connect(thread, SIGNAL(started()), this, SLOT(work()));
+
+    connect(this, &ElaborateThread::log, server, &MyServer::emitLog);
+    connect(this, &ElaborateThread::timeSlotEnd, server, &MyServer::dataForDb);
+    connect(this, &ElaborateThread::ready, server, &MyServer::startToClients);
+
+    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
 
 void ElaborateThread::manageCurrentMinute(){
@@ -64,10 +83,7 @@ void ElaborateThread::manageCurrentMinute(){
     }
 }
 
-//---------------------------------------------
-
 void ElaborateThread::manageLastMinute() {
-    QList<QPointF> devicesCoords;
 
     //calcolo posizione dispositivi solo se almeno 3 client connessi
     if(connectedClients < 3){
@@ -75,18 +91,11 @@ void ElaborateThread::manageLastMinute() {
         return;
     }
 
-    // --- TODO: manda la lista al thread che disegna la mappa ---------------
-    devicesCoords = calculateDevicesPosition();
-    // -----------------------------------------------------------------------
-
-    this->currMinute++;
-    this->packetsMap.clear();
-    this->areaPacketsMap.clear();
+    //calcola lista di posizioni dei device nell'area e la salva in devicesCoords
+    calculateDevicesPosition();
 }
-//---------------------------------------------
 
-QList<QPointF> ElaborateThread::calculateDevicesPosition(){
-    QList<QPointF> devicesCoords;
+void ElaborateThread::calculateDevicesPosition(){
     QPointF posA, posB, posC;
     Esp espA, espB, espC;
     QMap<QString, Esp>::iterator it;
@@ -135,9 +144,8 @@ QList<QPointF> ElaborateThread::calculateDevicesPosition(){
         QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
         //se punto nell'area delimitata dagli esp
         if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y()))
-            devicesCoords.append(pos);
+            devicesCoords->append(pos);
     }
-    return devicesCoords;
 }
 
 void ElaborateThread::updatePacketsSet(Person &p, QString shortKey){

@@ -1,4 +1,13 @@
 #include "dbthread.h"
+#include <iostream>
+#include <QTcpSocket>
+#include <QEventLoop>
+#include <QPlainTextEdit>
+#include "esp.h"
+#include "packet.h"
+#include <QMutex>
+#include <QThread>
+#include "myserver.h"
 
 DBThread::DBThread()
 {
@@ -57,6 +66,17 @@ bool DBThread::init() {
         return false;
     }
     return true;
+}
+
+void DBThread::signalsConnection(QThread *thread, MyServer *server){
+
+    connect(thread, SIGNAL(started()), this, SLOT(send()));
+
+//    connect(this, &DBThread::log, server, &MyServer::emitLog);
+
+    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
 
 void DBThread::send()
