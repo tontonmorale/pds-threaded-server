@@ -14,12 +14,12 @@ public:
     QString getId();
 //    QTcpSocket* getSocket();
 //    void setSocket(QTcpSocket *socket);
-//    QPointF getPoint();
+    QPointF getPosition();
 
 private:
     QString id;
     QString mac;
-    QPointF coord;
+    QPointF position;
 };
 
 #endif // ESP_H

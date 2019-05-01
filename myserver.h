@@ -34,6 +34,9 @@ public slots:
     void startToClients();
     void emitLog(QString message);
     void createElaborateThread();
+    void dataForDb();
+    void readyFromClient();
+    ~MyServer() override;
 
 private:
     QMutex* mutex;
@@ -50,6 +53,9 @@ private:
     int currMinute;
     QList<ListenerThread*> *listenerThreadList;
     bool DBinitialized;
+    QPointF maxEspCoords;
+    QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
+    QList<QPointF> *devicesCoords;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

@@ -1,16 +1,10 @@
 #ifndef DBTHREAD_H
 #define DBTHREAD_H
 
-#include <QThread>
-#include <iostream>
-#include <QTcpSocket>
-#include <QEventLoop>
-#include <QPlainTextEdit>
-#include <QMutex>
-#include <QtSql>
-#include "packet.h"
-#include "esp.h"
 #include "person.h"
+#include <QtSql>
+
+class MyServer;
 
 using namespace std;
 
@@ -25,9 +19,10 @@ public:
     bool initialized;
     void GetTimestampsFromDB(QString begintime, QString endtime, QList<QPointF> *peopleCounter);
     void GetLPSFromDB(QString begintime, QString endtime);
+    void signalsConnection(QThread *thread, MyServer *server);
 
 public slots:
-    void send();   
+    void send();
     bool init();
 
 signals:

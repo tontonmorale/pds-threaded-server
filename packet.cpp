@@ -23,7 +23,7 @@ QString Packet::getMac() {
     return this->mac;
 }
 
-QString Packet::getEsp() {
+QString Packet::getEspId() {
     return this->espId;
 }
 

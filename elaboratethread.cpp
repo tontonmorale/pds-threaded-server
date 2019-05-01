@@ -1,30 +1,56 @@
 #include "elaboratethread.h"
+#include "utility.h"
 
 #include <QMap>
 
 #define MAX_MINUTES 5
 
+ElaborateThread::ElaborateThread() {}
+
 ElaborateThread::ElaborateThread(QMap<QString, QSharedPointer<Packet>> *packetsMap,
                                  QMap<QString, int> *packetsDetectionMap,
-                                 int totClients,
+                                 int connectedClients,
                                  QMap<QString, Person> *peopleMap,
-                                 int currMinute):
+                                 int currMinute,
+                                 QMap<QString, Esp> *espMap,
+                                 QPointF maxEspCoords,
+                                 QList<QPointF> *devicesCoords):
     packetsMap(packetsMap),
     packetsDetectionMap(packetsDetectionMap),
-    totClients(totClients),
     peopleMap(peopleMap),
-    currMinute(currMinute)
+    currMinute(currMinute),
+    connectedClients(connectedClients),
+    espMap(espMap),
+    maxEspCoords(maxEspCoords),
+    devicesCoords(devicesCoords)
 {
 
 }
 
 void ElaborateThread::work() {
-
+    // minuto attuale
     manageCurrentMinute();
 
-    if(currMinute >= MAX_MINUTES)
+    // ultimo minuto
+    if(currMinute >= MAX_MINUTES){
+        currMinute = 0;
+        emit ready(); // manda start alle schede per nuovo timeslot
         manageLastMinute();
+        emit timeSlotEnd(); // manda dati time slot corrente al thread che si occupa del db e alla gui
+    }
+}
 
+void ElaborateThread::signalsConnection(QThread *thread, MyServer *server){
+
+    connect(thread, SIGNAL(started()), this, SLOT(work()));
+
+    connect(this, &ElaborateThread::log, server, &MyServer::emitLog);
+    connect(this, &ElaborateThread::timeSlotEnd, server, &MyServer::dataForDb);
+    connect(this, &ElaborateThread::ready, server, &MyServer::startToClients);
+
+    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
 
 void ElaborateThread::manageCurrentMinute(){
@@ -57,98 +83,70 @@ void ElaborateThread::manageCurrentMinute(){
     }
 }
 
-//---------------------------------------------
-//if last minute
-QList<QPointF> points;
-
-{
+void ElaborateThread::manageLastMinute() {
 
     //calcolo posizione dispositivi solo se almeno 3 client connessi
-    if(MAX_CLIENTS>=3)
-    {
-        QPointF pA, pB, pC;
-        Esp espA, espB, espC;
-        espA = (*espList)[0];
-        espB = (*espList)[1];
-        espC = (*espList)[2];
-        pA = espA.getPoint();
-        pB = espB.getPoint();
-        pC = espC.getPoint();
-
-        //calculate positions of people in area
-        QMap<QString, Person>::iterator pm;
-        for(pm=this->peopleMap.begin(); pm!=this->peopleMap.end(); pm++){
-            qDebug().noquote() << "Mac: " + pm.key();
-            qDebug().noquote() << " con i seguenti pacchetti:\n";
-
-            QSet<QSharedPointer<Packet>> ps = pm.value().getPacketsSet();
-
-            double d1, d2, d3;
-
-            //corrispondenza tra un certo esp e la sua potenza
-            for (QSet<QSharedPointer<Packet>>::iterator i = ps.begin(); i != ps.end(); i++) {
-                if ((*i)->getEsp().compare(espA.getName())==0){
-                    d1 = dbToMeters((*i)->getSignal());
-//                                d1 = calculateDistance((*i)->getSignal());
-                    if((*i)->getMac().compare("30:74:96:94:e3:2d")==0)
-                        qDebug().noquote() << QString::number(d1) + " " + QString::number((*i)->getSignal()) + "\n";
-                }
-                else if ((*i)->getEsp().compare(espB.getName())==0){
-                    d2 = dbToMeters((*i)->getSignal());
-//                                d2 = calculateDistance((*i)->getSignal());
-                    if((*i)->getMac().compare("30:74:96:94:e3:2d")==0)
-                        qDebug().noquote() << QString::number(d2) + " " + QString::number((*i)->getSignal()) + "\n";
-                }
-                else if ((*i)->getEsp().compare(espC.getName())==0){
-                    d3 = dbToMeters((*i)->getSignal());
-//                                d3 = calculateDistance((*i)->getSignal());
-                    if((*i)->getMac().compare("30:74:96:94:e3:2d")==0)
-                        qDebug().noquote() << QString::number(d3) + " " + QString::number((*i)->getSignal()) + "\n";
-                }
-                qDebug().noquote() << (*i)->getHash() + "\n";
-
-            }
-
-
-            Point res = trilateration(d1, d2, d3, pA, pB, pC);
-            QPointF point = QPointF(res.getX(), res.getY());
-            if ((point.x()>=0 && point.y()>=0) && (point.x()<=max.x() && point.y()<=max.y()))
-                    points.append(point);
-            }
-        }
-
-    //conta le persone nell'area e disegna grafico
-    this->currTimeSlot ++;
-    QPointF point = QPointF(this->currTimeSlot * TIME_SLOT, peopleMap.size());
-    this->peopleCounter.append(point);
-    this->window->setWidget("time", peopleCounter, max);
-    //disegna persone nella mappa
-    this->window->setWidget("map", points, max);
-    this->window->show();
-
-    if(this->currTimeSlot>=12){
-        this->currTimeSlot = 0;
-        this->peopleCounter.clear();
-        QPointF point = QPointF(0, 0);
-        this->peopleCounter.append(point);
+    if(connectedClients < 3){
+        emit log("Non ci sono abbastanza dispositivi connessi\n");
+        return;
     }
 
-    //delete previous packets
-    this->peopleMap.clear();
-
-    this->currMinute = 0;
-    //send start to clients
-    startToClients();
-    //...todo
-    //...todo
-    //...todo
+    //calcola lista di posizioni dei device nell'area e la salva in devicesCoords
+    calculateDevicesPosition();
 }
 
-this->currMinute++;
-this->packetsMap.clear();
-this->areaPacketsMap.clear();
-conn->flush();
-//---------------------------------------------
+void ElaborateThread::calculateDevicesPosition(){
+    QPointF posA, posB, posC;
+    Esp espA, espB, espC;
+    QMap<QString, Esp>::iterator it;
+
+    it = espMap->begin();
+    espA = it.value();
+    it++;
+    espB = it.value();
+    it++;
+    espC = it.value();
+    posA = espA.getPosition();
+    posB = espB.getPosition();
+    posC = espC.getPosition();
+
+    //calcola posizioni dispositivi nell'area
+    QMap<QString, Person>::iterator person;
+    for(person = peopleMap->begin(); person != peopleMap->end(); person++){
+        qDebug().noquote() << "Mac: " + person.key();
+        qDebug().noquote() << " con i seguenti pacchetti:\n";
+
+        QSet<QSharedPointer<Packet>> set = person.value().getPacketsSet();
+
+        double d1, d2, d3;
+
+        //corrispondenza tra un certo esp e la sua potenza
+        for (QSet<QSharedPointer<Packet>>::iterator p = set.begin(); p != set.end(); p++) {
+            if ((*p)->getEspId().compare(espA.getId())==0){
+                d1 = Utility::dbToMeters((*p)->getSignal());
+                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0)
+                    qDebug().noquote() << QString::number(d1) + " " + QString::number((*p)->getSignal()) + "\n";
+            }
+            else if ((*p)->getEspId().compare(espB.getId())==0){
+                d2 = Utility::dbToMeters((*p)->getSignal());
+                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0)
+                    qDebug().noquote() << QString::number(d2) + " " + QString::number((*p)->getSignal()) + "\n";
+            }
+            else if ((*p)->getEspId().compare(espC.getId())==0){
+                d3 = Utility::dbToMeters((*p)->getSignal());
+                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0)
+                    qDebug().noquote() << QString::number(d3) + " " + QString::number((*p)->getSignal()) + "\n";
+            }
+            qDebug().noquote() << (*p)->getHash() + "\n";
+
+        }
+
+        QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
+        //se punto nell'area delimitata dagli esp
+        if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y()))
+            devicesCoords->append(pos);
+    }
+}
 
 void ElaborateThread::updatePacketsSet(Person &p, QString shortKey){
     QMap<QString, QSharedPointer<Packet>>::iterator itLow, i;

@@ -9,7 +9,7 @@ public:
    Packet(QString hash, QString mac, QString timestamp, QString signal, QString esp, QString ssid);
    QString getHash();
    QString getMac();
-   QString getEsp();
+   QString getEspId();
    QString getTimestamp();
    int getSignal();
 private:

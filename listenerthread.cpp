@@ -17,6 +17,20 @@ ListenerThread::ListenerThread(qintptr socketDescriptor,
       espMap(espMap){
 }
 
+void ListenerThread::signalsConnection(QThread *thread, MyServer *server){
+
+    connect(thread, SIGNAL(started()), this, SLOT(work()));
+
+    connect(this, &ListenerThread::ready, server, &MyServer::readyFromClient);
+    connect(server, &MyServer::start2Clients, this, &ListenerThread::sendStart);
+    connect(this, &ListenerThread::log, server, &MyServer::emitLog);
+    connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThread);
+
+    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+}
+
 void ListenerThread::work(){
     socket = new QTcpSocket();
     if(!socket->setSocketDescriptor(socketDescriptor)){
