@@ -47,6 +47,7 @@ private:
     QMap<QString, int> *packetsDetectionMap;
     QMap<QString, Esp> *espMap;
     QMap<QString, Person> *peopleMap;
+    QMap<QString, int> *oldCountMap;
     int connectedClients;
     int totClients;
     int endPkClients;

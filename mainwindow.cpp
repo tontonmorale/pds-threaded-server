@@ -7,7 +7,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::error, this, &MainWindow::fatalError);
     connect(&server, &MyServer::error, this, &MainWindow::fatalError);
     connect(&server, &MyServer::log, this, &MainWindow::printToLog);
+    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
+
     ui->setupUi(this);
 }
 
