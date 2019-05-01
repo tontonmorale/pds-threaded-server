@@ -35,9 +35,26 @@ void MainWindow::printToLog(QString message){
 
 //disegna grafico del numero di mac rilevati nel periodo specificato
 void MainWindow::printOldCountMap() {
+    QString begintime, endtime;
+
+    //disegno grafico runtime
+
+    QDateTime curr_timestamp = QDateTime::currentDateTime();
+    endtime = curr_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
+    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
+    begintime = old_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
+    QList<QPointF> *runtimeList = server.DrawOldCountMap(begintime, endtime);
+    QWidget *qw = new QWidget;
+    QGridLayout *grid = new QGridLayout;
+    grid->addWidget(createTimeChartGroup(*runtimeList), 0, 0);
+    qw->setLayout(grid);
+    ui->centralWidget->layout()->addWidget(qw);
+    //disegno vecchio grafico
+
+
     //prendi begin time ed end time dalle tendine che ci sono sul grafico
-    QList<QPointF> list = server.DrawOldCountMap(begintime, endtime);
-    ui->gridLayout->addWidget(createTimeChartGroup(list), 0, 0);
+    QList<QPointF> *list = server.DrawOldCountMap(begintime, endtime);
+//    ui->gridLayout->addWidget(createTimeChartGroup(*list), 0, 0);
 
 }
 

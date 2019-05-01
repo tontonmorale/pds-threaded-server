@@ -15,11 +15,11 @@ class DBThread : public QObject
 
 public:
     DBThread();
-    DBThread(QMap<QString, Person> *peopleMap, bool initialized);
+    DBThread(QMap<QString, Person> *peopleMap, int size, bool initialized, QString begintime, QString endtime, QList<QPointF> *peopleCounter);
     bool initialized;
-    void GetTimestampsFromDB(QString begintime, QString endtime, QList<QPointF> *peopleCounter);
+    void GetTimestampsFromDB();
     void GetLPSFromDB(QString begintime, QString endtime);
-    void signalsConnection(QThread *thread, MyServer *server);
+    void signalsConnection(QThread *thread, MyServer *server, QString slotName);
 
 public slots:
     void send();
@@ -31,8 +31,11 @@ signals:
 private:
     QSqlDatabase db;
     bool dbConnect();
+    int size;
     QMap<QString, Person> *peopleMap;
     QList<QPointF> drawOldContMap(QMap<QString, int> *oldCountMap);
+    QString begintime, endtime;
+    QList<QPointF> *peopleCounter;
 };
 
 

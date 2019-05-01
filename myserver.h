@@ -2,14 +2,15 @@
 #define MYSERVER_H
 
 #include <QTcpServer>
-#include <listenerthread.h>
 #include <QEventLoop>
 #include <QPlainTextEdit>
 #include <QMutex>
+#include "listenerthread.h"
 #include "packet.h"
 #include "person.h"
 #include "esp.h"
 #include "dbthread.h"
+
 
 class MyServer : public QTcpServer
 {
@@ -20,7 +21,7 @@ public:
     void confFromFile();
     void init();
     void SendToDB();
-    void DrawOldCountMap(QString begintime, QString endtime);
+    QList<QPointF> *DrawOldCountMap(QString begintime, QString endtime);
     void Connects(QString slot);
 
 signals:

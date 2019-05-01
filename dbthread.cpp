@@ -14,9 +14,13 @@ DBThread::DBThread()
 
 }
 
-DBThread::DBThread(QMap<QString, Person> *peopleMap, bool initialized)
+DBThread::DBThread(QMap<QString, Person> *peopleMap, int size, bool initialized, QString begintime, QString endtime, QList<QPointF> *peopleCounter)
 {
     this->peopleMap=peopleMap;
+    this->size = size;
+    this->begintime = begintime;
+    this->endtime = endtime;
+    this->peopleCounter = peopleCounter;
 
     if (!initialized)
     {
@@ -68,9 +72,15 @@ bool DBThread::init() {
     return true;
 }
 
-void DBThread::signalsConnection(QThread *thread, MyServer *server){
+void DBThread::signalsConnection(QThread *thread, MyServer *server, QString slotName){
 
-    connect(thread, SIGNAL(started()), this, SLOT(send()));
+
+    if (slotName.compare("DrawOldCountMap")==0) {
+        connect(thread, SIGNAL(started()), this, SLOT(GetTimestampsFromDB()));
+    }
+    else if (slotName.compare("SendToDB")==0) {
+        connect(thread, SIGNAL(started()), this, SLOT(send()));
+    }
 
 //    connect(this, &DBThread::log, server, &MyServer::emitLog);
 
@@ -95,7 +105,7 @@ void DBThread::send()
     qDebug().noquote() << "Timestamp delle persone nella peopleMap: " + Timestamp;
 
     queryString = "INSERT INTO Timestamps (timestamp, count) "
-                              "VALUES ('" + Timestamp + "', " + QString::number(peopleMap->count()) + ");";
+                              "VALUES ('" + Timestamp + "', " + QString::number(this->size) + ");";
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
@@ -145,10 +155,10 @@ bool DBThread::dbConnect() {
 }
 
 //NOTA: assumo che il begintime e l'endtime siano timestamp correttamente costruiti a partire da data e ora prese in input dall'utente
-void DBThread::GetTimestampsFromDB(QString begintime, QString endtime, QList<QPointF> *peopleCounter) {
+void DBThread::GetTimestampsFromDB() {
     QSqlQuery query;
     QString queryString;
-    QMap<QString, int> *oldCountMap = nullptr;
+    QMap<QString, int> *oldCountMap;
 
     queryString = "SELECT * "
                   "FROM Timestamps "

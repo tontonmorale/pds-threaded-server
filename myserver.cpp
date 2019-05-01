@@ -43,7 +43,7 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
 void MyServer::init(){
     confFromFile();
     maxEspCoords = setMaxEspCoords(espMap);
-    DBThread dbthread(peopleMap, DBinitialized);
+    DBThread dbthread(peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
     if (dbthread.initialized)
         this->DBinitialized = true;
 }
@@ -153,7 +153,7 @@ void MyServer::confFromFile(){
 
 void MyServer::dataForDb(){
     // todo: passare dati al thread che gestisce il db
-//    SendToDB(*devicesCoords);
+    SendToDB();
 
     // pulisce le strutture dati per il time slot successivo
     packetsMap->clear();
@@ -164,52 +164,53 @@ void MyServer::dataForDb(){
 
 void MyServer::SendToDB() {
     QThread *thread = new QThread();
+    DBThread *dbthread = new DBThread(peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
 
-    // --- TODO: dbthread, per contare le persone nell'area, non deve usare peopleMap ma la lista di coordinate dall'elaborate thread
-    DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
     dbthread->moveToThread(thread);
 
-    dbthread->signalsConnection(thread, this);
+    dbthread->signalsConnection(thread, this, "SendToDB");
 
+    thread->start();
 //    connect(dbthread, SIGNAL(ready()), this, SLOT(startToClients()));
 //    connect(this, SIGNAL(start2Clients()), dbthread, SLOT(sendStart()));
 //    connect(dbthread, &ListenerObj::log, this, &MyServer::emitLog
 //            ,Qt::QueuedConnection
 //            );
 
-    thread->start();
+
 //    emit DBsignal(&peopleMap);
 }
 
-void MyServer::DrawOldCountMap(QString begintime, QString endtime) {
+QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
     QThread *thread = new QThread();
-    DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
     QList<QPointF> *peopleCounter;
+    DBThread *dbthread = new DBThread(peopleMap, devicesCoords->size(), DBinitialized, begintime, endtime, peopleCounter);
+
     dbthread->moveToThread(thread);
+    dbthread->signalsConnection(thread, this, "DrawOldCountMap");
 
-    connect(thread, SIGNAL(started()), dbthread, SLOT(&DBThread::GetTimestampsFromDB));
-
-    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     thread->start();
 
+    //controlla
+    return peopleCounter;
+
+//    connect(thread, SIGNAL(started()), dbthread, SLOT(GetTimestampsFromDB()));
+
+//    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
+//    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
+//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+
+
 }
 
-void MyServer::Connects(QString slot) {
-    QThread *thread = new QThread();
-    DBThread *dbthread = new DBThread(peopleMap, DBinitialized);
-    dbthread->moveToThread(thread);
-    if (slot.compare("DrawOldCountMap")==0) {
-        connect(thread, SIGNAL(started()), dbthread, SLOT(&DBThread::GetTimestampsFromDB));
-    }
-    else if (slot.compare("SendToDB")==0) {
-        connect(thread, SIGNAL(started()), dbthread, SLOT(send()));
-    }
-    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-}
+//void MyServer::Connects(QString slot) {
+//    QThread *thread = new QThread();
+//    DBThread *dbthread = new DBThread(peopleMap, devicesCoords->size(), DBinitialized);
+//    dbthread->moveToThread(thread);
+//    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
+//    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
+//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+//}
 
 MyServer::~MyServer() {
 //    espMap = new QMap<QString, Esp>();

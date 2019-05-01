@@ -30,6 +30,17 @@
      <bool>true</bool>
     </property>
    </widget>
+   <widget class="QWidget" name="gridLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>40</y>
+      <width>371</width>
+      <height>321</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout"/>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -37,7 +48,7 @@
      <x>0</x>
      <y>0</y>
      <width>939</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
