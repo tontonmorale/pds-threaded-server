@@ -23,7 +23,7 @@ public:
     DBThread();
     DBThread(QMap<QString, Person> *peopleMap, bool initialized);
     bool initialized;
-    void GetTimestampsFromDB(QString begintime, QString endtime);
+    void GetTimestampsFromDB(QString begintime, QString endtime, QList<QPointF> *peopleCounter);
     void GetLPSFromDB(QString begintime, QString endtime);
 
 public slots:
@@ -37,6 +37,7 @@ private:
     QSqlDatabase db;
     bool dbConnect();
     QMap<QString, Person> *peopleMap;
+    QList<QPointF> drawOldContMap(QMap<QString, int> *oldCountMap);
 };
 
 

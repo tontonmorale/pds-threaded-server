@@ -3,6 +3,12 @@
 
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QGridLayout>
+#include <QWidget>
+#include <QtCharts>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMainWindow>
+#include <QValueAxis>
 #include <myserver.h>
 
 
@@ -17,6 +23,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     void serverInit();
+    QGroupBox* createTimeChartGroup(QList<QPointF> points);
     ~MainWindow();
 
 signals:
@@ -25,6 +32,7 @@ signals:
 public slots:
     void fatalError(QString message);
     void printToLog(QString message);
+    void printOldCountMap();
 
 private:
     Ui::MainWindow *ui;
