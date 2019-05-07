@@ -9,7 +9,8 @@
 #include <QMutex>
 #include "packet.h"
 #include "esp.h"
-#include "myserver.h"
+
+class MyServer;
 
 using namespace std;
 
@@ -19,7 +20,7 @@ class ListenerThread : public QObject
 
 public:
     ListenerThread();
-    ListenerThread(qintptr socketDescriptor,
+    ListenerThread(MyServer *server, qintptr socketDescriptor,
                 QMutex* mutex,
                 QMap<QString, QSharedPointer<Packet>> *packetsMap,
                 QMap<QString, int> *packetsDetectionMap,
@@ -28,7 +29,7 @@ public:
     void clientSetup();
     void closeConnection();
     void newPacket(QString line);
-    void signalsConnection(QThread *thread, MyServer *server);
+    void signalsConnection(QThread *thread);
     ~ListenerThread();
 
 public slots:
@@ -50,6 +51,7 @@ private:
     QTcpSocket *socket;
     qintptr socketDescriptor;
     shared_ptr<QMap<QString, Esp>> espMap;
+    MyServer *server;
 };
 
 #endif // LISTENEROBJ_H

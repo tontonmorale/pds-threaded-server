@@ -1,4 +1,5 @@
 #include "elaboratethread.h"
+#include "myserver.h"
 #include "utility.h"
 
 #include <QMap>
@@ -7,7 +8,7 @@
 
 ElaborateThread::ElaborateThread() {}
 
-ElaborateThread::ElaborateThread(QMap<QString, QSharedPointer<Packet>> *packetsMap,
+ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, QSharedPointer<Packet>> *packetsMap,
                                  QMap<QString, int> *packetsDetectionMap,
                                  int connectedClients,
                                  QMap<QString, Person> *peopleMap,
@@ -22,7 +23,8 @@ ElaborateThread::ElaborateThread(QMap<QString, QSharedPointer<Packet>> *packetsM
     connectedClients(connectedClients),
     espMap(espMap),
     maxEspCoords(maxEspCoords),
-    devicesCoords(devicesCoords)
+    devicesCoords(devicesCoords),
+    server(server)
 {
 
 }
@@ -40,7 +42,7 @@ void ElaborateThread::work() {
     }
 }
 
-void ElaborateThread::signalsConnection(QThread *thread, MyServer *server){
+void ElaborateThread::signalsConnection(QThread *thread){
 
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 

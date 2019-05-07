@@ -1,23 +1,26 @@
 #include "listenerthread.h"
+#include "myserver.h"
 
 ListenerThread::ListenerThread()
 {
 
 }
 
-ListenerThread::ListenerThread(qintptr socketDescriptor,
+ListenerThread::ListenerThread(MyServer *server, qintptr socketDescriptor,
                          QMutex *mutex,
                          QMap<QString, QSharedPointer<Packet>> *packetsMap,
                          QMap<QString, int> *packetsDetectionMap,
                          QMap<QString, Esp> *espMap)
     : mutex(mutex),
+
       packetsMap(packetsMap),
-      packetsDetectionMap(packetsDetectionMap),
+      packetsDetectionMap(packetsDetectionMap),      
       socketDescriptor(socketDescriptor),
-      espMap(espMap){
+      espMap(espMap),
+      server(server) {
 }
 
-void ListenerThread::signalsConnection(QThread *thread, MyServer *server){
+void ListenerThread::signalsConnection(QThread *thread){
 
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 

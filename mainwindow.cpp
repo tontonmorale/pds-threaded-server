@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::error, this, &MainWindow::fatalError);
     connect(&server, &MyServer::error, this, &MainWindow::fatalError);
     connect(&server, &MyServer::log, this, &MainWindow::printToLog);
-    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
+//    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
 
     ui->setupUi(this);
@@ -55,7 +55,7 @@ void MainWindow::printOldCountMap() {
 
 
     //prendi begin time ed end time dalle tendine che ci sono sul grafico
-    QList<QPointF> *list = server.DrawOldCountMap(begintime, endtime);
+//    QList<QPointF> *list = server.DrawOldCountMap(begintime, endtime);
 //    ui->gridLayout->addWidget(createTimeChartGroup(*list), 0, 0);
 
 }

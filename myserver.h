@@ -10,19 +10,20 @@
 #include "person.h"
 #include "esp.h"
 #include "dbthread.h"
-
+#include "elaboratethread.h"
 
 class MyServer : public QTcpServer
 {
     Q_OBJECT
 
 public:
-    MyServer(QObject *parent = 0);
+    MyServer(QObject *parent = nullptr);
     void confFromFile();
     void init();
     void SendToDB();
     QList<QPointF> *DrawOldCountMap(QString begintime, QString endtime);
     void Connects(QString slot);
+    ~MyServer() override;
 
 signals:
     void start2Clients();
@@ -37,7 +38,6 @@ public slots:
     void createElaborateThread();
     void dataForDb();
     void readyFromClient();
-    ~MyServer() override;
 
 private:
     QMutex* mutex;

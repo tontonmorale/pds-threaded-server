@@ -14,13 +14,14 @@ DBThread::DBThread()
 
 }
 
-DBThread::DBThread(QMap<QString, Person> *peopleMap, int size, bool initialized, QString begintime, QString endtime, QList<QPointF> *peopleCounter)
+DBThread::DBThread(MyServer* server, QMap<QString, Person> *peopleMap, int size, bool initialized, QString begintime, QString endtime, QList<QPointF> *peopleCounter)
 {
     this->peopleMap=peopleMap;
     this->size = size;
     this->begintime = begintime;
     this->endtime = endtime;
     this->peopleCounter = peopleCounter;
+    this->server = server;
 
     if (!initialized)
     {
@@ -72,7 +73,7 @@ bool DBThread::init() {
     return true;
 }
 
-void DBThread::signalsConnection(QThread *thread, MyServer *server, QString slotName){
+void DBThread::signalsConnection(QThread *thread, QString slotName){
 
 
     if (slotName.compare("DrawOldCountMap")==0) {
@@ -158,7 +159,7 @@ bool DBThread::dbConnect() {
 void DBThread::GetTimestampsFromDB() {
     QSqlQuery query;
     QString queryString;
-    QMap<QString, int> *oldCountMap;
+    QMap<QString, int> oldCountMap;
 
     queryString = "SELECT * "
                   "FROM Timestamps "
@@ -169,13 +170,13 @@ void DBThread::GetTimestampsFromDB() {
         int i = 0, j = 1;
         //popolo la mappa delle persone
         while (query.next()) {
-            oldCountMap->insert(query.value(i).toString(), query.value(j).toInt());
+            oldCountMap.insert(query.value(i).toString(), query.value(j).toInt());
             i += 2;
             j += 2;
         }
         //setto la lista di punti con persone ricevute dal db
         QPointF point;
-        for (QMap<QString, int>::iterator i = oldCountMap->begin(); i != oldCountMap->end(); i++) {
+        for (QMap<QString, int>::iterator i = oldCountMap.begin(); i != oldCountMap.end(); i++) {
             point = QPointF(i.key().toInt(), i.value()); //Verifica che funziona la conversione da timestamp stringa a timestamp intero
             peopleCounter->append(point);
         }

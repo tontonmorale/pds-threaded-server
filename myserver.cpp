@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "myserver.h"
-#include "elaboratethread.h"
 #include <fstream>
 #include <memory>
 using namespace std;
@@ -43,17 +42,17 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
 void MyServer::init(){
     confFromFile();
     maxEspCoords = setMaxEspCoords(espMap);
-    DBThread dbthread(peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
+    DBThread dbthread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
     if (dbthread.initialized)
         this->DBinitialized = true;
 }
 
 void MyServer::incomingConnection(qintptr socketDescriptor){
     QThread *thread = new QThread();
-    ListenerThread *lt = new ListenerThread(socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
+    ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
 
     lt->moveToThread(thread);
-    lt->signalsConnection(thread, this);
+    lt->signalsConnection(thread);
     listenerThreadList->append(lt);
     thread->start();
 }
@@ -73,10 +72,10 @@ void MyServer::createElaborateThread(){
     mutex.unlock();
 
     QThread *thread = new QThread();
-    ElaborateThread *et = new ElaborateThread(packetsMap, packetsDetectionMap, connectedClients,
+    ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, connectedClients,
                                               peopleMap, currMinute, espMap, maxEspCoords, devicesCoords);
     et->moveToThread(thread);
-    et->signalsConnection(thread, this);
+    et->signalsConnection(thread);
     thread->start();
 
     // inizio prossimo minuto
@@ -164,11 +163,11 @@ void MyServer::dataForDb(){
 
 void MyServer::SendToDB() {
     QThread *thread = new QThread();
-    DBThread *dbthread = new DBThread(peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
+    DBThread *dbthread = new DBThread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
 
     dbthread->moveToThread(thread);
 
-    dbthread->signalsConnection(thread, this, "SendToDB");
+    dbthread->signalsConnection(thread, "SendToDB");
 
     thread->start();
 //    connect(dbthread, SIGNAL(ready()), this, SLOT(startToClients()));
@@ -183,11 +182,11 @@ void MyServer::SendToDB() {
 
 QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
     QThread *thread = new QThread();
-    QList<QPointF> *peopleCounter;
-    DBThread *dbthread = new DBThread(peopleMap, devicesCoords->size(), DBinitialized, begintime, endtime, peopleCounter);
+    QList<QPointF> *peopleCounter = new QList<QPointF>();
+    DBThread *dbthread = new DBThread(this, peopleMap, devicesCoords->size(), DBinitialized, begintime, endtime, peopleCounter);
 
     dbthread->moveToThread(thread);
-    dbthread->signalsConnection(thread, this, "DrawOldCountMap");
+    dbthread->signalsConnection(thread, "DrawOldCountMap");
 
     thread->start();
 
