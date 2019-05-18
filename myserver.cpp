@@ -4,7 +4,7 @@
 #include <memory>
 using namespace std;
 
-#define ESP_FILE_PATH "C:/Users/raffy/Downloads/PDS_progetto/pds-threaded-server/esp.txt"
+#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_prova/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
     QTcpServer (parent),
@@ -107,7 +107,7 @@ void MyServer::startToClients(){
     {
         qDebug() << "Start to clients\n";
         endPkClients = 0;
-        emit log("\n[server] sending start...\n");
+        emit log("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");
         currMinute++;
         emit start2Clients();
     }
@@ -155,9 +155,10 @@ void MyServer::dataForDb(){
     SendToDB();
 
     // pulisce le strutture dati per il time slot successivo
-    packetsMap->clear();
+//    packetsMap->clear();
+    packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap->clear();
-    peopleMap->clear();
+//    peopleMap->clear();
     devicesCoords->clear();
 }
 

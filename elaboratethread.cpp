@@ -59,7 +59,7 @@ void ElaborateThread::manageCurrentMinute(){
     QMap<QString, int>::iterator i;
     for(i=packetsDetectionMap->begin(); i!=packetsDetectionMap->end(); i++){
         // se dispositivo rilevato da tutti i client
-        if(i.value() >= totClients){
+        if(i.value() >= connectedClients){
 
             QString shortKey = i.key();
             QString mac = shortKey.split('-').at(1);
@@ -157,7 +157,7 @@ void ElaborateThread::updatePacketsSet(Person &p, QString shortKey){
 
     p.clearPacketsSet();
 
-    for(i=itLow, n=0; n<totClients; i++, n++)
+    for(i=itLow, n=0; n<connectedClients; i++, n++)
         p.insertPacket(i.value());
 
     //check if set contains n=MAX_CLIENTS packets

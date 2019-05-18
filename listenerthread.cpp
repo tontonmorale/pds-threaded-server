@@ -75,6 +75,7 @@ void ListenerThread::clientSetup(){
 
 void ListenerThread::sendStart(){
     socket->write("START\r\n");
+    qDebug() << "mando Start";
 //    socketTimerMap[socket]->start(MAX_WAIT+5000);
 }
 

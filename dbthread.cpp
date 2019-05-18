@@ -76,6 +76,12 @@ bool DBThread::init() {
 void DBThread::signalsConnection(QThread *thread, QString slotName){
 
 
+    qDebug().noquote() << "signalsConnection";
+    if (!dbConnect()) {
+        qDebug().noquote() << "signalsConnection: dbConnect fallita.";
+        return;
+    }
+
     if (slotName.compare("DrawOldCountMap")==0) {
         connect(thread, SIGNAL(started()), this, SLOT(GetTimestampsFromDB()));
     }

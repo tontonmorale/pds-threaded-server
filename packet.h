@@ -12,13 +12,15 @@ public:
    QString getEspId();
    QString getTimestamp();
    int getSignal();
+
+
 private:
-    QString espId;
-    QString hash;
-    QString mac;
-    QString timestamp;
-    int signal;
-    QString ssid;
+   QString espId;
+   QString hash;
+   QString mac;
+   QString timestamp;
+   int signal;
+   QString ssid;
 };
 
 #endif // PACKET_H
