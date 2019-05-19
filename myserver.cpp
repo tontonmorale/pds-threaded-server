@@ -22,6 +22,12 @@ MyServer::MyServer(QObject *parent):
     devicesCoords = new QList<QPointF>;
 }
 
+/**
+ * @brief MyServer::setMaxEspCoords
+ * cerca x e y max tra le coordinate degli esp
+ * @param espMap, mappa degli esp
+ * @return QPoint con le coord max
+ */
 QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
     double x_max = 0, y_max = 0;
     QPointF pos;
@@ -39,6 +45,10 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
     return pos;
 }
 
+/**
+ * @brief MyServer::init
+ * legge le posizioni degli esp da file, cerca le loro coord max e inizializza il db
+ */
 void MyServer::init(){
     confFromFile();
     maxEspCoords = setMaxEspCoords(espMap);
@@ -47,6 +57,11 @@ void MyServer::init(){
         this->DBinitialized = true;
 }
 
+/**
+ * @brief MyServer::incomingConnection
+ * genera un listenerThread all'arrivo di una nuova connessione
+ * @param socketDescriptor: descrittore del socket in ascolto
+ */
 void MyServer::incomingConnection(qintptr socketDescriptor){
     QThread *thread = new QThread();
     ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
@@ -57,6 +72,12 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
     thread->start();
 }
 
+/**
+ * @brief MyServer::createElaborateThread
+ * -> controlla se ha ricevuto il segnale di "pacchetti ricevuti" da tutti i listenerThread
+ * -> genera l'elaborateThread per ottenere i device nell'area nel minuto passato
+ * -> manda segnale di start per il nuovo minuto
+ */
 void MyServer::createElaborateThread(){
     QMutex mutex;
 
@@ -86,21 +107,30 @@ void MyServer::emitLog(QString message){
     emit log(message);
 }
 
+/**
+ * @brief MyServer::readyFromClient
+ * -> slot che risponde al segnale di completamento del setup di un esp
+ * -> se ricevuto da tutti gli esp, manda segnale di start del blocco di N minuti
+ */
 void MyServer::readyFromClient(){
     connectedClients++;
     if(connectedClients==totClients
 //            && connectedClients>=3
             ){
         currMinute = 0;
+        // inizio blocco N minuti
         startToClients();
     }
 
 }
 
+/**
+ * @brief MyServer::startToClients
+ * manda start agli esp se:
+    -> inizialmente tutti i client sono connessi
+    -> le volte successive se almeno 3 client connessi
+ */
 void MyServer::startToClients(){
-    // manda start se:
-    //  -inizialmente tutti i client sono connessi
-    //  -le volte successive se almeno 3 client connessi
     if(connectedClients==totClients
 //            && connectedClients>=3
             )
@@ -116,6 +146,10 @@ void MyServer::startToClients(){
     }
 }
 
+/**
+ * @brief MyServer::confFromFile
+ * legge posizioni degli esp da file
+ */
 void MyServer::confFromFile(){
     ifstream inputFile;
     int i;
@@ -136,8 +170,8 @@ void MyServer::confFromFile(){
         return;
     }
 
-    inputFile >> totClients; // --- nClients è da sostituire con totClients ---
-    for(i=0; i< totClients; i++){ // --- nClients è da sostituire con totClients ---
+    inputFile >> totClients;
+    for(i=0; i< totClients; i++){
         inputFile >> id >> mac >> x_str >> y_str;
         x_double = stod(x_str.c_str());
         y_double = stod(y_str.c_str());
@@ -150,6 +184,9 @@ void MyServer::confFromFile(){
     inputFile.close();
 }
 
+/**
+ * @brief MyServer::dataForDb
+ */
 void MyServer::dataForDb(){
     // todo: passare dati al thread che gestisce il db
     SendToDB();
@@ -162,6 +199,9 @@ void MyServer::dataForDb(){
     devicesCoords->clear();
 }
 
+/**
+ * @brief MyServer::SendToDB
+ */
 void MyServer::SendToDB() {
     QThread *thread = new QThread();
     DBThread *dbthread = new DBThread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
@@ -181,6 +221,12 @@ void MyServer::SendToDB() {
 //    emit DBsignal(&peopleMap);
 }
 
+/**
+ * @brief MyServer::DrawOldCountMap
+ * @param begintime
+ * @param endtime
+ * @return
+ */
 QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
     QThread *thread = new QThread();
     QList<QPointF> *peopleCounter = new QList<QPointF>();

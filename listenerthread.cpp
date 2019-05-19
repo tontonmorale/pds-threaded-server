@@ -20,6 +20,11 @@ ListenerThread::ListenerThread(MyServer *server, qintptr socketDescriptor,
       server(server) {
 }
 
+/**
+ * @brief ListenerThread::signalsConnection
+ * connette segnali e slot di questo thread col server
+ * @param thread
+ */
 void ListenerThread::signalsConnection(QThread *thread){
 
     connect(thread, SIGNAL(started()), this, SLOT(work()));
@@ -34,6 +39,10 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
 
+/**
+ * @brief ListenerThread::work
+ * richiamata allo start del thread, setta il socket e chiama il setup iniziale dell'esp
+ */
 void ListenerThread::work(){
     socket = new QTcpSocket();
     if(!socket->setSocketDescriptor(socketDescriptor)){
@@ -41,13 +50,20 @@ void ListenerThread::work(){
         return;
     }
 
+    // setup iniziale dell' esp
     clientSetup();
 
+    // imposta lo slot che reagisce alla ricezione di nuovi dati dall'esp
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
-//    qDebug() << "manda ready al server";
+
+    // segnale di ready verso il server
     emit ready();
 }
 
+/**
+ * @brief ListenerThread::clientSetup
+ * riceve il mac dall'esp e gli invia l'id letto da file
+ */
 void ListenerThread::clientSetup(){
     QStringList sl;
     QString line, clientId, hello2Client, mac, helloFromClient, id;
@@ -57,28 +73,39 @@ void ListenerThread::clientSetup(){
 
     socket->waitForReadyRead();
     helloFromClient = QString(socket->readLine());
-    mac = helloFromClient.split(" ").at(2);
+    mac = helloFromClient.split(" ").at(2); // mi aspetto "ciao sono <mac>\r\n"
     mac.remove('\r');
     mac.remove('\n');
     if(mac == nullptr){
         closeConnection();
     }
+
+    // cerca id dell'esp a partire dal mac, ricavandolo dalla espMap
     id = espMap->find(mac)->getId();
     if(id == nullptr){
         closeConnection();
     }
+
     emit log("client mac: " + mac);
-    hello2Client = "ciao " + id +"\r\n";
+    hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
     msg = hello2Client.toStdString().c_str();
     socket->write(msg);
 }
 
+/**
+ * @brief ListenerThread::sendStart
+ * scrive start all'esp per iniziare l'ascolto dei pacchetti
+ */
 void ListenerThread::sendStart(){
     socket->write("START\r\n");
     qDebug() << "mando Start";
 //    socketTimerMap[socket]->start(MAX_WAIT+5000);
 }
 
+/**
+ * @brief ListenerThread::readFromClient
+ * ricezione di nuovi dati dall'esp, geestisce il caso in cui ci sia un pacchetto nuovo o la fine dell'elenco di pacchetti
+ */
 void ListenerThread::readFromClient(){
     QString line, firstWord, hash, timestamp, mac, signal, microsec_str, espId, ssid;
     QStringList sl, tsSplit, macList;
@@ -94,17 +121,23 @@ void ListenerThread::readFromClient(){
 
         firstWord = line.split(" ").at(0);
 
-        //received new packet
         if(firstWord.compare("PKT")==0){
+            // ricevuto nuovo pacchetto
             newPacket(line);
         }
         if(firstWord.compare("END")==0){
+            // ricevuto fine dell'elenco di pacchetti
             emit endPackets();
         }
 
     }
 }
 
+/**
+ * @brief ListenerThread::newPacket
+ * ricezione di un nuovo pacchetto
+ * @param line: stringa ricevuta dall'esp
+ */
 void ListenerThread::newPacket(QString line){
     QString hash, timestamp, mac, signal, microsec_str, espId, ssid, key, shortKey;
     Packet pkt;
@@ -117,6 +150,7 @@ void ListenerThread::newPacket(QString line){
         return;
     }
 
+    // ricava i campi dalla stringa ricevuta
     hash = sl.at(1);
     mac = sl.at(2);
     signal = sl.at(3);
@@ -125,17 +159,17 @@ void ListenerThread::newPacket(QString line){
 
     emit log("[scheda " + espId + "] " + line);
 
-    key = hash + "-" + mac + "-" + espId;
-    shortKey = hash + "-" + mac;
+    key = hash + "-" + mac + "-" + espId; // key = "pktHash-mac-espId"
+    shortKey = hash + "-" + mac; // shortKey = "pktHash-mac"
 
-    // --- update packets ---
+    // --- inserisci nuovo pacchetto ---
     mutex->lock();
 
-    //insert new packet
-    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i packetti rimangono nella mappa una volta uscito dalla funzione !!!
+    // nuovo pacchetto
+    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i pacchetti rimangono nella mappa una volta uscito dalla funzione !!!
     (*packetsMap)[key] = QSharedPointer<Packet>(&pkt);
 
-    //update detection packets count
+    // aggiorna packetsDetectionMap, aggiorna il conto di quante schede hanno rilevato ogni pacchetto
     if(packetsDetectionMap->find(shortKey) != packetsDetectionMap->end()){
         (*packetsDetectionMap)[shortKey] ++;
     }
@@ -143,7 +177,7 @@ void ListenerThread::newPacket(QString line){
         (*packetsDetectionMap)[shortKey] = 1;
     }
     mutex->unlock();
-    // --- update packets ---
+    // --- inserisci nuovo pacchetto ---
 }
 
 void ListenerThread::closeConnection(){
