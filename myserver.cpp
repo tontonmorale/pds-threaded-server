@@ -4,7 +4,8 @@
 #include <memory>
 using namespace std;
 
-#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_prova/pds-threaded-server/esp.txt"
+//#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_prova/pds-threaded-server/esp.txt"
+#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
     QTcpServer (parent),
@@ -55,6 +56,9 @@ void MyServer::init(){
     DBThread dbthread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
     if (dbthread.initialized)
         this->DBinitialized = true;
+    else {
+        emit error("Impossible to connect to db");
+    }
 }
 
 /**
@@ -195,9 +199,15 @@ void MyServer::dataForDb(){
 //    packetsMap->clear();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap->clear();
-//    peopleMap->clear();
+
     devicesCoords->clear();
 }
+
+void MyServer::clearPeopleMap(){
+    peopleMap->clear();
+}
+
+
 
 /**
  * @brief MyServer::SendToDB

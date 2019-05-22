@@ -38,6 +38,7 @@ public slots:
     void createElaborateThread();
     void dataForDb();
     void readyFromClient();
+    void clearPeopleMap();
 
 private:
     QMutex* mutex;

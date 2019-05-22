@@ -60,6 +60,7 @@ void ElaborateThread::signalsConnection(QThread *thread){
     connect(this, &ElaborateThread::ready, server, &MyServer::startToClients);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(this, SIGNAL(finished()), server, SLOT(clearPeopleMap()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }

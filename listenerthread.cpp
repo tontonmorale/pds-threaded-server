@@ -166,8 +166,8 @@ void ListenerThread::newPacket(QString line){
     mutex->lock();
 
     // nuovo pacchetto
-    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i pacchetti rimangono nella mappa una volta uscito dalla funzione !!!
-    (*packetsMap)[key] = QSharedPointer<Packet>(&pkt);
+//    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i pacchetti rimangono nella mappa una volta uscito dalla funzione !!!
+    (*packetsMap)[key] = QSharedPointer<Packet>(new Packet(hash, mac, timestamp, signal, espId, "ssid"));
 
     // aggiorna packetsDetectionMap, aggiorna il conto di quante schede hanno rilevato ogni pacchetto
     if(packetsDetectionMap->find(shortKey) != packetsDetectionMap->end()){

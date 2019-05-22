@@ -44,6 +44,8 @@ bool DBThread::init() {
             "PRIMARY KEY (timestamp)"
             ") ENGINE = InnoDB;";
 
+
+
     qDebug().noquote() << "query: " + queryString;
 
     if (query.exec(queryString)) {
@@ -75,12 +77,8 @@ bool DBThread::init() {
 
 void DBThread::signalsConnection(QThread *thread, QString slotName){
 
+    qDebug().noquote() << "signalsConnection";  // TODO: spostare dbConnect in un'altra funzione, questa collega solo i segnali
 
-    qDebug().noquote() << "signalsConnection";
-    if (!dbConnect()) {
-        qDebug().noquote() << "signalsConnection: dbConnect fallita.";
-        return;
-    }
 
     if (slotName.compare("DrawOldCountMap")==0) {
         connect(thread, SIGNAL(started()), this, SLOT(GetTimestampsFromDB()));
@@ -102,6 +100,11 @@ void DBThread::send()
     QString queryString;
 
     //inserisco la nuova entry timestamp-numero di persone rilevate a quel timestamp nella tabella timestamp
+    if (!dbConnect()) {
+        qDebug().noquote() << "send(): dbConnect fallita.";
+        return;
+    }
+    qDebug().noquote() << "send(): dbConnect andata a buon fine.";
     QMap<QString, Person>::iterator pm = this->peopleMap->begin();
     QSet<QSharedPointer<Packet>> ps = pm.value().getPacketsSet();
     QString timestamp = (*ps.begin())->getTimestamp();
@@ -113,6 +116,8 @@ void DBThread::send()
 
     queryString = "INSERT INTO Timestamps (timestamp, count) "
                               "VALUES ('" + Timestamp + "', " + QString::number(this->size) + ");";
+    if (db.open())
+        qDebug().noquote() << "il db è open.";
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
