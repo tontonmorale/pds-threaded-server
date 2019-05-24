@@ -51,14 +51,15 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
  * legge le posizioni degli esp da file, cerca le loro coord max e inizializza il db
  */
 void MyServer::init(){
+    QThread *thread = new QThread();
+    DBThread *dbthread = new DBThread(this);
+
+    dbthread->moveToThread(thread);
+    dbthread->signalsConnection(thread);
+    thread->start();
+
     confFromFile();
     maxEspCoords = setMaxEspCoords(espMap);
-    DBThread dbthread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
-    if (dbthread.initialized)
-        this->DBinitialized = true;
-    else {
-        emit error("Impossible to connect to db");
-    }
 }
 
 /**
@@ -82,7 +83,7 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
  * -> genera l'elaborateThread per ottenere i device nell'area nel minuto passato
  * -> manda segnale di start per il nuovo minuto
  */
-void MyServer::createElaborateThread(){
+void MyServer::createElaborateThreadSlot(){
     QMutex mutex;
 
     // controlla se ricevuto endPackets da tutte le schede
@@ -107,8 +108,8 @@ void MyServer::createElaborateThread(){
     startToClients();
 }
 
-void MyServer::emitLog(QString message){
-    emit log(message);
+void MyServer::emitLogSlot(QString message){
+    emit logSig(message);
 }
 
 /**
@@ -116,14 +117,14 @@ void MyServer::emitLog(QString message){
  * -> slot che risponde al segnale di completamento del setup di un esp
  * -> se ricevuto da tutti gli esp, manda segnale di start del blocco di N minuti
  */
-void MyServer::readyFromClient(){
+void MyServer::readyFromClientSlot(){
     connectedClients++;
     if(connectedClients==totClients
 //            && connectedClients>=3
             ){
         currMinute = 0;
         // inizio blocco N minuti
-        startToClients();
+        startToClientsSlot();
     }
 
 }
@@ -134,20 +135,24 @@ void MyServer::readyFromClient(){
     -> inizialmente tutti i client sono connessi
     -> le volte successive se almeno 3 client connessi
  */
-void MyServer::startToClients(){
+void MyServer::startToClientsSlot(){
     if(connectedClients==totClients
 //            && connectedClients>=3
             )
     {
         qDebug() << "Start to clients\n";
         endPkClients = 0;
-        emit log("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");
+        emit logSig("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");
         currMinute++;
-        emit start2Clients();
+        emit start2ClientsSig();
     }
     else {
         // todo: meno di 3 client connessi => ?????
     }
+}
+
+void MyServer::errorFromThreadSlot(QString errorMsg){
+    emit fatalErrorSig(errorMsg);
 }
 
 /**
@@ -170,7 +175,7 @@ void MyServer::confFromFile(){
     if(i>=3){
         // segnale di errore
         qDebug() << "Errore apertura file";
-        emit error("Impossibile aprire il file degli esp");
+        emit fatalErrorSig("Impossibile aprire il file degli esp");
         return;
     }
 
@@ -197,13 +202,13 @@ void MyServer::dataForDb(){
 
     // pulisce le strutture dati per il time slot successivo
 //    packetsMap->clear();
-    packetsMap = new QMap<QString, QSharedPointer<Packet>>();
+    packetsMap = new QMap<QString, QSharedPointer<Packet>>(); // todo: da rivedere
     packetsDetectionMap->clear();
 
     devicesCoords->clear();
 }
 
-void MyServer::clearPeopleMap(){
+void MyServer::clearPeopleMapSlot(){
     peopleMap->clear();
 }
 
@@ -213,14 +218,14 @@ void MyServer::clearPeopleMap(){
  * @brief MyServer::SendToDB
  */
 void MyServer::SendToDB() {
-    QThread *thread = new QThread();
-    DBThread *dbthread = new DBThread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
+//    QThread *thread = new QThread();
+//    DBThread *dbthread = new DBThread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
 
-    dbthread->moveToThread(thread);
+//    dbthread->moveToThread(thread);
 
-    dbthread->signalsConnection(thread, "SendToDB");
+//    dbthread->signalsConnection(thread, "SendToDB");
 
-    thread->start();
+    thread->start(); // diventa chiamata alla funzione giusta
 //    connect(dbthread, SIGNAL(ready()), this, SLOT(startToClients()));
 //    connect(this, SIGNAL(start2Clients()), dbthread, SLOT(sendStart()));
 //    connect(dbthread, &ListenerObj::log, this, &MyServer::emitLog

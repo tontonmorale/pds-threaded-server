@@ -4,9 +4,9 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
-    connect(this, &MainWindow::error, this, &MainWindow::fatalError);
-    connect(&server, &MyServer::error, this, &MainWindow::fatalError);
-    connect(&server, &MyServer::log, this, &MainWindow::printToLog);
+    connect(this, &MainWindow::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
+    connect(&server, &MyServer::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
+    connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
 //    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
 
@@ -18,25 +18,25 @@ void MainWindow::serverInit(){
     server.init();
 
     if (!server.listen(QHostAddress("192.168.1.172"), 9999)) {
-        emit error("Errore avvio del server");
+        emit fatalErrorSig("Errore avvio del server");
         return;
     }
 
     ui->log->appendPlainText("--- Server started ---\nip: 192.168.1.172\nport: 9999\n");
 }
 
-void MainWindow::fatalError(QString message){
+void MainWindow::fatalErrorSlot(QString message){
     qDebug().noquote() << message;
     QMessageBox::critical(this, "", message);
     exit(-1);
 }
 
-void MainWindow::printToLog(QString message){
+void MainWindow::printToLogSlot(QString message){
     ui->log->appendPlainText(message);
 }
 
 //disegna grafico del numero di mac rilevati nel periodo specificato
-void MainWindow::printOldCountMap() {
+void MainWindow::printOldCountMapSlot() {
     QString begintime, endtime;
 
     //disegno grafico runtime

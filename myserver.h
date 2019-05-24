@@ -26,19 +26,20 @@ public:
     ~MyServer() override;
 
 signals:
-    void start2Clients();
-    void error(QString message);
-    void log(QString message);
-    void DBsignal(QMap<QString, Person> *peopleMap);
+    void start2ClientsSig();
+    void fatalErrorSig(QString message);
+    void logSig(QString message);
+    void DBsig(QMap<QString, Person> *peopleMap);
 
 public slots:
 //    void onClientConnection();
-    void startToClients();
-    void emitLog(QString message);
-    void createElaborateThread();
-    void dataForDb();
-    void readyFromClient();
-    void clearPeopleMap();
+    void startToClientsSlot();
+    void emitLogSlot(QString message);
+    void createElaborateThreadSlot();
+    void dataForDbSlot();
+    void readyFromClientSlot();
+    void clearPeopleMapSlot();
+    void errorFromThreadSlot(QString errorMsg);
 
 private:
     QMutex* mutex;

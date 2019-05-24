@@ -27,12 +27,12 @@ public:
     ~MainWindow();
 
 signals:
-    void error(QString message);
+    void fatalErrorSig(QString message);
 
 public slots:
-    void fatalError(QString message);
-    void printToLog(QString message);
-    void printOldCountMap();
+    void fatalErrorSlot(QString message);
+    void printToLogSlot(QString message);
+    void printOldCountMapSlot();
 
 private:
     Ui::MainWindow *ui;

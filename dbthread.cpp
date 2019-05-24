@@ -9,30 +9,30 @@
 #include <QThread>
 #include "myserver.h"
 
+QSqlDatabase DBThread::db;
+
 DBThread::DBThread()
 {
 
 }
 
-DBThread::DBThread(MyServer* server, QMap<QString, Person> *peopleMap, int size, bool initialized, QString begintime, QString endtime, QList<QPointF> *peopleCounter)
+DBThread::DBThread(MyServer* server)
 {
-    this->peopleMap=peopleMap;
-    this->size = size;
-    this->begintime = begintime;
-    this->endtime = endtime;
-    this->peopleCounter = peopleCounter;
+//    this->peopleMap=peopleMap;
+//    this->size = size;
+//    this->begintime = begintime;
+//    this->endtime = endtime;
+//    this->peopleCounter = peopleCounter;
     this->server = server;
-
-    if (!initialized)
-    {
-        this->initialized = init();
-    }
 }
 
-bool DBThread::init() {
+void DBThread::run() {
 
-    if (!dbConnect())
-        return false; //gestione mancata connessione da fare
+    if (!dbConnect()){
+        dbDisconnect();
+        emit fatalErrorSig("Database connection failed");
+        return;
+    }
 
     QSqlQuery query;
     QString queryString;
@@ -45,7 +45,6 @@ bool DBThread::init() {
             ") ENGINE = InnoDB;";
 
 
-
     qDebug().noquote() << "query: " + queryString;
 
     if (query.exec(queryString)) {
@@ -53,14 +52,17 @@ bool DBThread::init() {
     }
     else{
         qDebug() << "Query di creazione tabella timestamp fallita";
-        return false;
+        dbDisconnect();
+        emit fatalErrorSig("TIMESTAMPS table creation failed");
+        return;
     }
 
     //LPStats = long period statistics
+    // ts = timestamp
     queryString = "CREATE TABLE IF NOT EXISTS LPStats ("
             "timestamp VARCHAR(255) NOT NULL, "
             "mac VARCHAR(255) NOT NULL, "
-            "PRIMARY KEY (timestamp, mac)"
+            "PRIMARY KEY (ts, mac)"
             ") ENGINE = InnoDB;";
 
     qDebug().noquote() << "query: " + queryString;
@@ -70,15 +72,17 @@ bool DBThread::init() {
     }
     else{
         qDebug() << "Query di creazione tabella timestamp fallita";
-        return false;
+        dbDisconnect();
+        emit fatalErrorSig("LPSTATS table creation failed");
+        return;
     }
-    return true;
+
+    return;
 }
 
-void DBThread::signalsConnection(QThread *thread, QString slotName){
+void DBThread::signalsConnection(QThread *thread){
 
-    qDebug().noquote() << "signalsConnection";  // TODO: spostare dbConnect in un'altra funzione, questa collega solo i segnali
-
+    qDebug().noquote() << "signalsConnection()";
 
     if (slotName.compare("DrawOldCountMap")==0) {
         connect(thread, SIGNAL(started()), this, SLOT(GetTimestampsFromDB()));
@@ -87,8 +91,8 @@ void DBThread::signalsConnection(QThread *thread, QString slotName){
         connect(thread, SIGNAL(started()), this, SLOT(send()));
     }
 
-//    connect(this, &DBThread::log, server, &MyServer::emitLog);
-
+    connect(thread, SIGNAL(started()), this, SLOT(run()));
+    connect(this, &DBThread::logSig, server, &MyServer::emitLogSlot);
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
@@ -98,6 +102,8 @@ void DBThread::send()
 {
     QSqlQuery query;
     QString queryString;
+
+    qDebug().noquote() << "send()";
 
     //inserisco la nuova entry timestamp-numero di persone rilevate a quel timestamp nella tabella timestamp
     if (!dbConnect()) {
@@ -116,7 +122,7 @@ void DBThread::send()
 
     queryString = "INSERT INTO Timestamps (timestamp, count) "
                               "VALUES ('" + Timestamp + "', " + QString::number(this->size) + ");";
-    if (db.open())
+    if (DBThread::db.open())
         qDebug().noquote() << "il db è open.";
 
     qDebug().noquote() << "query: " + queryString;
@@ -146,8 +152,13 @@ void DBThread::send()
         qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
         return;
     }
-    emit finished();
+    emit finishedSig();
     }
+
+void DBThread::dbDisconnect(){
+    if(db.isOpen())
+        db.close();
+}
 
 bool DBThread::dbConnect() {
     this->db = QSqlDatabase::addDatabase("QMYSQL");
