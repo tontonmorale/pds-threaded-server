@@ -31,6 +31,9 @@ signals:
     void logSig(QString message);
     void DBsig(QMap<QString, Person> *peopleMap);
     void drawRuntimeChartSig(QList<QPointF> *peopleCounter);
+    void sendToDBSig(QMap<QString, Person> *peopleMap, int size);
+    void getTimestampsSig(QList<QPointF> *peopleCounter, QString begintime, QString endtime);
+    void getStatsSig(QString begintime, QString endtime);
 
 public slots:
 //    void onClientConnection();

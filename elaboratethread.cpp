@@ -40,7 +40,7 @@ void ElaborateThread::work() {
     // ultimo minuto
     if(currMinute >= MAX_MINUTES){
         currMinute = 0;
-        emit ready(); // manda start alle schede per nuovo timeslot
+//        emit ready(); // manda start alle schede per nuovo timeslot
         manageLastMinute();
         emit timeSlotEnd(); // manda dati time slot corrente al thread che si occupa del db e alla gui
     }
@@ -60,7 +60,7 @@ void ElaborateThread::signalsConnection(QThread *thread){
     connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(this, SIGNAL(finished()), server, SLOT(clearPeopleMap()));
+    connect(this, SIGNAL(finished()), server, SLOT(clearPeopleMapSlot()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
@@ -176,7 +176,6 @@ void ElaborateThread::calculateDevicesPosition(){
             devicesCoords->append(pos);
         }
     }
-    emit timeSlotEnd();
 }
 
 /**

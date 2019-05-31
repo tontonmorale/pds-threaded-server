@@ -22,9 +22,10 @@ public:
     void signalsConnection(QThread *thread);
     bool dbConnect();
     void dbDisconnect();
+    bool isDbOpen();
 
 public slots:
-    void send(QMap<QString, Person> *peopleMap, int size);
+    void sendSlot(QMap<QString, Person> *peopleMap, int size);
     void run();
 
 signals:
@@ -32,6 +33,7 @@ signals:
     void fatalErrorSig(QString errorMsg);
     void logSig(QString logMsg);
     void drawRuntimeChartSig();
+    void sendFinishedSig();
 
 private:    
 

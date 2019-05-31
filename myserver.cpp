@@ -213,10 +213,10 @@ void MyServer::clearPeopleMapSlot(){
     peopleMap->clear();
     QString begintime, endtime;
     QDateTime curr_timestamp = QDateTime::currentDateTime();
-    endtime = curr_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
+    endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
     QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
-    begintime = old_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
-    dbthread->GetTimestampsFromDB(peopleCounter, begintime, endtime); //probabilmente bisogna passare a questa funzione begintime ed endtime
+    begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
+    emit getTimestampsSig(peopleCounter, begintime, endtime);
 }
 
 /**
@@ -232,7 +232,7 @@ void MyServer::emitDrawRuntimeChartSignalSlot() {
  * @brief MyServer::SendToDB
  */
 void MyServer::SendToDB() {
-    dbthread->send(peopleMap, devicesCoords->size());
+    emit sendToDBSig(peopleMap, devicesCoords->size());
 }
 
 /**
@@ -244,7 +244,7 @@ void MyServer::SendToDB() {
 QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
     //da sistemare
     QList<QPointF> *peopleCounter = new QList<QPointF>();
-    dbthread->GetLPSFromDB(begintime, endtime);
+    emit getStatsSig(begintime, endtime);
 
     //controlla
     return peopleCounter;
