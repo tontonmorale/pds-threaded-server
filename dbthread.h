@@ -17,20 +17,21 @@ public:
     DBThread();
     DBThread(MyServer* server);
     bool initialized;
-    void GetTimestampsFromDB();
+    void GetTimestampsFromDB(QList<QPointF> *peopleCounter, QString begintime, QString endtime);
     void GetLPSFromDB(QString begintime, QString endtime);
     void signalsConnection(QThread *thread);
     bool dbConnect();
     void dbDisconnect();
 
 public slots:
-    void send();
+    void send(QMap<QString, Person> *peopleMap, int size);
     void run();
 
 signals:
     void finishedSig();
     void fatalErrorSig(QString errorMsg);
     void logSig(QString logMsg);
+    void drawRuntimeChartSig();
 
 private:    
 

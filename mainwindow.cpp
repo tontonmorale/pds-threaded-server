@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
+    connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::drawRuntimeChartSlot);
 //    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
 
@@ -35,25 +36,22 @@ void MainWindow::printToLogSlot(QString message){
     ui->log->appendPlainText(message);
 }
 
-//disegna grafico del numero di mac rilevati nel periodo specificato
-void MainWindow::printOldCountMapSlot() {
-    QString begintime, endtime;
+void MainWindow::drawRuntimeChartSlot(QList<QPointF> *runtimeList) {
+
 
     //disegno grafico runtime
 
-    QDateTime curr_timestamp = QDateTime::currentDateTime();
-    endtime = curr_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
-    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
-    begintime = old_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
-    QList<QPointF> *runtimeList = server.DrawOldCountMap(begintime, endtime);
+//    QList<QPointF> *runtimeList = server.DrawOldCountMap(begintime, endtime);
     QWidget *qw = new QWidget;
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(createTimeChartGroup(*runtimeList), 0, 0);
     qw->setLayout(grid);
     ui->centralWidget->layout()->addWidget(qw);
-    //disegno vecchio grafico
+}
 
-
+//disegna grafico del numero di mac rilevati nel periodo specificato
+void MainWindow::drawOldCountChartSlot() {
+    QString begintime, endtime;
     //prendi begin time ed end time dalle tendine che ci sono sul grafico
 //    QList<QPointF> *list = server.DrawOldCountMap(begintime, endtime);
 //    ui->gridLayout->addWidget(createTimeChartGroup(*list), 0, 0);

@@ -21,6 +21,7 @@ MyServer::MyServer(QObject *parent):
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
     devicesCoords = new QList<QPointF>;
+    peopleCounter = new QList<QPointF>;
 }
 
 /**
@@ -52,8 +53,8 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
  */
 void MyServer::init(){
     QThread *thread = new QThread();
-    DBThread *dbthread = new DBThread(this);
-
+//    DBThread *dbthread = new DBThread(this);
+    dbthread = new DBThread(this);
     dbthread->moveToThread(thread);
     dbthread->signalsConnection(thread);
     thread->start();
@@ -105,7 +106,7 @@ void MyServer::createElaborateThreadSlot(){
     thread->start();
 
     // inizio prossimo minuto
-    startToClients();
+    startToClientsSlot();
 }
 
 void MyServer::emitLogSlot(QString message){
@@ -196,44 +197,42 @@ void MyServer::confFromFile(){
 /**
  * @brief MyServer::dataForDb
  */
-void MyServer::dataForDb(){
-    // todo: passare dati al thread che gestisce il db
+void MyServer::dataForDbSlot(){
+
     SendToDB();
 
     // pulisce le strutture dati per il time slot successivo
 //    packetsMap->clear();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>(); // todo: da rivedere
     packetsDetectionMap->clear();
-
     devicesCoords->clear();
+
 }
 
 void MyServer::clearPeopleMapSlot(){
     peopleMap->clear();
+    QString begintime, endtime;
+    QDateTime curr_timestamp = QDateTime::currentDateTime();
+    endtime = curr_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
+    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
+    begintime = old_timestamp.toString("dd/MM/yyyy_hh:mm:ss");
+    dbthread->GetTimestampsFromDB(peopleCounter, begintime, endtime); //probabilmente bisogna passare a questa funzione begintime ed endtime
 }
 
-
+/**
+ * @brief MyServer::emitDrawRunTimeChartSignalSlot
+ * emette il segnale per far sì che la mainwindow disegni il grafico runtime del conto delle persone nell'area
+ * Avendo messo una funzione apposita solo per emettere il segnale, non ho creato dipendenze tra dbthrad e myserver
+ */
+void MyServer::emitDrawRuntimeChartSignalSlot() {
+    emit drawRuntimeChartSig(peopleCounter);
+}
 
 /**
  * @brief MyServer::SendToDB
  */
 void MyServer::SendToDB() {
-//    QThread *thread = new QThread();
-//    DBThread *dbthread = new DBThread(this, peopleMap, devicesCoords->size(), DBinitialized, "", "", nullptr);
-
-//    dbthread->moveToThread(thread);
-
-//    dbthread->signalsConnection(thread, "SendToDB");
-
-    thread->start(); // diventa chiamata alla funzione giusta
-//    connect(dbthread, SIGNAL(ready()), this, SLOT(startToClients()));
-//    connect(this, SIGNAL(start2Clients()), dbthread, SLOT(sendStart()));
-//    connect(dbthread, &ListenerObj::log, this, &MyServer::emitLog
-//            ,Qt::QueuedConnection
-//            );
-
-
-//    emit DBsignal(&peopleMap);
+    dbthread->send(peopleMap, devicesCoords->size());
 }
 
 /**
@@ -243,23 +242,12 @@ void MyServer::SendToDB() {
  * @return
  */
 QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
-    QThread *thread = new QThread();
+    //da sistemare
     QList<QPointF> *peopleCounter = new QList<QPointF>();
-    DBThread *dbthread = new DBThread(this, peopleMap, devicesCoords->size(), DBinitialized, begintime, endtime, peopleCounter);
-
-    dbthread->moveToThread(thread);
-    dbthread->signalsConnection(thread, "DrawOldCountMap");
-
-    thread->start();
+    dbthread->GetLPSFromDB(begintime, endtime);
 
     //controlla
     return peopleCounter;
-
-//    connect(thread, SIGNAL(started()), dbthread, SLOT(GetTimestampsFromDB()));
-
-//    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
-//    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
-//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 
 
 }

@@ -18,11 +18,6 @@ DBThread::DBThread()
 
 DBThread::DBThread(MyServer* server)
 {
-//    this->peopleMap=peopleMap;
-//    this->size = size;
-//    this->begintime = begintime;
-//    this->endtime = endtime;
-//    this->peopleCounter = peopleCounter;
     this->server = server;
 }
 
@@ -84,22 +79,19 @@ void DBThread::signalsConnection(QThread *thread){
 
     qDebug().noquote() << "signalsConnection()";
 
-    if (slotName.compare("DrawOldCountMap")==0) {
-        connect(thread, SIGNAL(started()), this, SLOT(GetTimestampsFromDB()));
-    }
-    else if (slotName.compare("SendToDB")==0) {
-        connect(thread, SIGNAL(started()), this, SLOT(send()));
-    }
-
     connect(thread, SIGNAL(started()), this, SLOT(run()));
     connect(this, &DBThread::logSig, server, &MyServer::emitLogSlot);
+    connect(this, &DBThread::finishedSig, server, &MyServer::clearPeopleMapSlot);
+    connect(this, &DBThread::drawRuntimeChartSig, server, &MyServer::emitDrawRuntimeChartSignalSlot);
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
 
-void DBThread::send()
+void DBThread::send(QMap<QString, Person> *peopleMap, int size)
 {
+    this->peopleMap=peopleMap;
+    this->size = size;
     QSqlQuery query;
     QString queryString;
 
@@ -178,7 +170,8 @@ bool DBThread::dbConnect() {
 }
 
 //NOTA: assumo che il begintime e l'endtime siano timestamp correttamente costruiti a partire da data e ora prese in input dall'utente
-void DBThread::GetTimestampsFromDB() {
+void DBThread::GetTimestampsFromDB(QList<QPointF> *peopleCounter, QString begintime, QString endtime) {
+    this->peopleCounter = peopleCounter;
     QSqlQuery query;
     QString queryString;
     QMap<QString, int> oldCountMap;
@@ -202,6 +195,7 @@ void DBThread::GetTimestampsFromDB() {
             point = QPointF(i.key().toInt(), i.value()); //Verifica che funziona la conversione da timestamp stringa a timestamp intero
             peopleCounter->append(point);
         }
+        emit drawRuntimeChartSig();
         return;
 
     }

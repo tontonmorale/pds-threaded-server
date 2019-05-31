@@ -29,10 +29,10 @@ void ListenerThread::signalsConnection(QThread *thread){
 
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 
-    connect(this, &ListenerThread::ready, server, &MyServer::readyFromClient);
-    connect(server, &MyServer::start2Clients, this, &ListenerThread::sendStart);
-    connect(this, &ListenerThread::log, server, &MyServer::emitLog);
-    connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThread);
+    connect(this, &ListenerThread::ready, server, &MyServer::readyFromClientSlot);
+    connect(server, &MyServer::start2ClientsSlot, this, &ListenerThread::sendStart);
+    connect(this, &ListenerThread::log, server, &MyServer::emitLogSlot);
+    connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));

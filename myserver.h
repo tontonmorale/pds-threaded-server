@@ -30,6 +30,7 @@ signals:
     void fatalErrorSig(QString message);
     void logSig(QString message);
     void DBsig(QMap<QString, Person> *peopleMap);
+    void drawRuntimeChartSig(QList<QPointF> *peopleCounter);
 
 public slots:
 //    void onClientConnection();
@@ -40,6 +41,7 @@ public slots:
     void readyFromClientSlot();
     void clearPeopleMapSlot();
     void errorFromThreadSlot(QString errorMsg);
+    void emitDrawRuntimeChartSignalSlot();
 
 private:
     QMutex* mutex;
@@ -55,10 +57,12 @@ private:
     int endPkClients;
     int currMinute;
     QList<ListenerThread*> *listenerThreadList;
+    DBThread *dbthread;
     bool DBinitialized;
     QPointF maxEspCoords;
     QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
     QList<QPointF> *devicesCoords;
+    QList<QPointF> *peopleCounter;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

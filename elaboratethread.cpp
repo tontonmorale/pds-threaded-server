@@ -55,9 +55,9 @@ void ElaborateThread::signalsConnection(QThread *thread){
 
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 
-    connect(this, &ElaborateThread::log, server, &MyServer::emitLog);
-    connect(this, &ElaborateThread::timeSlotEnd, server, &MyServer::dataForDb);
-    connect(this, &ElaborateThread::ready, server, &MyServer::startToClients);
+    connect(this, &ElaborateThread::log, server, &MyServer::emitLogSlot);
+    connect(this, &ElaborateThread::timeSlotEnd, server, &MyServer::dataForDbSlot);
+    connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
     connect(this, SIGNAL(finished()), server, SLOT(clearPeopleMap()));
@@ -106,6 +106,7 @@ void ElaborateThread::manageCurrentMinute(){
  * chiama funzione calcolo posizionidei device nell'area
  */
 void ElaborateThread::manageLastMinute() {
+
 
     //calcolo posizione dispositivi solo se almeno 3 client connessi
     if(connectedClients < 3){
@@ -175,6 +176,7 @@ void ElaborateThread::calculateDevicesPosition(){
             devicesCoords->append(pos);
         }
     }
+    emit timeSlotEnd();
 }
 
 /**
