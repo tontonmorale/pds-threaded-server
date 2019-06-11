@@ -36,17 +36,54 @@ void MainWindow::printToLogSlot(QString message){
     ui->log->appendPlainText(message);
 }
 
-void MainWindow::drawRuntimeChartSlot(QList<QPointF> *runtimeList) {
+void MainWindow::drawRuntimeChartSlot(QMap<QString, int> *runtimeMap) {
 
 
     //disegno grafico runtime
+    QLineSeries *series = new QLineSeries();
 
-//    QList<QPointF> *runtimeList = server.DrawOldCountMap(begintime, endtime);
-    QWidget *qw = new QWidget;
-    QGridLayout *grid = new QGridLayout;
-    grid->addWidget(createTimeChartGroup(*runtimeList), 0, 0);
-    qw->setLayout(grid);
-    ui->centralWidget->layout()->addWidget(qw);
+//    key: 2019/03/22_17:52:14, value: 14
+    for (auto i = runtimeMap->begin(); i != runtimeMap->end(); i++) {
+        QStringList dateAndTime = i.key().split("_");
+        QStringList splitDate = dateAndTime[0].split("/");
+        QStringList splitTime = dateAndTime[1].split(":");
+        QDateTime dateTime(QDate(splitDate[0].toInt(), splitDate[1].toInt(), splitDate[2].toInt()), QTime(splitTime[0].toInt(), splitTime[1].toInt()));
+        series->append(dateTime.toMSecsSinceEpoch(), i.value());
+    }
+
+    // crea chart
+        QChart *chart = new QChart();
+        chart->addSeries(series);
+        chart->legend()->hide();
+        chart->setTitle("Titolo bruttissssssssimo");
+
+        // setta gli assi
+        QDateTimeAxis *axisX = new QDateTimeAxis;
+        axisX->setTickCount(12);
+        axisX->setFormat("MMM yyyy");
+        axisX->setTitleText("Date");
+        chart->addAxis(axisX, Qt::AlignBottom);
+        series->attachAxis(axisX);
+
+        QValueAxis *axisY = new QValueAxis;
+        axisY->setLabelFormat("%i");
+        axisY->setTitleText("Sunspots count");
+        chart->addAxis(axisY, Qt::AlignLeft);
+        series->attachAxis(axisY);
+
+        // robe 2
+        QChartView *chartView = new QChartView(chart);
+        chartView->setRenderHint(QPainter::Antialiasing);
+
+        // robe 3
+        ui->gridLayout->addWidget(chartView);
+
+//    QWidget *qw = new QWidget;
+//    QGridLayout *grid = new QGridLayout;
+//    grid->addWidget(createTimeChartGroup(*runtimeList), 0, 0);
+//    qw->setLayout(grid);
+//    ui->gridLayout->addWidget(qw);
+//    ui->centralWidget->layout()->addWidget(qw);
 }
 
 //disegna grafico del numero di mac rilevati nel periodo specificato

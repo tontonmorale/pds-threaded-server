@@ -177,11 +177,10 @@ bool DBThread::dbConnect() {
 }
 
 //NOTA: assumo che il begintime e l'endtime siano timestamp correttamente costruiti a partire da data e ora prese in input dall'utente
-void DBThread::GetTimestampsFromDB(QList<QPointF> *peopleCounter, QString begintime, QString endtime) {
-    this->peopleCounter = peopleCounter;
+void DBThread::GetTimestampsFromDB(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime) {
+    this->peopleCounterMap = peopleCounterMap;
     QSqlQuery query((QSqlDatabase::database("connection")));
     QString queryString;
-    QMap<QString, int> oldCountMap;
 
     queryString = "SELECT * "
                   "FROM Timestamps "
@@ -189,19 +188,9 @@ void DBThread::GetTimestampsFromDB(QList<QPointF> *peopleCounter, QString begint
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
-        int i = 0, j = 1;
         //popolo la mappa delle persone
         while (query.next()) {
-            oldCountMap.insert(query.value(i).toString(), query.value(j).toInt());
-//            i += 2;
-//            j += 2;
-        }
-
-        //creo la lista di coordinate del grafico a partire dalla mappa che contiene timestamp-numero persone
-        QPointF point;
-        for (QMap<QString, int>::iterator i = oldCountMap.begin(); i != oldCountMap.end(); i++) {
-            point = QPointF(i.key().toInt(), i.value()); //Verifica che funziona la conversione da timestamp stringa a timestamp intero
-            peopleCounter->append(point);
+            peopleCounterMap->insert(query.value(0).toString(), query.value(1).toInt());
         }
         emit drawRuntimeChartSig();
         return;

@@ -17,7 +17,7 @@ public:
     DBThread();
     DBThread(MyServer* server);
     bool initialized;
-    void GetTimestampsFromDB(QList<QPointF> *peopleCounter, QString begintime, QString endtime);
+    void GetTimestampsFromDB(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime);
     void GetLPSFromDB(QString begintime, QString endtime);
     void signalsConnection(QThread *thread);
     bool dbConnect();
@@ -42,8 +42,8 @@ private:
     QMap<QString, Person> *peopleMap;
     QList<QPointF> drawOldContMap(QMap<QString, int> *oldCountMap);
     QString begintime, endtime;
-    QList<QPointF> *peopleCounter;
     MyServer* server;
+    QMap<QString, int> *peopleCounterMap;
 };
 
 

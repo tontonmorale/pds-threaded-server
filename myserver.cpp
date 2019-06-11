@@ -21,7 +21,7 @@ MyServer::MyServer(QObject *parent):
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
     devicesCoords = new QList<QPointF>;
-    peopleCounter = new QList<QPointF>;
+    peopleCounterMap = new QMap<QString, int>;
 }
 
 /**
@@ -216,7 +216,7 @@ void MyServer::clearPeopleMapSlot(){
     endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
     QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
-    emit getTimestampsSig(peopleCounter, begintime, endtime);
+    emit getTimestampsSig(peopleCounterMap, begintime, endtime);
 }
 
 /**
@@ -225,7 +225,7 @@ void MyServer::clearPeopleMapSlot(){
  * Avendo messo una funzione apposita solo per emettere il segnale, non ho creato dipendenze tra dbthrad e myserver
  */
 void MyServer::emitDrawRuntimeChartSignalSlot() {
-    emit drawRuntimeChartSig(peopleCounter);
+    emit drawRuntimeChartSig(peopleCounterMap);
 }
 
 /**

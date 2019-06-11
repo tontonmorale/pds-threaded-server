@@ -32,7 +32,7 @@ signals:
 public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
-    void drawRuntimeChartSlot(QList<QPointF> *runtimeList);
+    void drawRuntimeChartSlot(QMap<QString, int> *runtimeMap);
     void drawOldCountChartSlot();
 
 private:

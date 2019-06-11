@@ -30,9 +30,9 @@ signals:
     void fatalErrorSig(QString message);
     void logSig(QString message);
     void DBsig(QMap<QString, Person> *peopleMap);
-    void drawRuntimeChartSig(QList<QPointF> *peopleCounter);
+    void drawRuntimeChartSig(QMap<QString, int> *peopleCounterMap);
     void sendToDBSig(QMap<QString, Person> *peopleMap, int size);
-    void getTimestampsSig(QList<QPointF> *peopleCounter, QString begintime, QString endtime);
+    void getTimestampsSig(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime);
     void getStatsSig(QString begintime, QString endtime);
 
 public slots:
@@ -65,7 +65,7 @@ private:
     QPointF maxEspCoords;
     QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
     QList<QPointF> *devicesCoords;
-    QList<QPointF> *peopleCounter;
+    QMap<QString, int> *peopleCounterMap;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
