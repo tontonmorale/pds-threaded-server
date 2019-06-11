@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 
     w.show();
     w.serverInit();
+//    w.drawRuntimeChartSlot(new QMap<QString, int>());
 
     return a.exec();
 }
