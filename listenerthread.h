@@ -7,6 +7,7 @@
 #include <QEventLoop>
 #include <QPlainTextEdit>
 #include <QMutex>
+#include <QTimer>
 #include "packet.h"
 #include "esp.h"
 
@@ -30,6 +31,7 @@ public:
     void closeConnection();
     void newPacket(QString line);
     void signalsConnection(QThread *thread);
+    QString getId();
     ~ListenerThread();
 
 public slots:
@@ -39,12 +41,14 @@ public slots:
 
 signals:
     void ready();
-    void finished();
+    void finished(ListenerThread*);
     void log(QString message);
     void endPackets();
+    void addThreadSignal(ListenerThread*);
 
 
 private:
+    QString id;
     QMutex* mutex;
     QMap<QString, QSharedPointer<Packet>> *packetsMap;
     QMap<QString, int> *packetsDetectionMap;
@@ -52,6 +56,7 @@ private:
     qintptr socketDescriptor;
     shared_ptr<QMap<QString, Esp>> espMap;
     MyServer *server;
+    QTimer* disconnectionTimer;
 };
 
 #endif // LISTENEROBJ_H

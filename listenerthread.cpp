@@ -34,8 +34,10 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(this, &ListenerThread::log, server, &MyServer::emitLogSlot);
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
 
+    connect(this, &ListenerThread::addThreadSignal, server, &MyServer::addListenerThreadSlot);
+
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
 
@@ -44,6 +46,10 @@ void ListenerThread::signalsConnection(QThread *thread){
  * richiamata allo start del thread, setta il socket e chiama il setup iniziale dell'esp
  */
 void ListenerThread::work(){
+    // crea timer disconnessione e connetti segnali
+    disconnectionTimer = new QTimer();
+    connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::closeConnection);
+
     socket = new QTcpSocket();
     if(!socket->setSocketDescriptor(socketDescriptor)){
         emit log("Errore set sock descriptor\n");
@@ -60,13 +66,17 @@ void ListenerThread::work(){
     emit ready();
 }
 
+QString ListenerThread::getId(){
+    return id;
+}
+
 /**
  * @brief ListenerThread::clientSetup
  * riceve il mac dall'esp e gli invia l'id letto da file
  */
 void ListenerThread::clientSetup(){
     QStringList sl;
-    QString line, clientId, hello2Client, mac, helloFromClient, id;
+    QString line, clientId, hello2Client, mac, helloFromClient;
     const char* msg;
 
     emit log("--- New connection ---");
@@ -86,6 +96,8 @@ void ListenerThread::clientSetup(){
         closeConnection();
     }
 
+    emit addThreadSignal(this);
+
     emit log("client mac: " + mac);
     hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
     msg = hello2Client.toStdString().c_str();
@@ -94,12 +106,14 @@ void ListenerThread::clientSetup(){
 
 /**
  * @brief ListenerThread::sendStart
- * scrive start all'esp per iniziare l'ascolto dei pacchetti
+ * scrive start all'esp per iniziare l'ascolto dei pacchetti e setta il timer
  */
 void ListenerThread::sendStart(){
+    //start timer per rilevare disconnessioni
+    disconnectionTimer->start(MyServer::intervalTime * 2 + 5000);
+
     socket->write("START\r\n");
     qDebug() << "mando Start";
-//    socketTimerMap[socket]->start(MAX_WAIT+5000);
 }
 
 /**
@@ -182,7 +196,8 @@ void ListenerThread::newPacket(QString line){
 
 void ListenerThread::closeConnection(){
     socket->disconnect();
-    emit finished();
+    qDebug("Disconnessione client");
+    emit finished(this);
 }
 
 ListenerThread::~ListenerThread(){

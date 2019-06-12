@@ -24,6 +24,7 @@ public:
     QList<QPointF> *DrawOldCountMap(QString begintime, QString endtime);
     void Connects(QString slot);
     ~MyServer() override;
+    static const int intervalTime = 15000;
 
 signals:
     void start2ClientsSig();
@@ -45,6 +46,8 @@ public slots:
     void clearPeopleMapSlot();
     void errorFromThreadSlot(QString errorMsg);
     void emitDrawRuntimeChartSignalSlot();
+    void addListenerThreadSlot(ListenerThread *lt);
+    void disconnectClientSlot(ListenerThread *lt);
 
 private:
     QMutex* mutex;
@@ -59,7 +62,8 @@ private:
     int totClients;
     int endPkClients;
     int currMinute;
-    QList<ListenerThread*> *listenerThreadList;
+//    QList<ListenerThread*> listenerThreadList;
+    QMap<QString, ListenerThread*> listenerThreadPool;
     DBThread *dbthread;
     bool DBinitialized;
     QPointF maxEspCoords;

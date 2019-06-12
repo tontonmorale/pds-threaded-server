@@ -16,7 +16,7 @@ MyServer::MyServer(QObject *parent):
 
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
-    listenerThreadList = new QList<ListenerThread*>();
+//    listenerThreadList = new QList<ListenerThread*>();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>();
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
@@ -74,8 +74,25 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
     lt->moveToThread(thread);
     lt->signalsConnection(thread);
-    listenerThreadList->append(lt);
+
     thread->start();
+}
+
+/**
+ * @brief MyServer::addListenerThreadSlot -> slot chiamato dal listenerthread
+ * cancella il vecchio thread con stesso id, se presente, e aggiunge quello nuovo
+ * @param lt -> nuovo thread da aggiungere
+ */
+void MyServer::addListenerThreadSlot(ListenerThread* lt){
+    QString newId = lt->getId();
+    auto it = listenerThreadPool.find(newId);
+
+    if( it != listenerThreadPool.end()){
+        listenerThreadPool.erase(it);
+        connectedClients --;
+    }
+
+    listenerThreadPool.insert(newId, lt);
 }
 
 /**
@@ -138,7 +155,7 @@ void MyServer::readyFromClientSlot(){
  */
 void MyServer::startToClientsSlot(){
     if(connectedClients==totClients
-//            && connectedClients>=3
+            && connectedClients>=3
             )
     {
         qDebug() << "Start to clients\n";
@@ -150,6 +167,15 @@ void MyServer::startToClientsSlot(){
     else {
         // todo: meno di 3 client connessi => ?????
     }
+}
+
+void MyServer::disconnectClientSlot(ListenerThread *thread){
+    QString id = thread->getId();
+    auto it = listenerThreadPool.find(id);
+
+    if(it!=listenerThreadPool.end())
+        listenerThreadPool.erase(it);
+    thread->deleteLater();
 }
 
 void MyServer::errorFromThreadSlot(QString errorMsg){
