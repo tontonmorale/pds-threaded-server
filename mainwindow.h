@@ -24,6 +24,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     void serverInit();
     QGroupBox* createTimeChartGroup(QList<QPointF> points);
+    void drawPeopleCountChart();
     ~MainWindow();
 
 signals:

@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     QString endtime = QString::number(curr_timestamp);
 
     w.show();
-    w.serverInit();
+//    w.serverInit();
 //    w.drawRuntimeChartSlot(new QMap<QString, int>());
 
     return a.exec();

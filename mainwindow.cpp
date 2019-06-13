@@ -12,6 +12,36 @@ MainWindow::MainWindow(QWidget *parent) :
     ui = new Ui::MainWindow;
 
     ui->setupUi(this);
+    drawPeopleCountChart();
+}
+
+void MainWindow::drawPeopleCountChart(){
+    QChart *chart = new QChart();
+    QLineSeries *series = new QLineSeries();
+
+    // setta chart
+    chart->addSeries(series);
+    chart->legend()->hide();
+    chart->setTitle("People count");
+
+    // setta gli assi
+    QDateTimeAxis *axisX = new QDateTimeAxis;
+    axisX->setTickCount(12);
+    axisX->setFormat("yy/MM/dd <br> hh:mm");
+    axisX->setTitleText("Date");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis;
+    axisY->setLabelFormat("%i");
+    axisY->setTitleText("People count");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+
+    // crea chart view
+    QChartView *chartView = ui->count_chart;
+    chartView->setChart(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
 }
 
 void MainWindow::serverInit(){
@@ -38,9 +68,6 @@ void MainWindow::printToLogSlot(QString message){
 
 void MainWindow::drawRuntimeChartSlot(QMap<QString, int> *runtimeMap) {
 
-//    runtimeMap->insert("2019/03/22_17:52", 14);
-//    runtimeMap->insert("2019/03/22_17:57", 6);
-
     //disegno grafico runtime
     QLineSeries *series = new QLineSeries();
 
@@ -53,35 +80,7 @@ void MainWindow::drawRuntimeChartSlot(QMap<QString, int> *runtimeMap) {
         series->append(dateTime.toMSecsSinceEpoch(), i.value());
     }
 
-    QChart *chart = new QChart();
 
-
-
-    // setta chart
-    chart->addSeries(series);
-    chart->legend()->hide();
-    chart->setTitle("Titolo bruttissssssssimo");
-
-    // setta gli assi
-    QDateTimeAxis *axisX = new QDateTimeAxis;
-    axisX->setTickCount(12);
-    axisX->setFormat("yy/MM/dd <br> hh:mm");
-    axisX->setTitleText("Date");
-    chart->addAxis(axisX, Qt::AlignBottom);
-    series->attachAxis(axisX);
-
-    QValueAxis *axisY = new QValueAxis;
-    axisY->setLabelFormat("%i");
-    axisY->setTitleText("Sunspots count");
-    chart->addAxis(axisY, Qt::AlignLeft);
-    series->attachAxis(axisY);
-
-    // robe 2
-    QChartView *chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-
-    // robe 3
-    ui->gridLayout->addWidget(chartView);
 
 //    QWidget *qw = new QWidget;
 //    QGridLayout *grid = new QGridLayout;
