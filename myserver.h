@@ -35,6 +35,7 @@ signals:
     void sendToDBSig(QMap<QString, Person> *peopleMap, int size);
     void getTimestampsSig(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime);
     void getStatsSig(QString begintime, QString endtime);
+    void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
 
 public slots:
 //    void onClientConnection();
@@ -48,6 +49,7 @@ public slots:
     void emitDrawRuntimeChartSignalSlot();
     void addListenerThreadSlot(ListenerThread *lt);
     void disconnectClientSlot(ListenerThread *lt);
+//    void drawMapSlot();
 
 private:
     QMutex* mutex;

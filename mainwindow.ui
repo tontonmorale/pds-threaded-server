@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="1">
-     <widget class="QChartView" name="map" native="true"/>
+     <widget class="QChartView" name="mapView" native="true"/>
     </item>
     <item row="1" column="0" colspan="2">
      <widget class="QPlainTextEdit" name="log">

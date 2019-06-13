@@ -42,7 +42,7 @@ void ElaborateThread::work() {
         currMinute = 0;
 //        emit ready(); // manda start alle schede per nuovo timeslot
         manageLastMinute();
-        emit timeSlotEnd(); // manda dati time slot corrente al thread che si occupa del db e alla gui
+        emit timeSlotEndSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
     }
 }
 
@@ -56,13 +56,15 @@ void ElaborateThread::signalsConnection(QThread *thread){
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 
     connect(this, &ElaborateThread::log, server, &MyServer::emitLogSlot);
-    connect(this, &ElaborateThread::timeSlotEnd, server, &MyServer::dataForDbSlot);
+    connect(this, &ElaborateThread::timeSlotEndSig, server, &MyServer::dataForDbSlot);
     connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
     connect(this, SIGNAL(finished()), server, SLOT(clearPeopleMapSlot()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+
+//    connect(this, &ElaborateThread::drawMapSig, server, &MyServer::drawMapSlot);
 }
 
 /**
@@ -174,6 +176,10 @@ void ElaborateThread::calculateDevicesPosition(){
         if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
             // device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
             devicesCoords->append(pos);
+        }
+        else{
+            //togli persone dall'elenco
+            peopleMap->erase(person);
         }
     }
 }

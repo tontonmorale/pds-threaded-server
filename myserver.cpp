@@ -63,6 +63,10 @@ void MyServer::init(){
     maxEspCoords = setMaxEspCoords(espMap);
 }
 
+//void MyServer::drawMapSlot(){
+//    emit drawMapSig(devicesCoords, maxEspCoords);
+//}
+
 /**
  * @brief MyServer::incomingConnection
  * genera un listenerThread all'arrivo di una nuova connessione
@@ -122,8 +126,9 @@ void MyServer::createElaborateThreadSlot(){
     et->signalsConnection(thread);
     thread->start();
 
-    // inizio prossimo minuto
-    startToClientsSlot();
+    // inizio prossimo minuto se non è finito lo slot di 5 minuti attuale
+    if(currMinute<5)
+        startToClientsSlot();
 }
 
 void MyServer::emitLogSlot(QString message){
@@ -160,8 +165,8 @@ void MyServer::startToClientsSlot(){
     {
         qDebug() << "Start to clients\n";
         endPkClients = 0;
-        emit logSig("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");
         currMinute++;
+        emit logSig("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");        
         emit start2ClientsSig();
     }
     else {
@@ -231,6 +236,10 @@ void MyServer::dataForDbSlot(){
 //    packetsMap->clear();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>(); // todo: da rivedere
     packetsDetectionMap->clear();
+
+    //posso copia dati da disegnare alla mappa e cancello quelli vecchi
+    QList<QPointF> coordsForMap = *devicesCoords;
+    emit drawMapSig(coordsForMap, maxEspCoords);
     devicesCoords->clear();
 
 }
@@ -240,7 +249,7 @@ void MyServer::clearPeopleMapSlot(){
     QString begintime, endtime;
     QDateTime curr_timestamp = QDateTime::currentDateTime();
     endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
-    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
+    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().minute()));
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
     emit getTimestampsSig(peopleCounterMap, begintime, endtime);
 }

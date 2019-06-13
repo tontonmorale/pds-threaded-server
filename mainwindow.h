@@ -34,7 +34,7 @@ public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
     void drawChartSlot(QMap<QString, int> *runtimeMap);
-    void drawMapSlot(QMap<QString, int> *runtimeMap);
+    void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void drawOldCountChartSlot();
 
 private:

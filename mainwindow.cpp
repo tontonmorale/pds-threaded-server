@@ -8,6 +8,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&server, &MyServer::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
     connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::drawChartSlot);
+    connect(&server, &MyServer::drawMapSig, this, &MainWindow::drawMapSlot);
 //    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
 
@@ -16,6 +17,25 @@ MainWindow::MainWindow(QWidget *parent) :
 //    i->insert("2019/03/22_17:52", 3);
 //    i->insert("2019/03/22_17:52", 1);
 //    setChartDataSlot(i);
+}
+
+void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords){
+    QScatterSeries *series = new QScatterSeries();
+
+    for(QList<QPointF>::iterator i=devicesCoords.begin(); i!=devicesCoords.end(); i++)
+        *series << *i;
+
+    QChart *chart = new QChart();
+    chart->legend()->hide();
+    chart->addSeries(series);
+    chart->createDefaultAxes();
+    chart->axisX()->setRange(0.0, maxEspCoords);
+    chart->axisY()->setRange(0.0, maxEspCoords);
+    chart->setTitle("People in the area");
+
+    QChartView *mapView = ui->mapView;
+    mapView->setRenderHint(QPainter::Antialiasing);
+    mapView->setChart(chart);
 }
 
 //void MainWindow::drawPeopleCountChart(){

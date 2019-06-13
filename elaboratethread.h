@@ -47,8 +47,9 @@ public slots:
 signals:
     void finished();
     void log(QString message);
-    void timeSlotEnd();
+    void timeSlotEndSig();
     void ready();
+    void drawMapSig();
 };
 
 #endif // ELABORATETHREAD_H
