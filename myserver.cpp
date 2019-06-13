@@ -54,7 +54,7 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
 void MyServer::init(){
     QThread *thread = new QThread();
 //    DBThread *dbthread = new DBThread(this);
-    dbthread = new DBThread(this);
+    dbthread = new DBThread(this, peopleCounterMap);
     dbthread->moveToThread(thread);
     dbthread->signalsConnection(thread);
     thread->start();

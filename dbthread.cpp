@@ -14,9 +14,11 @@ DBThread::DBThread()
 
 }
 
-DBThread::DBThread(MyServer* server)
+DBThread::DBThread(MyServer* server, QMap<QString, int> *peopleCounterMap)
 {
     this->server = server;
+    this->peopleCounterMap = peopleCounterMap;
+
 }
 
 void DBThread::run() {
@@ -70,12 +72,13 @@ void DBThread::run() {
         return;
     }
 
+    // dati per il primo disegno del chart
     QString begintime, endtime;
     QDateTime curr_timestamp = QDateTime::currentDateTime();
     endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
-    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
+    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().minute()));
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
-    GetTimestampsFromDB(new QMap<QString, int>(), begintime, endtime);
+    GetTimestampsFromDB(peopleCounterMap, begintime, endtime);
 
     return;
 }
@@ -191,7 +194,7 @@ void DBThread::GetTimestampsFromDB(QMap<QString, int> *peopleCounterMap, QString
 
     queryString = "SELECT * "
                   "FROM Timestamps "
-                  "WHERE timestamp > '" + begintime + "' AND timestamp < '" + endtime + "';";
+                  "WHERE timestamp > '" + begintime + "' AND timestamp <= '" + endtime + "';";
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {

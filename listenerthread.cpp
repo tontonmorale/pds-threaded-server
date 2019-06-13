@@ -36,7 +36,7 @@ void ListenerThread::signalsConnection(QThread *thread){
 
     connect(this, &ListenerThread::addThreadSignal, server, &MyServer::addListenerThreadSlot);
 
-    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(this, &ListenerThread::finished, thread, &QThread::quit);
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }

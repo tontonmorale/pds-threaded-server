@@ -7,47 +7,50 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
-    connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::setChartDataSlot);
+    connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::drawChartSlot);
 //    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
 
     ui->setupUi(this);
-    setChartDataSlot(new QMap<QString, int>());
+//    auto i = new QMap<QString, int>();
+//    i->insert("2019/03/22_17:52", 3);
+//    i->insert("2019/03/22_17:52", 1);
+//    setChartDataSlot(i);
 }
 
-void MainWindow::drawPeopleCountChart(){
-    QChart *chart = new QChart();
-    this->chartSeries = new QLineSeries();
+//void MainWindow::drawPeopleCountChart(){
+//    QChart *chart = new QChart();
+//    this->chartSeries = new QLineSeries();
 
-//    QDateTime dateTime(QDate(19, 6, 13), QTime(13, 10));
-//    chartSeries->append(dateTime.toMSecsSinceEpoch(), 5);
-//    dateTime = QDateTime(QDate(19, 6, 13), QTime(13, 15));
-//    chartSeries->append(dateTime.toMSecsSinceEpoch(), 15);
+////    QDateTime dateTime(QDate(19, 6, 13), QTime(13, 10));
+////    chartSeries->append(dateTime.toMSecsSinceEpoch(), 5);
+////    dateTime = QDateTime(QDate(19, 6, 13), QTime(13, 15));
+////    chartSeries->append(dateTime.toMSecsSinceEpoch(), 15);
 
-    // setta chart
-    chart->addSeries(chartSeries);
-    chart->legend()->hide();
-    chart->setTitle("People count");
+//    // setta chart
+//    chart->addSeries(chartSeries);
+//    chart->legend()->hide();
+//    chart->setTitle("People count");
 
-    // setta gli assi
-    QDateTimeAxis *axisX = new QDateTimeAxis;
-    axisX->setTickCount(chartSeries->count());
-    axisX->setFormat("yy/MM/dd <br> hh:mm");
-    axisX->setTitleText("Date");
-    chart->addAxis(axisX, Qt::AlignBottom);
-    chartSeries->attachAxis(axisX);
+//    // setta gli assi
+//    QDateTimeAxis *axisX = new QDateTimeAxis;
+//    axisX->setTickCount(chartSeries->count());
+//    axisX->setFormat("yy/MM/dd <br> hh:mm");
+//    axisX->setTitleText("Date");
+//    chart->addAxis(axisX, Qt::AlignBottom);
+//    chartSeries->attachAxis(axisX);
 
-    QValueAxis *axisY = new QValueAxis;
-    axisY->setLabelFormat("%i");
-    axisY->setTitleText("People count");
-    chart->addAxis(axisY, Qt::AlignLeft);
-    chartSeries->attachAxis(axisY);
+//    QValueAxis *axisY = new QValueAxis;
+//    axisY->setLabelFormat("%i");
+//    axisY->setTitleText("People count");
+//    chart->addAxis(axisY, Qt::AlignLeft);
+//    chartSeries->attachAxis(axisY);
 
-    // crea chart view
-    QChartView *chartView = ui->countChartView;
-    chartView->setChart(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-}
+//    // crea chart view
+//    QChartView *chartView = ui->countChartView;
+//    chartView->setChart(chart);
+//    chartView->setRenderHint(QPainter::Antialiasing);
+//}
 
 void MainWindow::serverInit(){
     // server init
@@ -71,46 +74,61 @@ void MainWindow::printToLogSlot(QString message){
     ui->log->appendPlainText(message);
 }
 
-void MainWindow::setChartDataSlot(QMap<QString, int> *runtimeMap) {
+void MainWindow::drawChartSlot(QMap<QString, int> *runtimeMap) {
 
     //disegno grafico runtime
-    ui->countChartView->chart()->deleteLater();
-    chartSeries = new QLineSeries();
 
-//    key: 2019/03/22_17:52, value: 14
-    for (auto i = runtimeMap->begin(); i != runtimeMap->end(); i++) {
-        QStringList dateAndTime = i.key().split("_");
-        QStringList splitDate = dateAndTime[0].split("/");
-        QStringList splitTime = dateAndTime[1].split(":");
-        QDateTime dateTime(QDate(splitDate[0].toInt(), splitDate[1].toInt(), splitDate[2].toInt()), QTime(splitTime[0].toInt(), splitTime[1].toInt()));
-        chartSeries->append(dateTime.toMSecsSinceEpoch(), i.value());
+
+    if(runtimeMap->size()!=0){
+        QChart* oldChart = ui->countChartView->chart();
+        if(oldChart!=nullptr)
+            oldChart->deleteLater();
+
+        ui->noChartData->hide();
+
+        QLineSeries *chartSeries = new QLineSeries();
+
+    //    key: 2019/03/22_17:52, value: 14
+        for (auto i = runtimeMap->begin(); i != runtimeMap->end(); i++) {
+            QStringList dateAndTime = i.key().split("_");
+            QStringList splitDate = dateAndTime[0].split("/");
+            QStringList splitTime = dateAndTime[1].split(":");
+            QDateTime dateTime(QDate(splitDate[0].toInt(), splitDate[1].toInt(), splitDate[2].toInt()), QTime(splitTime[0].toInt(), splitTime[1].toInt()));
+            chartSeries->append(dateTime.toMSecsSinceEpoch(), i.value());
+        }
+
+        QChart *chart = new QChart();
+
+        // setta chart
+
+        chart->addSeries(chartSeries);
+        chart->legend()->hide();
+        chart->setTitle("People count");
+
+        // setta gli assi
+        QDateTimeAxis *axisX = new QDateTimeAxis;
+        axisX->setTickCount(chartSeries->count());
+        axisX->setFormat("yy/MM/dd <br> hh:mm");
+        axisX->setTitleText("Date");
+        chart->addAxis(axisX, Qt::AlignBottom);
+        chartSeries->attachAxis(axisX);
+
+        QValueAxis *axisY = new QValueAxis;
+        axisY->setTitleText("People count");
+//        axisY->setTickCount(chartSeries->count());
+        chart->addAxis(axisY, Qt::AlignLeft);
+        chartSeries->attachAxis(axisY);
+
+        // crea chart view
+        QChartView *chartView = ui->countChartView;
+        chartView->setChart(chart);
+        chartView->setRenderHint(QPainter::Antialiasing);
     }
 
-    QChart *chart = new QChart();
-
-    // setta chart
-    chart->addSeries(chartSeries);
-    chart->legend()->hide();
-    chart->setTitle("People count");
-
-    // setta gli assi
-    QDateTimeAxis *axisX = new QDateTimeAxis;
-    axisX->setTickCount(chartSeries->count());
-    axisX->setFormat("yy/MM/dd <br> hh:mm");
-    axisX->setTitleText("Date");
-    chart->addAxis(axisX, Qt::AlignBottom);
-    chartSeries->attachAxis(axisX);
-
-    QValueAxis *axisY = new QValueAxis;
-    axisY->setLabelFormat("%i");
-    axisY->setTitleText("People count");
-    chart->addAxis(axisY, Qt::AlignLeft);
-    chartSeries->attachAxis(axisY);
-
-    // crea chart view
-    QChartView *chartView = ui->countChartView;
-    chartView->setChart(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
+    else{
+        ui->countChartView->chart()->hide();
+        ui->noChartData->show();
+    }
 }
 
 //disegna grafico del numero di mac rilevati nel periodo specificato

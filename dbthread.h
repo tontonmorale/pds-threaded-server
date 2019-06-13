@@ -15,7 +15,7 @@ class DBThread : public QObject
 
 public:
     DBThread();
-    DBThread(MyServer* server);
+    DBThread(MyServer* server, QMap<QString, int> *peopleCounterMap);
     bool initialized;
     void GetTimestampsFromDB(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime);
     void GetLPSFromDB(QString begintime, QString endtime);

@@ -33,13 +33,13 @@ signals:
 public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
-    void setChartDataSlot(QMap<QString, int> *runtimeMap);
+    void drawChartSlot(QMap<QString, int> *runtimeMap);
+    void drawMapSlot(QMap<QString, int> *runtimeMap);
     void drawOldCountChartSlot();
 
 private:
     Ui::MainWindow *ui;
     MyServer server;
-    QLineSeries* chartSeries;
 };
 
 #endif // MAINWINDOW_H
