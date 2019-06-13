@@ -32,7 +32,7 @@
      </widget>
     </item>
     <item row="0" column="0">
-     <widget class="QChartView" name="count_chart" native="true"/>
+     <widget class="QChartView" name="countChartView" native="true"/>
     </item>
    </layout>
   </widget>

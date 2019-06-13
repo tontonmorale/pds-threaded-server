@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
-    connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::drawRuntimeChartSlot);
+    connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::setChartDataSlot);
 //    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
 
@@ -17,29 +17,34 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::drawPeopleCountChart(){
     QChart *chart = new QChart();
-    QLineSeries *series = new QLineSeries();
+    this->chartSeries = new QLineSeries();
+
+//    QDateTime dateTime(QDate(19, 6, 13), QTime(13, 10));
+//    series->append(dateTime.toMSecsSinceEpoch(), 5);
+//    dateTime = QDateTime(QDate(19, 6, 13), QTime(13, 15));
+//    series->append(dateTime.toMSecsSinceEpoch(), 15);
 
     // setta chart
-    chart->addSeries(series);
+    chart->addSeries(chartSeries);
     chart->legend()->hide();
     chart->setTitle("People count");
 
     // setta gli assi
     QDateTimeAxis *axisX = new QDateTimeAxis;
-    axisX->setTickCount(12);
+    axisX->setTickCount(chartSeries->count());
     axisX->setFormat("yy/MM/dd <br> hh:mm");
     axisX->setTitleText("Date");
     chart->addAxis(axisX, Qt::AlignBottom);
-    series->attachAxis(axisX);
+    chartSeries->attachAxis(axisX);
 
     QValueAxis *axisY = new QValueAxis;
     axisY->setLabelFormat("%i");
     axisY->setTitleText("People count");
     chart->addAxis(axisY, Qt::AlignLeft);
-    series->attachAxis(axisY);
+    chartSeries->attachAxis(axisY);
 
     // crea chart view
-    QChartView *chartView = ui->count_chart;
+    QChartView *chartView = ui->countChartView;
     chartView->setChart(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
 }
@@ -66,10 +71,14 @@ void MainWindow::printToLogSlot(QString message){
     ui->log->appendPlainText(message);
 }
 
-void MainWindow::drawRuntimeChartSlot(QMap<QString, int> *runtimeMap) {
+void MainWindow::setChartDataSlot(QMap<QString, int> *runtimeMap) {
 
     //disegno grafico runtime
-    QLineSeries *series = new QLineSeries();
+    QChart *chart = ui->countChartView->chart();
+
+//    chart->removeAllSeries();
+//    QLineSeries *series = new QLineSeries();
+    this->chartSeries->clear();
 
 //    key: 2019/03/22_17:52, value: 14
     for (auto i = runtimeMap->begin(); i != runtimeMap->end(); i++) {
@@ -77,7 +86,7 @@ void MainWindow::drawRuntimeChartSlot(QMap<QString, int> *runtimeMap) {
         QStringList splitDate = dateAndTime[0].split("/");
         QStringList splitTime = dateAndTime[1].split(":");
         QDateTime dateTime(QDate(splitDate[0].toInt(), splitDate[1].toInt(), splitDate[2].toInt()), QTime(splitTime[0].toInt(), splitTime[1].toInt()));
-        series->append(dateTime.toMSecsSinceEpoch(), i.value());
+        chartSeries->append(dateTime.toMSecsSinceEpoch(), i.value());
     }
 
 
@@ -99,35 +108,35 @@ void MainWindow::drawOldCountChartSlot() {
 
 }
 
-QGroupBox* MainWindow::createTimeChartGroup(QList<QPointF> points)
-{
-    QGroupBox *groupBox = new QGroupBox(tr("Temporal chart"));
+//QGroupBox* MainWindow::createTimeChartGroup(QList<QPointF> points)
+//{
+//    QGroupBox *groupBox = new QGroupBox(tr("Temporal chart"));
 
-    QLineSeries *series = new QLineSeries();
+//    QLineSeries *series = new QLineSeries();
 
-    for(QList<QPointF>::iterator i=points.begin(); i!=points.end(); i++)
-        *series << *i;
+//    for(QList<QPointF>::iterator i=points.begin(); i!=points.end(); i++)
+//        *series << *i;
 
-    QChart *chart = new QChart();
-    chart->legend()->hide();
-    chart->addSeries(series);
-    chart->createDefaultAxes();
-    chart->setTitle("Number of people in area");
+//    QChart *chart = new QChart();
+//    chart->legend()->hide();
+//    chart->addSeries(series);
+//    chart->createDefaultAxes();
+//    chart->setTitle("Number of people in area");
 
-    QValueAxis *axisX = new QValueAxis;
-    axisX->setRange(0, 60);
-    axisX->setTickCount(13);
-    chart->setAxisX(axisX, series);
+//    QValueAxis *axisX = new QValueAxis;
+//    axisX->setRange(0, 60);
+//    axisX->setTickCount(13);
+//    chart->setAxisX(axisX, series);
 
 
-    QChartView *chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    QHBoxLayout *layout = new QHBoxLayout;
-    layout->addWidget(chartView);
-    groupBox->setLayout(layout);
+//    QChartView *chartView = new QChartView(chart);
+//    chartView->setRenderHint(QPainter::Antialiasing);
+//    QHBoxLayout *layout = new QHBoxLayout;
+//    layout->addWidget(chartView);
+//    groupBox->setLayout(layout);
 
-    return groupBox;
-}
+//    return groupBox;
+//}
 
 MainWindow::~MainWindow()
 {

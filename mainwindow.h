@@ -23,7 +23,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     void serverInit();
-    QGroupBox* createTimeChartGroup(QList<QPointF> points);
+//    QGroupBox* createTimeChartGroup(QList<QPointF> points);
     void drawPeopleCountChart();
     ~MainWindow();
 
@@ -33,12 +33,13 @@ signals:
 public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
-    void drawRuntimeChartSlot(QMap<QString, int> *runtimeMap);
+    void setChartDataSlot(QMap<QString, int> *runtimeMap);
     void drawOldCountChartSlot();
 
 private:
     Ui::MainWindow *ui;
     MyServer server;
+    QLineSeries* chartSeries;
 };
 
 #endif // MAINWINDOW_H
