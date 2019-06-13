@@ -11,15 +11,9 @@ int main(int argc, char *argv[])
     uint curr_timestamp = QDateTime::currentDateTime().toTime_t();
     QString endtime = QString::number(curr_timestamp);
 
-    auto runtimeMap = new QMap<QString, int>();
-    runtimeMap->insert("19/03/22_17:52", 4);
-    runtimeMap->insert("19/03/22_17:57", 10);
 
-    w.setChartDataSlot(runtimeMap);
-
+    w.serverInit();
     w.show();
-//    w.serverInit();
-//    w.drawRuntimeChartSlot(new QMap<QString, int>());
 
     return a.exec();
 }

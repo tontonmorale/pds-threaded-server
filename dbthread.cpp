@@ -70,6 +70,13 @@ void DBThread::run() {
         return;
     }
 
+    QString begintime, endtime;
+    QDateTime curr_timestamp = QDateTime::currentDateTime();
+    endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
+    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().second()));
+    begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
+    GetTimestampsFromDB(new QMap<QString, int>(), begintime, endtime);
+
     return;
 }
 
