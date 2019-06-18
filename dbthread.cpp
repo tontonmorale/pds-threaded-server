@@ -80,6 +80,9 @@ void DBThread::run() {
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
     GetTimestampsFromDB(peopleCounterMap, begintime, endtime);
 
+    emit logSig("[ db thread ] Db connection established");
+    emit dbConnectedSig();
+
     return;
 }
 
@@ -98,7 +101,9 @@ void DBThread::signalsConnection(QThread *thread){
     connect(this, &DBThread::drawRuntimeChartSig, server, &MyServer::emitDrawRuntimeChartSignalSlot);
     connect(this, SIGNAL(finishedSig()), thread, SLOT(quit()));
     connect(this, SIGNAL(finishedSig()), this, SLOT(deleteLater()));
+    connect(this, &DBThread::fatalErrorSig, server, &MyServer::errorFromThreadSlot);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    connect(this, &DBThread::dbConnectedSig, server, &MyServer::dbConnectedSlot);
 }
 
 void DBThread::sendSlot(QMap<QString, Person> *peopleMap, int size)

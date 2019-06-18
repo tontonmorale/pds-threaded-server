@@ -79,7 +79,7 @@ void ListenerThread::clientSetup(){
     QString line, clientId, hello2Client, mac, helloFromClient;
     const char* msg;
 
-    emit log("--- New connection ---");
+    emit log("[ listener thread ] New connection");
 
     socket->waitForReadyRead();
     helloFromClient = QString(socket->readLine());
@@ -98,7 +98,7 @@ void ListenerThread::clientSetup(){
 
     emit addThreadSignal(this);
 
-    emit log("client mac: " + mac);
+    emit log("\tclient info: mac = " + mac + ", id = " + id);
     hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
     msg = hello2Client.toStdString().c_str();
     socket->write(msg);

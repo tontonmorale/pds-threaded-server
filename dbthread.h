@@ -34,6 +34,7 @@ signals:
     void logSig(QString logMsg);
     void drawRuntimeChartSig();
     void sendFinishedSig();
+    void dbConnectedSig();
 
 private:    
 

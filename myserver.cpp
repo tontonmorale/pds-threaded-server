@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "myserver.h"
+#include "utility.h"
 #include <fstream>
 #include <memory>
 using namespace std;
@@ -52,15 +53,19 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
  * legge le posizioni degli esp da file, cerca le loro coord max e inizializza il db
  */
 void MyServer::init(){
+    confFromFile();
+    emit logSig("[ server ] Esp configuration acquired from file");
+    maxEspCoords = setMaxEspCoords(espMap);
+
     QThread *thread = new QThread();
-//    DBThread *dbthread = new DBThread(this);
     dbthread = new DBThread(this, peopleCounterMap);
     dbthread->moveToThread(thread);
     dbthread->signalsConnection(thread);
     thread->start();
+}
 
-    confFromFile();
-    maxEspCoords = setMaxEspCoords(espMap);
+void MyServer::dbConnectedSlot(){
+    emit dbConnectedSig();
 }
 
 //void MyServer::drawMapSlot(){
@@ -143,11 +148,14 @@ void MyServer::emitLogSlot(QString message){
 void MyServer::readyFromClientSlot(){
     connectedClients++;
     if(connectedClients==totClients
-//            && connectedClients>=3
+//            && Utility::canTriangulate(connectedClients)
             ){
         currMinute = 0;
         // inizio blocco N minuti
         startToClientsSlot();
+    }
+    else{
+        //todo: ??
     }
 
 }
@@ -160,7 +168,7 @@ void MyServer::readyFromClientSlot(){
  */
 void MyServer::startToClientsSlot(){
     if(connectedClients==totClients
-            && connectedClients>=3
+//            && Utility::canTriangulate(connectedClients)
             )
     {
         qDebug() << "Start to clients\n";
@@ -230,6 +238,7 @@ void MyServer::confFromFile(){
  */
 void MyServer::dataForDbSlot(){
 
+    //emetto segnale verso dbthread
     SendToDB();
 
     // pulisce le strutture dati per il time slot successivo

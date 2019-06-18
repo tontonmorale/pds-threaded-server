@@ -109,9 +109,8 @@ void ElaborateThread::manageCurrentMinute(){
  */
 void ElaborateThread::manageLastMinute() {
 
-
     //calcolo posizione dispositivi solo se almeno 3 client connessi
-    if(connectedClients < 3){
+    if(! Utility::canTriangulate(connectedClients) ){
         emit log("Non ci sono abbastanza dispositivi connessi\n");
         return;
     }

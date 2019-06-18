@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
     connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::drawChartSlot);
     connect(&server, &MyServer::drawMapSig, this, &MainWindow::drawMapSlot);
+    connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);
 //    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
     ui = new Ui::MainWindow;
 
@@ -75,13 +76,15 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords)
 void MainWindow::serverInit(){
     // server init
     server.init();
+}
 
+void MainWindow::serverListenSlot(){
     if (!server.listen(QHostAddress("192.168.1.172"), 9999)) {
         emit fatalErrorSig("Errore avvio del server");
         return;
     }
 
-    ui->log->appendPlainText("--- Server started ---\nip: 192.168.1.172\nport: 9999\n");
+    printToLogSlot("[ server ] Server started: ip = 192.168.1.172, port = 9999\n\n Waiting for incoming connections...\n");
 }
 
 void MainWindow::fatalErrorSlot(QString message){

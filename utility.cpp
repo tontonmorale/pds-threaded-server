@@ -20,6 +20,15 @@ double Utility::norm(QPointF p){
     return pow(pow(x,2)+pow(y,2) , 0.5);
 }
 
+/**
+ * @brief Utility::canTriangulate -> sostituisce l'uso dell'if nelle altre classi per trovare meglio i punti in cui viene utilizzato
+ * @param connectedClients
+ * @return
+ */
+bool Utility::canTriangulate(int connectedClients){
+    return connectedClients >= 3;
+}
+
 QPointF Utility::trilateration(double r1, double r2, double r3, QPointF pos1, QPointF pos2, QPointF pos3) {
     QPointF resultPose;
 

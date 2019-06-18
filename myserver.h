@@ -36,6 +36,7 @@ signals:
     void getTimestampsSig(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime);
     void getStatsSig(QString begintime, QString endtime);
     void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
+    void dbConnectedSig();
 
 public slots:
 //    void onClientConnection();
@@ -49,6 +50,7 @@ public slots:
     void emitDrawRuntimeChartSignalSlot();
     void addListenerThreadSlot(ListenerThread *lt);
     void disconnectClientSlot(ListenerThread *lt);
+    void dbConnectedSlot();
 //    void drawMapSlot();
 
 private:
