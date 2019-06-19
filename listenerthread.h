@@ -10,6 +10,7 @@
 #include <QTimer>
 #include "packet.h"
 #include "esp.h"
+#include "math.h"
 
 class MyServer;
 
@@ -25,7 +26,8 @@ public:
                 QMutex* mutex,
                 QMap<QString, QSharedPointer<Packet>> *packetsMap,
                 QMap<QString, int> *packetsDetectionMap,
-                QMap<QString, Esp> *espMap);
+                QMap<QString, Esp> *espMap,
+                double maxSignal);
 //    void clientSetup(QTcpSocket *socket);
     void clientSetup();
     void closeConnection();
@@ -57,6 +59,7 @@ private:
     shared_ptr<QMap<QString, Esp>> espMap;
     MyServer *server;
     QTimer* disconnectionTimer;
+    double maxSignal;
 };
 
 #endif // LISTENEROBJ_H

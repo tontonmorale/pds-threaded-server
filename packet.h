@@ -6,7 +6,7 @@ class Packet
 {
 public:
    Packet();
-   Packet(QString hash, QString mac, QString timestamp, QString signal, QString esp, QString ssid);
+   Packet(QString hash, QString mac, QString timestamp, int signal, QString esp, QString ssid);
    QString getHash();
    QString getMac();
    QString getEspId();

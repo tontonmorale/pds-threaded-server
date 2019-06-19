@@ -21,17 +21,32 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords){
-    QScatterSeries *series = new QScatterSeries();
+    QScatterSeries *mapSeries = new QScatterSeries();
 
     for(QList<QPointF>::iterator i=devicesCoords.begin(); i!=devicesCoords.end(); i++)
-        *series << *i;
+        *mapSeries << *i;
 
     QChart *chart = new QChart();
     chart->legend()->hide();
-    chart->addSeries(series);
-    chart->createDefaultAxes();
-    chart->axisX()->setRange(0.0, maxEspCoords);
-    chart->axisY()->setRange(0.0, maxEspCoords);
+    chart->addSeries(mapSeries);
+
+    // setta gli assi
+    QValueAxis *axisX = new QValueAxis;
+    axisX->setMin(0.0);
+    axisX->setMax(maxEspCoords.x());
+    axisX->setTitleText("x");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    mapSeries->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis;
+    axisY->setMin(0.0);
+    axisY->setMax(maxEspCoords.y());
+    axisY->setTitleText("y");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    mapSeries->attachAxis(axisY);
+
+//    chart->axisX()->setRange(0.0, maxEspCoords);
+//    chart->axisY()->setRange(0.0, maxEspCoords);
     chart->setTitle("People in the area");
 
     QChartView *mapView = ui->mapView;

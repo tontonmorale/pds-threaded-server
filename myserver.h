@@ -20,7 +20,6 @@ public:
     MyServer(QObject *parent = nullptr);
     void confFromFile();
     void init();
-    void SendToDB();
     QList<QPointF> *DrawOldCountMap(QString begintime, QString endtime);
     void Connects(QString slot);
     ~MyServer() override;
@@ -43,7 +42,7 @@ public slots:
     void startToClientsSlot();
     void emitLogSlot(QString message);
     void createElaborateThreadSlot();
-    void dataForDbSlot();
+    void onChartDataReadySlot();
     void readyFromClientSlot();
     void clearPeopleMapSlot();
     void errorFromThreadSlot(QString errorMsg);
@@ -71,6 +70,7 @@ private:
     DBThread *dbthread;
     bool DBinitialized;
     QPointF maxEspCoords;
+    double maxSignal;
     QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
     QList<QPointF> *devicesCoords;
     QMap<QString, int> *peopleCounterMap;

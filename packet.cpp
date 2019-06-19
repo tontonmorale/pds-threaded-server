@@ -6,12 +6,12 @@ Packet::Packet(){
 
 }
 
-Packet::Packet(QString hash, QString mac, QString timestamp, QString signal, QString espId, QString ssid) {
+Packet::Packet(QString hash, QString mac, QString timestamp, int signal, QString espId, QString ssid) {
     this->espId = espId;
     this->hash = hash;
     this->mac = mac;
     this->timestamp = timestamp;
-    this->signal = signal.toInt();
+    this->signal = signal;
     this->ssid = ssid;
 }
 

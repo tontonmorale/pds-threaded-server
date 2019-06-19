@@ -56,6 +56,10 @@ void MyServer::init(){
     confFromFile();
     emit logSig("[ server ] Esp configuration acquired from file");
     maxEspCoords = setMaxEspCoords(espMap);
+    if(maxEspCoords.x() > maxEspCoords.y())
+        maxSignal = Utility::metersToDb(maxEspCoords.y());
+    else
+        maxSignal = Utility::metersToDb(maxEspCoords.x());
 
     QThread *thread = new QThread();
     dbthread = new DBThread(this, peopleCounterMap);
@@ -79,7 +83,7 @@ void MyServer::dbConnectedSlot(){
  */
 void MyServer::incomingConnection(qintptr socketDescriptor){
     QThread *thread = new QThread();
-    ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap);
+    ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal);
 
     lt->moveToThread(thread);
     lt->signalsConnection(thread);
@@ -236,10 +240,10 @@ void MyServer::confFromFile(){
 /**
  * @brief MyServer::dataForDb
  */
-void MyServer::dataForDbSlot(){
+void MyServer::onChartDataReadySlot(){
 
     //emetto segnale verso dbthread
-    SendToDB();
+    emit sendToDBSig(peopleMap, devicesCoords->size());
 
     // pulisce le strutture dati per il time slot successivo
 //    packetsMap->clear();
@@ -270,13 +274,6 @@ void MyServer::clearPeopleMapSlot(){
  */
 void MyServer::emitDrawRuntimeChartSignalSlot() {
     emit drawRuntimeChartSig(peopleCounterMap);
-}
-
-/**
- * @brief MyServer::SendToDB
- */
-void MyServer::SendToDB() {
-    emit sendToDBSig(peopleMap, devicesCoords->size());
 }
 
 /**

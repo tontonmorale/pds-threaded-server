@@ -42,7 +42,7 @@ void ElaborateThread::work() {
         currMinute = 0;
 //        emit ready(); // manda start alle schede per nuovo timeslot
         manageLastMinute();
-        emit timeSlotEndSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
+        emit elabFinishedSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
     }
 }
 
@@ -56,7 +56,7 @@ void ElaborateThread::signalsConnection(QThread *thread){
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 
     connect(this, &ElaborateThread::log, server, &MyServer::emitLogSlot);
-    connect(this, &ElaborateThread::timeSlotEndSig, server, &MyServer::dataForDbSlot);
+    connect(this, &ElaborateThread::elabFinishedSig, server, &MyServer::onChartDataReadySlot);
     connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
@@ -81,22 +81,25 @@ void ElaborateThread::manageCurrentMinute(){
             QString shortKey = i.key(); // shortKey = "pktHash-mac"
             QString mac = shortKey.split('-').at(1);
 
-            if(peopleMap->find(mac) == peopleMap->end()){
-                // device non rilevato nei minuti precedenti
+            if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 ){
 
-                Person p = Person(mac);
-                updatePacketsSet(p, shortKey);
-                //insert new person in peopleMap
-                (*peopleMap)[mac] = p;
-            }
-            else{
-                // device già rilevato nei minuti precedenti, controlla se già considerato nel minuto corrente
-                int count = (*peopleMap)[mac].getMinCount();
-                if(count < this->currMinute){
-                    // aggiorna i pacchetti del device con quelli rilevati al minuto corrente
-                    Person p = (*peopleMap)[mac];
-                    (*peopleMap)[mac].setMinCount(count+1);
-                    updatePacketsSet((*peopleMap)[mac], shortKey);
+                if(peopleMap->find(mac) == peopleMap->end()){
+                    // device non rilevato nei minuti precedenti
+
+                    Person p = Person(mac);
+                    updatePacketsSet(p, shortKey);
+                    //insert new person in peopleMap
+                    (*peopleMap)[mac] = p;
+                }
+                else{
+                    // device già rilevato nei minuti precedenti, controlla se già considerato nel minuto corrente
+                    int count = (*peopleMap)[mac].getMinCount();
+                    if(count < this->currMinute){
+                        // aggiorna i pacchetti del device con quelli rilevati al minuto corrente
+                        Person p = (*peopleMap)[mac];
+                        (*peopleMap)[mac].setMinCount(count+1);
+                        updatePacketsSet((*peopleMap)[mac], shortKey);
+                    }
                 }
             }
         }
@@ -154,17 +157,17 @@ void ElaborateThread::calculateDevicesPosition(){
         for (QSet<QSharedPointer<Packet>>::iterator p = set.begin(); p != set.end(); p++) {
             if ((*p)->getEspId().compare(espA.getId())==0){
                 d1 = Utility::dbToMeters((*p)->getSignal());
-                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0)
+                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0 || (*p)->getMac().compare("94:65:2d:41:f7:8c")==0)
                     qDebug().noquote() << QString::number(d1) + " " + QString::number((*p)->getSignal()) + "\n";
             }
             else if ((*p)->getEspId().compare(espB.getId())==0){
                 d2 = Utility::dbToMeters((*p)->getSignal());
-                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0)
+                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0 || (*p)->getMac().compare("94:65:2d:41:f7:8c")==0)
                     qDebug().noquote() << QString::number(d2) + " " + QString::number((*p)->getSignal()) + "\n";
             }
             else if ((*p)->getEspId().compare(espC.getId())==0){
                 d3 = Utility::dbToMeters((*p)->getSignal());
-                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0)
+                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0 || (*p)->getMac().compare("94:65:2d:41:f7:8c")==0)
                     qDebug().noquote() << QString::number(d3) + " " + QString::number((*p)->getSignal()) + "\n";
             }
             qDebug().noquote() << (*p)->getHash() + "\n";
@@ -172,14 +175,15 @@ void ElaborateThread::calculateDevicesPosition(){
         }
 
         QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
-        if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
+        qDebug() << "posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
+//        if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
             // device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
             devicesCoords->append(pos);
-        }
-        else{
-            //togli persone dall'elenco
-            peopleMap->erase(person);
-        }
+//        }
+//        else{
+//            //togli persone dall'elenco
+//            peopleMap->erase(person);
+//        }
     }
 }
 

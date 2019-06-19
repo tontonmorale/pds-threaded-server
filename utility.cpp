@@ -1,6 +1,7 @@
 #include "utility.h"
 
-#define TXPOWER -42
+#define TXPOWER -40
+#define N 2.0
 
 Utility::Utility()
 {
@@ -9,10 +10,13 @@ Utility::Utility()
 
 double Utility::dbToMeters(int signal){
     double d;
-    double n = 1;
 
-    d = pow(10, (TXPOWER-signal)/(10*n));
+    d = pow(10, (TXPOWER-signal)/(10*N));
     return d;
+}
+
+double Utility::metersToDb(double meters){
+    return TXPOWER - 10 * N * log10( meters );
 }
 
 double Utility::norm(QPointF p){

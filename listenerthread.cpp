@@ -6,18 +6,20 @@ ListenerThread::ListenerThread()
 
 }
 
-ListenerThread::ListenerThread(MyServer *server, qintptr socketDescriptor,
-                         QMutex *mutex,
-                         QMap<QString, QSharedPointer<Packet>> *packetsMap,
-                         QMap<QString, int> *packetsDetectionMap,
-                         QMap<QString, Esp> *espMap)
+ListenerThread::ListenerThread(MyServer *server,
+                               qintptr socketDescriptor,
+                               QMutex *mutex,
+                               QMap<QString, QSharedPointer<Packet>> *packetsMap,
+                               QMap<QString, int> *packetsDetectionMap,
+                               QMap<QString, Esp> *espMap,
+                               double maxSignal)
     : mutex(mutex),
-
       packetsMap(packetsMap),
       packetsDetectionMap(packetsDetectionMap),      
       socketDescriptor(socketDescriptor),
-      espMap(espMap),
-      server(server) {
+      espMap(espMap),      
+      server(server),
+      maxSignal(maxSignal){
 }
 
 /**
@@ -153,9 +155,10 @@ void ListenerThread::readFromClient(){
  * @param line: stringa ricevuta dall'esp
  */
 void ListenerThread::newPacket(QString line){
-    QString hash, timestamp, mac, signal, microsec_str, espId, ssid, key, shortKey;
+    QString hash, timestamp, mac, microsec_str, espId, ssid, key, shortKey;
     Packet pkt;
     QStringList sl, tsSplit, macList;
+    int signal;
 
     line.remove(',');
     sl=line.split(" ");
@@ -167,11 +170,17 @@ void ListenerThread::newPacket(QString line){
     // ricava i campi dalla stringa ricevuta
     hash = sl.at(1);
     mac = sl.at(2);
-    signal = sl.at(3);
+    signal = sl.at(3).toInt();
     timestamp = sl.at(4);
     espId = sl.at(5);
 
-    emit log("[scheda " + espId + "] " + line);
+    if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
+        emit log("[scheda " + espId + "] " + line);
+
+    //scarto pacchetto se valore intensità segnale sballata
+    if(abs(signal) > abs(maxSignal)){
+        return;
+    }
 
     key = hash + "-" + mac + "-" + espId; // key = "pktHash-mac-espId"
     shortKey = hash + "-" + mac; // shortKey = "pktHash-mac"

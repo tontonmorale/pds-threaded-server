@@ -120,7 +120,7 @@ void DBThread::sendSlot(QMap<QString, Person> *peopleMap, int size)
         qDebug().noquote() << "send(): db not open";
         return;
     }
-    qDebug().noquote() << "send(): dn open";
+    qDebug().noquote() << "send(): db open";
     QMap<QString, Person>::iterator pm = this->peopleMap->begin();
     QSet<QSharedPointer<Packet>> ps = pm.value().getPacketsSet();
     QString timestamp = (*ps.begin())->getTimestamp();

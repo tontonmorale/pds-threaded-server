@@ -47,7 +47,7 @@ public slots:
 signals:
     void finished();
     void log(QString message);
-    void timeSlotEndSig();
+    void elabFinishedSig();
     void ready();
     void drawMapSig();
 };
