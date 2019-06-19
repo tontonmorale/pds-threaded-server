@@ -15,25 +15,24 @@ class DBThread : public QObject
 
 public:
     DBThread();
-    DBThread(MyServer* server, QMap<QString, int> *peopleCounterMap);
+    DBThread(MyServer* server);
     bool initialized;
-    void GetTimestampsFromDB(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime);
     void GetLPSFromDB(QString begintime, QString endtime);
     void signalsConnection(QThread *thread);
     bool dbConnect();
     void dbDisconnect();
     bool isDbOpen();
+    void getChartDataFromDb(QString begintime, QString endtime);
 
 public slots:
-    void sendSlot(QMap<QString, Person> *peopleMap, int size);
+    void sendChartDataToDbSlot(QMap<QString, Person> *peopleMap);
     void run();
 
 signals:
     void finishedSig();
     void fatalErrorSig(QString errorMsg);
     void logSig(QString logMsg);
-    void drawRuntimeChartSig();
-    void sendFinishedSig();
+    void drawChartSig(QMap<QString, int> chartDataToDrawMap);
     void dbConnectedSig();
 
 private:    
@@ -44,7 +43,6 @@ private:
     QList<QPointF> drawOldContMap(QMap<QString, int> *oldCountMap);
     QString begintime, endtime;
     MyServer* server;
-    QMap<QString, int> *peopleCounterMap;
 };
 
 

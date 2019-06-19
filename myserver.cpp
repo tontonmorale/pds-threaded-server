@@ -22,7 +22,6 @@ MyServer::MyServer(QObject *parent):
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
     devicesCoords = new QList<QPointF>;
-    peopleCounterMap = new QMap<QString, int>;
 }
 
 /**
@@ -62,7 +61,7 @@ void MyServer::init(){
         maxSignal = Utility::metersToDb(maxEspCoords.x());
 
     QThread *thread = new QThread();
-    dbthread = new DBThread(this, peopleCounterMap);
+    dbthread = new DBThread(this);
     dbthread->moveToThread(thread);
     dbthread->signalsConnection(thread);
     thread->start();
@@ -242,13 +241,13 @@ void MyServer::confFromFile(){
  */
 void MyServer::onChartDataReadySlot(){
 
-    //emetto segnale verso dbthread
-    emit sendToDBSig(peopleMap, devicesCoords->size());
-
     // pulisce le strutture dati per il time slot successivo
 //    packetsMap->clear();
     packetsMap = new QMap<QString, QSharedPointer<Packet>>(); // todo: da rivedere
     packetsDetectionMap->clear();
+
+    //emetto segnale verso dbthread
+    emit chartDataToDbSig(peopleMap);
 
     //posso copia dati da disegnare alla mappa e cancello quelli vecchi
     QList<QPointF> coordsForMap = *devicesCoords;
@@ -257,23 +256,13 @@ void MyServer::onChartDataReadySlot(){
 
 }
 
-void MyServer::clearPeopleMapSlot(){
-    peopleMap->clear();
-    QString begintime, endtime;
-    QDateTime curr_timestamp = QDateTime::currentDateTime();
-    endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
-    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().minute()));
-    begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
-    emit getTimestampsSig(peopleCounterMap, begintime, endtime);
-}
-
 /**
  * @brief MyServer::emitDrawRunTimeChartSignalSlot
  * emette il segnale per far sì che la mainwindow disegni il grafico runtime del conto delle persone nell'area
  * Avendo messo una funzione apposita solo per emettere il segnale, non ho creato dipendenze tra dbthrad e myserver
  */
-void MyServer::emitDrawRuntimeChartSignalSlot() {
-    emit drawRuntimeChartSig(peopleCounterMap);
+void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
+    emit drawChartSig(chartDataToDrawMap);
 }
 
 /**

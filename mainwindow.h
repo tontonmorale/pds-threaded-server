@@ -33,7 +33,7 @@ signals:
 public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
-    void drawChartSlot(QMap<QString, int> *runtimeMap);
+    void drawChartSlot(QMap<QString, int> chartDataToDrawMap);
     void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void drawOldCountChartSlot();
     void serverListenSlot();

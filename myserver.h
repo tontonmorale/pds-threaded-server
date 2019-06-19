@@ -30,9 +30,9 @@ signals:
     void fatalErrorSig(QString message);
     void logSig(QString message);
     void DBsig(QMap<QString, Person> *peopleMap);
-    void drawRuntimeChartSig(QMap<QString, int> *peopleCounterMap);
-    void sendToDBSig(QMap<QString, Person> *peopleMap, int size);
-    void getTimestampsSig(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime);
+    void drawChartSig(QMap<QString, int> chartDataToDrawMap);
+    void chartDataToDbSig(QMap<QString, Person> *peopleMap);
+    void getChartDataFromDb(QMap<QString, int> *peopleCounterMap);
     void getStatsSig(QString begintime, QString endtime);
     void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void dbConnectedSig();
@@ -44,9 +44,8 @@ public slots:
     void createElaborateThreadSlot();
     void onChartDataReadySlot();
     void readyFromClientSlot();
-    void clearPeopleMapSlot();
     void errorFromThreadSlot(QString errorMsg);
-    void emitDrawRuntimeChartSignalSlot();
+    void emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap);
     void addListenerThreadSlot(ListenerThread *lt);
     void disconnectClientSlot(ListenerThread *lt);
     void dbConnectedSlot();
@@ -73,7 +72,6 @@ private:
     double maxSignal;
     QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
     QList<QPointF> *devicesCoords;
-    QMap<QString, int> *peopleCounterMap;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

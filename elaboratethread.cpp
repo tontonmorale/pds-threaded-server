@@ -176,14 +176,14 @@ void ElaborateThread::calculateDevicesPosition(){
 
         QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
         qDebug() << "posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
-//        if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
-            // device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
+        if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
+            //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
             devicesCoords->append(pos);
-//        }
-//        else{
-//            //togli persone dall'elenco
-//            peopleMap->erase(person);
-//        }
+        }
+        else{
+            //togli persone dall'elenco
+            peopleMap->erase(person);
+        }
     }
 }
 

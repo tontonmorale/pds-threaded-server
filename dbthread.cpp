@@ -14,10 +14,8 @@ DBThread::DBThread()
 
 }
 
-DBThread::DBThread(MyServer* server, QMap<QString, int> *peopleCounterMap)
-{
-    this->server = server;
-    this->peopleCounterMap = peopleCounterMap;
+DBThread::DBThread(MyServer* server) :
+    server(server) {
 
 }
 
@@ -78,7 +76,7 @@ void DBThread::run() {
     endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
     QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().minute()));
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
-    GetTimestampsFromDB(peopleCounterMap, begintime, endtime);
+    getChartDataFromDb(begintime, endtime);
 
     emit logSig("[ db thread ] Db connection established");
     emit dbConnectedSig();
@@ -90,15 +88,15 @@ void DBThread::signalsConnection(QThread *thread){
 
     qDebug().noquote() << "signalsConnection()";
 
+    qRegisterMetaType<QMap<QString, int>>("QMap<QString, int>");
+
     connect(thread, SIGNAL(started()), this, SLOT(run()));
 
-    connect(server, &MyServer::sendToDBSig, this, &DBThread::sendSlot);
-    connect(server, &MyServer::getTimestampsSig, this, &DBThread::GetTimestampsFromDB);
+    connect(server, &MyServer::chartDataToDbSig, this, &DBThread::sendChartDataToDbSlot);
     connect(server, &MyServer::getStatsSig, this, &DBThread::GetLPSFromDB);
 
     connect(this, &DBThread::logSig, server, &MyServer::emitLogSlot);
-    connect(this, &DBThread::sendFinishedSig, server, &MyServer::clearPeopleMapSlot);
-    connect(this, &DBThread::drawRuntimeChartSig, server, &MyServer::emitDrawRuntimeChartSignalSlot);
+    connect(this, &DBThread::drawChartSig, server, &MyServer::emitDrawChartSlot);
     connect(this, SIGNAL(finishedSig()), thread, SLOT(quit()));
     connect(this, SIGNAL(finishedSig()), this, SLOT(deleteLater()));
     connect(this, &DBThread::fatalErrorSig, server, &MyServer::errorFromThreadSlot);
@@ -106,10 +104,10 @@ void DBThread::signalsConnection(QThread *thread){
     connect(this, &DBThread::dbConnectedSig, server, &MyServer::dbConnectedSlot);
 }
 
-void DBThread::sendSlot(QMap<QString, Person> *peopleMap, int size)
+void DBThread::sendChartDataToDbSlot(QMap<QString, Person> *peopleMap)
 {
     this->peopleMap=peopleMap;
-    this->size = size;
+    this->size = peopleMap->size();
     QSqlQuery query(QSqlDatabase::database("connection"));
     QString queryString;
 
@@ -161,8 +159,14 @@ void DBThread::sendSlot(QMap<QString, Person> *peopleMap, int size)
         qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
         return;
     }
-    emit sendFinishedSig();
-    }
+
+    QString begintime, endtime;
+    QDateTime curr_timestamp = QDateTime::currentDateTime();
+    endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
+    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().minute()));
+    begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
+    getChartDataFromDb(begintime, endtime);
+}
 
 void DBThread::dbDisconnect(){
     if(db.isOpen())
@@ -192,9 +196,9 @@ bool DBThread::dbConnect() {
 }
 
 //NOTA: assumo che il begintime e l'endtime siano timestamp correttamente costruiti a partire da data e ora prese in input dall'utente
-void DBThread::GetTimestampsFromDB(QMap<QString, int> *peopleCounterMap, QString begintime, QString endtime) {
-    this->peopleCounterMap = peopleCounterMap;
-    QSqlQuery query((QSqlDatabase::database("connection")));
+void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
+    QMap<QString, int> chartDataToDrawMap;
+    QSqlQuery query(QSqlDatabase::database("connection"));
     QString queryString;
 
     queryString = "SELECT * "
@@ -205,9 +209,9 @@ void DBThread::GetTimestampsFromDB(QMap<QString, int> *peopleCounterMap, QString
     if (query.exec(queryString)) {
         //popolo la mappa delle persone
         while (query.next()) {
-            peopleCounterMap->insert(query.value(0).toString(), query.value(1).toInt());
+            chartDataToDrawMap.insert(query.value(0).toString(), query.value(1).toInt());
         }
-        emit drawRuntimeChartSig();
+        emit drawChartSig(chartDataToDrawMap);
         return;
 
     }

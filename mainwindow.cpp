@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::fatalErrorSig, this, &MainWindow::fatalErrorSlot);
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
-    connect(&server, &MyServer::drawRuntimeChartSig, this, &MainWindow::drawChartSlot);
+    connect(&server, &MyServer::drawChartSig, this, &MainWindow::drawChartSlot);
     connect(&server, &MyServer::drawMapSig, this, &MainWindow::drawMapSlot);
     connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);
 //    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
@@ -112,12 +112,12 @@ void MainWindow::printToLogSlot(QString message){
     ui->log->appendPlainText(message);
 }
 
-void MainWindow::drawChartSlot(QMap<QString, int> *runtimeMap) {
+void MainWindow::drawChartSlot(QMap<QString, int> chartDataToDrawMap) {
 
     //disegno grafico runtime
 
 
-    if(runtimeMap->size()!=0){
+    if(chartDataToDrawMap.size()!=0){
         QChart* oldChart = ui->countChartView->chart();
         if(oldChart!=nullptr)
             oldChart->deleteLater();
@@ -127,7 +127,7 @@ void MainWindow::drawChartSlot(QMap<QString, int> *runtimeMap) {
         QLineSeries *chartSeries = new QLineSeries();
 
     //    key: 2019/03/22_17:52, value: 14
-        for (auto i = runtimeMap->begin(); i != runtimeMap->end(); i++) {
+        for (auto i = chartDataToDrawMap.begin(); i != chartDataToDrawMap.end(); i++) {
             QStringList dateAndTime = i.key().split("_");
             QStringList splitDate = dateAndTime[0].split("/");
             QStringList splitTime = dateAndTime[1].split(":");
