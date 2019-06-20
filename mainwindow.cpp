@@ -21,6 +21,9 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords){
+
+    qDebug().noquote() << "disegno mappa";
+
     QScatterSeries *mapSeries = new QScatterSeries();
 
     for(QList<QPointF>::iterator i=devicesCoords.begin(); i!=devicesCoords.end(); i++)
@@ -115,8 +118,7 @@ void MainWindow::printToLogSlot(QString message){
 void MainWindow::drawChartSlot(QMap<QString, int> chartDataToDrawMap) {
 
     //disegno grafico runtime
-
-
+    qDebug().noquote() << "disegno il grafico runtime";
     if(chartDataToDrawMap.size()!=0){
         QChart* oldChart = ui->countChartView->chart();
         if(oldChart!=nullptr)

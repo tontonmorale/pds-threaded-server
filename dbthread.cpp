@@ -89,6 +89,7 @@ void DBThread::signalsConnection(QThread *thread){
     qDebug().noquote() << "signalsConnection()";
 
     qRegisterMetaType<QMap<QString, int>>("QMap<QString, int>");
+    qRegisterMetaType<QMap<QString, Person>>("QMap<QString, Person>");
 
     connect(thread, SIGNAL(started()), this, SLOT(run()));
 
@@ -97,17 +98,16 @@ void DBThread::signalsConnection(QThread *thread){
 
     connect(this, &DBThread::logSig, server, &MyServer::emitLogSlot);
     connect(this, &DBThread::drawChartSig, server, &MyServer::emitDrawChartSlot);
-    connect(this, SIGNAL(finishedSig()), thread, SLOT(quit()));
-    connect(this, SIGNAL(finishedSig()), this, SLOT(deleteLater()));
+    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(this, &DBThread::fatalErrorSig, server, &MyServer::errorFromThreadSlot);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     connect(this, &DBThread::dbConnectedSig, server, &MyServer::dbConnectedSlot);
 }
 
-void DBThread::sendChartDataToDbSlot(QMap<QString, Person> *peopleMap)
+void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
 {
-    this->peopleMap=peopleMap;
-    this->size = peopleMap->size();
+    int size = peopleMap.size();
     QSqlQuery query(QSqlDatabase::database("connection"));
     QString queryString;
 
@@ -116,19 +116,51 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> *peopleMap)
     //inserisco la nuova entry timestamp-numero di persone rilevate a quel timestamp nella tabella timestamp
     if (!isDbOpen()) {
         qDebug().noquote() << "send(): db not open";
+        emit fatalErrorSig("Db is not open");
         return;
     }
-    qDebug().noquote() << "send(): db open";
-    QMap<QString, Person>::iterator pm = this->peopleMap->begin();
-    QSet<QSharedPointer<Packet>> ps = pm.value().getPacketsSet();
-    QString timestamp = (*ps.begin())->getTimestamp();
+
+
+    QString timestamp;
+    if(peopleMap.size()==0){
+        QDateTime curr_timestamp = QDateTime::currentDateTime();
+        QDateTime correct_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour(), curr_timestamp.time().minute()-3));
+        timestamp = correct_timestamp.toString("yyyy/MM/dd_hh:mm:ss");
+    }
+    else{
+        QMap<QString, Person>::iterator pm = peopleMap.begin();
+        QSet<QSharedPointer<Packet>> ps = pm.value().getPacketsSet();
+
+        timestamp = (*ps.begin())->getTimestamp();
+
+        //inserisco le persone rilevate nell'altra tabella
+        //nota: vado a considerare il timestamp preso prima come timestamp generico per tutte le persone presenti nella peopleMap attuale
+        queryString = "INSERT INTO LPStats (timestamp, mac) VALUES ";
+        for(pm=peopleMap.begin(); pm!=peopleMap.end(); pm++){
+            queryString += "('" + timestamp + "', '" + pm.key() + "'),";
+        }
+        //tolgo l'ultima virgola
+        queryString = queryString.left(queryString.length()-1); //da verificare
+        queryString += ";";
+
+        qDebug().noquote() << "query: " + queryString;
+        if (query.exec(queryString)) {
+            qDebug() << "Query di inserzione delle persone nella tabella LPStats andata a buon fine";
+        }
+        else{
+            qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
+            return;
+        }
+    }
+
+
     //Il timestamp ricevuto è del tipo: 2019/03/22_17:52:14
     //in questa maniera vado a memorizzare l'intera stringa tranne i secondi
     timestamp = timestamp.left(timestamp.length()-3);
     qDebug().noquote() << "Timestamp delle persone nella peopleMap: " + timestamp;
 
     queryString = "INSERT INTO Timestamps (timestamp, count) "
-                              "VALUES ('" + timestamp + "', " + QString::number(this->size) + ");";
+                              "VALUES ('" + timestamp + "', " + QString::number(size) + ");";
     if (DBThread::db.open())
         qDebug().noquote() << "il db è open.";
 
@@ -141,24 +173,7 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> *peopleMap)
         return;
     }
 
-    //inserisco le persone rilevate nell'altra tabella
-    //nota: vado a considerare il timestamp preso prima come timestamp generico per tutte le persone presenti nella peopleMap attuale
-    queryString = "INSERT INTO LPStats (timestamp, mac) VALUES ";
-    for(pm=this->peopleMap->begin(); pm!=this->peopleMap->end(); pm++){
-        queryString += "('" + timestamp + "', '" + pm.key() + "'),";
-    }
-    //tolgo l'ultima virgola
-    queryString = queryString.left(queryString.length()-1); //da verificare
-    queryString += ";";
 
-    qDebug().noquote() << "query: " + queryString;
-    if (query.exec(queryString)) {
-        qDebug() << "Query di inserzione delle persone nella tabella LPStats andata a buon fine";
-    }
-    else{
-        qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
-        return;
-    }
 
     QString begintime, endtime;
     QDateTime curr_timestamp = QDateTime::currentDateTime();
@@ -171,7 +186,7 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> *peopleMap)
 void DBThread::dbDisconnect(){
     if(db.isOpen())
         db.close();
-    emit finishedSig();
+    emit finished();
 }
 
 bool DBThread::isDbOpen(){
@@ -208,6 +223,7 @@ void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
         //popolo la mappa delle persone
+        qDebug() << "Query di select dalla tabella Timestamps good";
         while (query.next()) {
             chartDataToDrawMap.insert(query.value(0).toString(), query.value(1).toInt());
         }

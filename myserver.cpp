@@ -130,6 +130,8 @@ void MyServer::createElaborateThreadSlot(){
     QThread *thread = new QThread();
     ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, connectedClients,
                                               peopleMap, currMinute, espMap, maxEspCoords, devicesCoords);
+
+    qDebug() << "[server] ----------> new elab thread creato";
     et->moveToThread(thread);
     et->signalsConnection(thread);
     thread->start();
@@ -247,9 +249,11 @@ void MyServer::onChartDataReadySlot(){
     packetsDetectionMap->clear();
 
     //emetto segnale verso dbthread
-    emit chartDataToDbSig(peopleMap);
+    QMap<QString, Person> people = *peopleMap;
+    peopleMap->clear();
+    emit chartDataToDbSig(people);
 
-    //posso copia dati da disegnare alla mappa e cancello quelli vecchi
+    //passo copia dati da disegnare alla mappa e cancello quelli vecchi
     QList<QPointF> coordsForMap = *devicesCoords;
     emit drawMapSig(coordsForMap, maxEspCoords);
     devicesCoords->clear();
@@ -271,16 +275,16 @@ void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
  * @param endtime
  * @return
  */
-QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
-    //da sistemare
-    QList<QPointF> *peopleCounter = new QList<QPointF>();
-    emit getStatsSig(begintime, endtime);
+//QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
+//    //da sistemare
+//    QList<QPointF> *peopleCounter = new QList<QPointF>();
+//    emit getStatsSig(begintime, endtime);
 
-    //controlla
-    return peopleCounter;
+//    //controlla
+//    return peopleCounter;
 
 
-}
+//}
 
 //void MyServer::Connects(QString slot) {
 //    QThread *thread = new QThread();

@@ -25,21 +25,18 @@ public:
     void getChartDataFromDb(QString begintime, QString endtime);
 
 public slots:
-    void sendChartDataToDbSlot(QMap<QString, Person> *peopleMap);
+    void sendChartDataToDbSlot(QMap<QString, Person> peopleMap);
     void run();
 
 signals:
-    void finishedSig();
+    void finished();
     void fatalErrorSig(QString errorMsg);
     void logSig(QString logMsg);
     void drawChartSig(QMap<QString, int> chartDataToDrawMap);
     void dbConnectedSig();
 
-private:    
-
-    int size;
+private:
     QSqlDatabase db;
-    QMap<QString, Person> *peopleMap;
     QList<QPointF> drawOldContMap(QMap<QString, int> *oldCountMap);
     QString begintime, endtime;
     MyServer* server;

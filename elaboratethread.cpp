@@ -36,6 +36,7 @@ ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, QSharedPointer<
 void ElaborateThread::work() {
     // minuto attuale
     manageCurrentMinute();
+    qDebug() << "[elaborate thread] gestito minuto corrente";
 
     // ultimo minuto
     if(currMinute >= MAX_MINUTES){
@@ -43,7 +44,12 @@ void ElaborateThread::work() {
 //        emit ready(); // manda start alle schede per nuovo timeslot
         manageLastMinute();
         emit elabFinishedSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
+        qDebug() << "[elaborate thread] gestito ultimo minuto";
+
     }
+    qDebug() << "[elaborate thread] in teoria sto per morire";
+
+    emit finished();
 }
 
 /**
@@ -60,7 +66,6 @@ void ElaborateThread::signalsConnection(QThread *thread){
     connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(this, SIGNAL(finished()), server, SLOT(clearPeopleMapSlot()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 
@@ -181,8 +186,13 @@ void ElaborateThread::calculateDevicesPosition(){
             devicesCoords->append(pos);
         }
         else{
+            QMap<QString, Person>::iterator temp = person+1;
             //togli persone dall'elenco
             peopleMap->erase(person);
+            person = temp;
+
+            if(peopleMap->size()==0)
+                break;
         }
     }
 }

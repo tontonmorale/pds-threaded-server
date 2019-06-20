@@ -178,9 +178,9 @@ void ListenerThread::newPacket(QString line){
         emit log("[scheda " + espId + "] " + line);
 
     //scarto pacchetto se valore intensità segnale sballata
-    if(abs(signal) > abs(maxSignal)){
-        return;
-    }
+//    if(abs(signal) > abs(maxSignal)){
+//        return;
+//    }
 
     key = hash + "-" + mac + "-" + espId; // key = "pktHash-mac-espId"
     shortKey = hash + "-" + mac; // shortKey = "pktHash-mac"

@@ -29,10 +29,8 @@ signals:
     void start2ClientsSig();
     void fatalErrorSig(QString message);
     void logSig(QString message);
-    void DBsig(QMap<QString, Person> *peopleMap);
     void drawChartSig(QMap<QString, int> chartDataToDrawMap);
-    void chartDataToDbSig(QMap<QString, Person> *peopleMap);
-    void getChartDataFromDb(QMap<QString, int> *peopleCounterMap);
+    void chartDataToDbSig(QMap<QString, Person> peopleMap);
     void getStatsSig(QString begintime, QString endtime);
     void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void dbConnectedSig();
