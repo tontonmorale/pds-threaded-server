@@ -37,6 +37,7 @@ public slots:
     void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void drawOldCountChartSlot();
     void serverListenSlot();
+    void onButtonClicked();
 
 private:
     Ui::MainWindow *ui;

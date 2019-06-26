@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>939</width>
-    <height>598</height>
+    <width>1251</width>
+    <height>655</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,22 +15,6 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="1">
-     <widget class="QChartView" name="mapView" native="true"/>
-    </item>
-    <item row="1" column="0" colspan="2">
-     <widget class="QPlainTextEdit" name="log">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="0">
      <widget class="QChartView" name="countChartView" native="true">
       <widget class="QPlainTextEdit" name="noChartData">
@@ -51,6 +35,29 @@
       </widget>
      </widget>
     </item>
+    <item row="0" column="1">
+     <widget class="QChartView" name="mapView" native="true"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QPlainTextEdit" name="log">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="pushButton">
+      <property name="text">
+       <string>Get LP Stats</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -58,7 +65,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>939</width>
+     <width>1251</width>
      <height>25</height>
     </rect>
    </property>

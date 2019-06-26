@@ -9,11 +9,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
     connect(&server, &MyServer::drawChartSig, this, &MainWindow::drawChartSlot);
     connect(&server, &MyServer::drawMapSig, this, &MainWindow::drawMapSlot);
-    connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);
-//    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::printOldCountMap);
+    connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);    
     ui = new Ui::MainWindow;
-
     ui->setupUi(this);
+    connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::onButtonClicked);
 //    auto i = new QMap<QString, int>();
 //    i->insert("2019/03/22_17:52", 3);
 //    i->insert("2019/03/22_17:52", 1);
@@ -169,6 +168,30 @@ void MainWindow::drawChartSlot(QMap<QString, int> chartDataToDrawMap) {
         ui->countChartView->chart()->hide();
         ui->noChartData->show();
     }
+}
+
+
+void MainWindow::onButtonClicked(){
+    QWidget *newWindow = new QWidget;
+    QDateEdit *date = new QDateEdit;
+    QTimeEdit *time = new QTimeEdit;
+    QGridLayout *layout = new QGridLayout;
+    QGroupBox *box = new QGroupBox(tr("LPStats"));
+    QDateEdit *datePicker = new QDateEdit;
+    datePicker->setDisplayFormat("MMM d yyyy");
+    QLabel *datePickerLabel = new QLabel(tr("&Select Date:"));
+    datePickerLabel->setBuddy(datePicker);
+    QTimeEdit *timePicker = new QTimeEdit;
+    timePicker->setDisplayFormat("HH:mm");
+    QLabel *timePickerLabel = new QLabel(tr("&Time Date:"));
+    timePickerLabel->setBuddy(timePicker);
+    //TODO: funzione del db per prendere la data minima per cui sono registrate le statistiche
+
+    layout->addWidget(box, 0, 0);
+    newWindow->setLayout(layout);
+//    newWindow->layout()->addWidget(date);
+//    newWindow->layout()->addWidget(time);
+    newWindow->show();
 }
 
 //disegna grafico del numero di mac rilevati nel periodo specificato
