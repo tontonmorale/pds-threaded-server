@@ -10,7 +10,7 @@ ListenerThread::ListenerThread(int& totClients): totClients(totClients)
 ListenerThread::ListenerThread(MyServer *server,
                                qintptr socketDescriptor,
                                QMutex *mutex,
-                               QMap<QString, QSharedPointer<Packet>> *packetsMap,
+                               QMap<QString, Packet> *packetsMap,
                                QMap<QString, int> *packetsDetectionMap,
                                QMap<QString, Esp> *espMap,
                                double maxSignal,
@@ -204,7 +204,7 @@ void ListenerThread::newPacket(QString line){
 
     // nuovo pacchetto
 //    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i pacchetti rimangono nella mappa una volta uscito dalla funzione !!!
-    (*packetsMap)[key] = QSharedPointer<Packet>(new Packet(hash, mac, timestamp, signal, espId, "ssid"));
+    (*packetsMap)[key] = Packet(hash, mac, timestamp, signal, espId, "ssid");
 
     // aggiorna packetsDetectionMap, aggiorna il conto di quante schede hanno rilevato ogni pacchetto
     if(packetsDetectionMap->find(shortKey) != packetsDetectionMap->end()){

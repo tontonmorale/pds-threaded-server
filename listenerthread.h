@@ -24,7 +24,7 @@ public:
     ListenerThread(int &totClients);
     ListenerThread(MyServer *server, qintptr socketDescriptor,
                 QMutex* mutex,
-                QMap<QString, QSharedPointer<Packet>> *packetsMap,
+                QMap<QString, Packet> *packetsMap,
                 QMap<QString, int> *packetsDetectionMap,
                 QMap<QString, Esp> *espMap,
                 double maxSignal,
@@ -52,7 +52,7 @@ signals:
 private:
     QString id;
     QMutex* mutex;
-    QMap<QString, QSharedPointer<Packet>> *packetsMap;
+    QMap<QString, Packet> *packetsMap;
     QMap<QString, int> *packetsDetectionMap;
     QTcpSocket *socket;
     qintptr socketDescriptor;

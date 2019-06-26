@@ -5,7 +5,6 @@
 #include "packet.h"
 #include "person.h"
 #include "esp.h"
-#include <QSharedPointer>
 
 class MyServer;
 
@@ -14,7 +13,7 @@ class ElaborateThread : public QObject
     Q_OBJECT
 
 private:
-    QMap<QString, QSharedPointer<Packet>> *packetsMap;
+    QMap<QString, Packet> *packetsMap;
     QMap<QString, int> *packetsDetectionMap;
     int totClients;
     QMap<QString, Person> *peopleMap;
@@ -30,7 +29,7 @@ private:
 
 public:
     ElaborateThread();
-    ElaborateThread(MyServer* server, QMap<QString, QSharedPointer<Packet>> *packetsMap,
+    ElaborateThread(MyServer* server, QMap<QString, Packet> *packetsMap,
                     QMap<QString, int> *packetsDetectionMap,
                     int connectedClients,
                     QMap<QString, Person> *peopleMap,

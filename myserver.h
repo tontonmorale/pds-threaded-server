@@ -53,7 +53,7 @@ private:
     QMutex* mutex;
 //    void onClientConnection(qintptr socketDescriptor);
 //    QPlainTextEdit *log;
-    QMap<QString, QSharedPointer<Packet>> *packetsMap;
+    QMap<QString, Packet> *packetsMap;
     QMap<QString, int> *packetsDetectionMap;
     QMap<QString, Esp> *espMap;
     QMap<QString, Person> *peopleMap;

@@ -1,6 +1,5 @@
 #include "person.h"
-
-#define INF std::numeric_limits<double>::max()
+#include "math.h"
 
 Person::Person(){
 
@@ -8,9 +7,8 @@ Person::Person(){
 
 Person::Person(QString mac){
     this->mac = mac;
-    this->packetsSet = packetsSet;
     this->minutesCount = 1;
-    this->point = QPointF(INF, INF);
+    this->point = QPointF(NAN, NAN);
 }
 
 int Person::getMinCount(){
@@ -21,18 +19,18 @@ void Person::setMinCount(int minutesCount){
     this->minutesCount = minutesCount;
 }
 
-void Person::setPacketsSet(QSet<QSharedPointer<Packet>> packetsSet){
-    this->packetsSet = packetsSet;
+void Person::setPacketsList(QList<Packet> packetsList){
+    this->packetsList = packetsList;
 }
 
-void Person::insertPacket(QSharedPointer<Packet> p){
-    this->packetsSet.insert(p);
+void Person::insertPacket(Packet p){
+    this->packetsList.append(p);
 }
 
-QSet<QSharedPointer<Packet>> Person::getPacketsSet(){
-    return this->packetsSet;
+QList<Packet> Person::getPacketsList(){
+    return this->packetsList;
 }
 
 void Person::clearPacketsSet(){
-    this->packetsSet.clear();
+    this->packetsList.clear();
 }

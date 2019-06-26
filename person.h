@@ -2,7 +2,6 @@
 #define PERSON_H
 
 #include <QString>
-#include <QSharedPointer>
 #include <QSet>
 #include <QPoint>
 #include "packet.h"
@@ -16,14 +15,14 @@ public:
     int getMinCount();
     void setMinCount(int minutesCount);
     void flushPacketsSet();
-    void setPacketsSet(QSet<QSharedPointer<Packet>> packetsSet);
-    QSet<QSharedPointer<Packet>> getPacketsSet();
-    void insertPacket(QSharedPointer<Packet> p);
+    void setPacketsList(QList<Packet> packetsList);
+    QList<Packet> getPacketsList();
+    void insertPacket(Packet p);
     void clearPacketsSet();
 
 private:
     QString mac;
-    QSet<QSharedPointer<Packet>> packetsSet;
+    QList<Packet> packetsList;
     int minutesCount;
     QPointF point;
 };

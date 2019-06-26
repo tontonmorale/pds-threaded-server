@@ -8,7 +8,7 @@
 
 ElaborateThread::ElaborateThread() {}
 
-ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, QSharedPointer<Packet>> *packetsMap,
+ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packetsMap,
                                  QMap<QString, int> *packetsDetectionMap,
                                  int connectedClients,
                                  QMap<QString, Person> *peopleMap,
@@ -154,28 +154,28 @@ void ElaborateThread::calculateDevicesPosition(){
         qDebug().noquote() << " con i seguenti pacchetti:\n";
 
         // set di pacchetti associati a quel device (stesso pacchetto ma rilevato dai vari esp)
-        QSet<QSharedPointer<Packet>> set = person.value().getPacketsSet();
+        QList<Packet> set = person.value().getPacketsList();
 
         double d1, d2, d3; // distanze tra device e i vari esp
 
         // conversione da intensità segnale a metri
-        for (QSet<QSharedPointer<Packet>>::iterator p = set.begin(); p != set.end(); p++) {
-            if ((*p)->getEspId().compare(espA.getId())==0){
-                d1 = Utility::dbToMeters((*p)->getSignal());
-                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0 || (*p)->getMac().compare("94:65:2d:41:f7:8c")==0)
-                    qDebug().noquote() << QString::number(d1) + " " + QString::number((*p)->getSignal()) + "\n";
+        for (auto p : set) {
+            if (p.getEspId().compare(espA.getId())==0){
+                d1 = Utility::dbToMeters(p.getSignal());
+                if(p.getMac().compare("30:74:96:94:e3:2d")==0 || p.getMac().compare("94:65:2d:41:f7:8c")==0)
+                    qDebug().noquote() << QString::number(d1) + " " + QString::number(p.getSignal()) + "\n";
             }
-            else if ((*p)->getEspId().compare(espB.getId())==0){
-                d2 = Utility::dbToMeters((*p)->getSignal());
-                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0 || (*p)->getMac().compare("94:65:2d:41:f7:8c")==0)
-                    qDebug().noquote() << QString::number(d2) + " " + QString::number((*p)->getSignal()) + "\n";
+            else if (p.getEspId().compare(espB.getId())==0){
+                d2 = Utility::dbToMeters(p.getSignal());
+                if(p.getMac().compare("30:74:96:94:e3:2d")==0 || p.getMac().compare("94:65:2d:41:f7:8c")==0)
+                    qDebug().noquote() << QString::number(d2) + " " + QString::number(p.getSignal()) + "\n";
             }
-            else if ((*p)->getEspId().compare(espC.getId())==0){
-                d3 = Utility::dbToMeters((*p)->getSignal());
-                if((*p)->getMac().compare("30:74:96:94:e3:2d")==0 || (*p)->getMac().compare("94:65:2d:41:f7:8c")==0)
-                    qDebug().noquote() << QString::number(d3) + " " + QString::number((*p)->getSignal()) + "\n";
+            else if (p.getEspId().compare(espC.getId())==0){
+                d3 = Utility::dbToMeters(p.getSignal());
+                if(p.getMac().compare("30:74:96:94:e3:2d")==0 || p.getMac().compare("94:65:2d:41:f7:8c")==0)
+                    qDebug().noquote() << QString::number(d3) + " " + QString::number(p.getSignal()) + "\n";
             }
-            qDebug().noquote() << (*p)->getHash() + "\n";
+            qDebug().noquote() << p.getHash() + "\n";
 
         }
 
@@ -205,7 +205,7 @@ void ElaborateThread::calculateDevicesPosition(){
  * @param shortKey: identifica un pacchetto (quindi un device)
  */
 void ElaborateThread::updatePacketsSet(Person &p, QString shortKey){
-    QMap<QString, QSharedPointer<Packet>>::iterator itLow, i;
+    QMap<QString, Packet>::iterator itLow, i;
     int n;
 
     // iteratore che punta al primo dei pacchetti con key = shortKey inviati nel minuto corrente dal device

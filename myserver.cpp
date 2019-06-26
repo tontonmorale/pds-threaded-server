@@ -19,7 +19,7 @@ MyServer::MyServer(QObject *parent):
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
 //    listenerThreadList = new QList<ListenerThread*>();
-    packetsMap = new QMap<QString, QSharedPointer<Packet>>();
+    packetsMap = new QMap<QString, Packet>;
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
     devicesCoords = new QList<QPointF>;
@@ -261,8 +261,8 @@ void MyServer::confFromFile(){
 void MyServer::onChartDataReadySlot(){
 
     // pulisce le strutture dati per il time slot successivo
-//    packetsMap->clear();
-    packetsMap = new QMap<QString, QSharedPointer<Packet>>(); // todo: da rivedere
+    packetsMap->clear();
+//    packetsMap = new QMap<QString, Packet>(); // todo: da rivedere
     packetsDetectionMap->clear();
 
     //emetto segnale verso dbthread
@@ -274,6 +274,9 @@ void MyServer::onChartDataReadySlot(){
     QList<QPointF> coordsForMap = *devicesCoords;
     emit drawMapSig(coordsForMap, maxEspCoords);
     devicesCoords->clear();
+    //fine dell'elaborazione di tutto, riparto con i nuovi 5 minuti
+    currMinute = 0;
+    startToClientsSlot();
 
 }
 

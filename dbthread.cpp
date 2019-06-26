@@ -129,9 +129,11 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     }
     else{
         QMap<QString, Person>::iterator pm = peopleMap.begin();
-        QSet<QSharedPointer<Packet>> ps = pm.value().getPacketsSet();
-
-        timestamp = (*ps.begin())->getTimestamp();
+        QList<Packet> ps = pm.value().getPacketsList();
+        for (auto prova : ps){
+            timestamp = prova.getTimestamp();
+            break;
+        }
 
         //inserisco le persone rilevate nell'altra tabella
         //nota: vado a considerare il timestamp preso prima come timestamp generico per tutte le persone presenti nella peopleMap attuale
