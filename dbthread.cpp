@@ -170,7 +170,7 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     }
     else{
         qDebug() << "Query di inserzione della nuova entry nella tabella timestamp fallita";
-        return;
+        emit logSig("Cannot update data on db");
     }
 
 

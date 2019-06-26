@@ -41,7 +41,7 @@ public slots:
     void emitLogSlot(QString message);
     void createElaborateThreadSlot();
     void onChartDataReadySlot();
-    void readyFromClientSlot();
+    void readyFromClientSlot(ListenerThread *lt);
     void errorFromThreadSlot(QString errorMsg);
     void emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap);
     void addListenerThreadSlot(ListenerThread *lt);
@@ -70,6 +70,7 @@ private:
     double maxSignal;
     QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
     QList<QPointF> *devicesCoords;
+    bool firstStart;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

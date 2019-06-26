@@ -1,7 +1,8 @@
 #include "listenerthread.h"
 #include "myserver.h"
+#include "math.h"
 
-ListenerThread::ListenerThread()
+ListenerThread::ListenerThread(int& totClients): totClients(totClients)
 {
 
 }
@@ -12,14 +13,16 @@ ListenerThread::ListenerThread(MyServer *server,
                                QMap<QString, QSharedPointer<Packet>> *packetsMap,
                                QMap<QString, int> *packetsDetectionMap,
                                QMap<QString, Esp> *espMap,
-                               double maxSignal)
+                               double maxSignal,
+                               int& totClients)
     : mutex(mutex),
       packetsMap(packetsMap),
       packetsDetectionMap(packetsDetectionMap),      
       socketDescriptor(socketDescriptor),
       espMap(espMap),      
       server(server),
-      maxSignal(maxSignal){
+      maxSignal(maxSignal),
+      totClients(totClients){
 }
 
 /**
@@ -35,8 +38,6 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(server, &MyServer::start2ClientsSig, this, &ListenerThread::sendStart);
     connect(this, &ListenerThread::log, server, &MyServer::emitLogSlot);
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
-
-    connect(this, &ListenerThread::addThreadSignal, server, &MyServer::addListenerThreadSlot);
 
     connect(this, &ListenerThread::finished, thread, &QThread::quit);
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
@@ -65,7 +66,7 @@ void ListenerThread::work(){
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
 
     // segnale di ready verso il server
-    emit ready();
+    emit ready(this);
 }
 
 QString ListenerThread::getId(){
@@ -93,12 +94,22 @@ void ListenerThread::clientSetup(){
     }
 
     // cerca id dell'esp a partire dal mac, ricavandolo dalla espMap
-    id = espMap->find(mac)->getId();
-    if(id == nullptr){
-        closeConnection();
-    }
+    auto it = espMap->find(mac);
+    if(it != espMap->end())
+        id = it.value().getId();
+    else{
+        totClients ++;
+        if(totClients<10){
+            id = "0";
+            id += QString::number(totClients);
+        }
+        else{
+            id = QString::number(totClients);
+        }
 
-    emit addThreadSignal(this);
+        // inserisco nuovo client nella mappa
+        espMap->insert(mac, Esp(id, mac, QPointF(NAN, NAN)));
+    }
 
     emit log("\tclient info: mac = " + mac + ", id = " + id);
     hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
@@ -132,6 +143,8 @@ void ListenerThread::readFromClient(){
     while ( socket->canReadLine() ) {
         line = QString(socket->readLine());
 
+        qDebug() << line;
+
         line.remove('\r');
         line.remove('\n');
 
@@ -143,6 +156,7 @@ void ListenerThread::readFromClient(){
         }
         if(firstWord.compare("END")==0){
             // ricevuto fine dell'elenco di pacchetti
+            qDebug() << "end ricevuto da: " << id;
             emit endPackets();
         }
 
@@ -204,7 +218,13 @@ void ListenerThread::newPacket(QString line){
 }
 
 void ListenerThread::closeConnection(){
+    socket->write("DISCONNECTED\r\n");
+    qDebug() << "mando disconnection";
     socket->disconnect();
+    socket->disconnectFromHost();
+    socket->deleteLater();
+    socket = nullptr;
+
     qDebug("Disconnessione client");
     emit finished(this);
 }

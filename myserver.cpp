@@ -13,7 +13,8 @@ MyServer::MyServer(QObject *parent):
     connectedClients(0),
     totClients(1),
     currMinute(0),
-    DBinitialized(false) {
+    DBinitialized(false),
+    firstStart(true){
 
     espMap = new QMap<QString, Esp>();
     mutex = new QMutex();
@@ -52,6 +53,7 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
  * legge le posizioni degli esp da file, cerca le loro coord max e inizializza il db
  */
 void MyServer::init(){
+    firstStart = true;
     confFromFile();
     emit logSig("[ server ] Esp configuration acquired from file");
     maxEspCoords = setMaxEspCoords(espMap);
@@ -82,7 +84,7 @@ void MyServer::dbConnectedSlot(){
  */
 void MyServer::incomingConnection(qintptr socketDescriptor){
     QThread *thread = new QThread();
-    ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal);
+    ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal, totClients);
 
     lt->moveToThread(thread);
     lt->signalsConnection(thread);
@@ -101,9 +103,10 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
 
     if( it != listenerThreadPool.end()){
         listenerThreadPool.erase(it);
-        connectedClients --;
+        connectedClients--;
     }
 
+    connectedClients++;
     listenerThreadPool.insert(newId, lt);
 }
 
@@ -119,7 +122,7 @@ void MyServer::createElaborateThreadSlot(){
     // controlla se ricevuto endPackets da tutte le schede
     mutex.lock();
     endPkClients ++;
-    if(endPkClients<totClients){
+    if(endPkClients<connectedClients){
         return;
     }
 
@@ -150,11 +153,20 @@ void MyServer::emitLogSlot(QString message){
  * -> slot che risponde al segnale di completamento del setup di un esp
  * -> se ricevuto da tutti gli esp, manda segnale di start del blocco di N minuti
  */
-void MyServer::readyFromClientSlot(){
-    connectedClients++;
+void MyServer::readyFromClientSlot(ListenerThread *lt){
+
+    //inserisco nuovo thread nella lista e aggiorno connectedClients
+    addListenerThreadSlot(lt);
+
+    QString s = "Connected clients: ";
+    s += QString::number(connectedClients);
+    logSig(s);
+
     if(connectedClients==totClients
 //            && Utility::canTriangulate(connectedClients)
+            && firstStart
             ){
+        firstStart = false;
         currMinute = 0;
         // inizio blocco N minuti
         startToClientsSlot();
@@ -172,19 +184,19 @@ void MyServer::readyFromClientSlot(){
     -> le volte successive se almeno 3 client connessi
  */
 void MyServer::startToClientsSlot(){
-    if(connectedClients==totClients
+//    if(
 //            && Utility::canTriangulate(connectedClients)
-            )
-    {
+//            )
+//    {
         qDebug() << "Start to clients\n";
         endPkClients = 0;
         currMinute++;
         emit logSig("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");        
         emit start2ClientsSig();
-    }
-    else {
-        // todo: meno di 3 client connessi => ?????
-    }
+//    }
+//    else {
+//        // todo: meno di 3 client connessi => ?????
+//    }
 }
 
 void MyServer::disconnectClientSlot(ListenerThread *thread){
@@ -194,6 +206,11 @@ void MyServer::disconnectClientSlot(ListenerThread *thread){
     if(it!=listenerThreadPool.end())
         listenerThreadPool.erase(it);
     thread->deleteLater();
+    connectedClients--;
+    QString s = "Client ";
+    s += id;
+    s += " disconnected";
+    logSig(s);
 }
 
 void MyServer::errorFromThreadSlot(QString errorMsg){

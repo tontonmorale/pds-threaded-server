@@ -21,13 +21,14 @@ class ListenerThread : public QObject
     Q_OBJECT
 
 public:
-    ListenerThread();
+    ListenerThread(int &totClients);
     ListenerThread(MyServer *server, qintptr socketDescriptor,
                 QMutex* mutex,
                 QMap<QString, QSharedPointer<Packet>> *packetsMap,
                 QMap<QString, int> *packetsDetectionMap,
                 QMap<QString, Esp> *espMap,
-                double maxSignal);
+                double maxSignal,
+                int& totClients);
 //    void clientSetup(QTcpSocket *socket);
     void clientSetup();
     void closeConnection();
@@ -42,11 +43,10 @@ public slots:
     void sendStart();
 
 signals:
-    void ready();
+    void ready(ListenerThread *);
     void finished(ListenerThread*);
     void log(QString message);
     void endPackets();
-    void addThreadSignal(ListenerThread*);
 
 
 private:
@@ -60,6 +60,7 @@ private:
     MyServer *server;
     QTimer* disconnectionTimer;
     double maxSignal;
+    int& totClients;
 };
 
 #endif // LISTENEROBJ_H
