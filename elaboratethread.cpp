@@ -36,6 +36,9 @@ ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packet
 void ElaborateThread::work() {
     // minuto attuale
     manageCurrentMinute();
+
+    // todo: controllare se si possono svuotare packetsMap e packetsDetectionMap !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     qDebug() << "[elaborate thread] gestito minuto corrente";
 
     // ultimo minuto
@@ -80,35 +83,72 @@ void ElaborateThread::manageCurrentMinute(){
     QMap<QString, int>::iterator i;
     for(i=packetsDetectionMap->begin(); i!=packetsDetectionMap->end(); i++){
 
-        if(i.value() >= connectedClients){
-            // dispositivo rilevato da tutti i client
+        if(i.value() >= 3){
+            // dispositivo rilevato da almeno 3 client
 
             QString shortKey = i.key(); // shortKey = "pktHash-mac"
             QString mac = shortKey.split('-').at(1);
 
-            if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 ){
+//            if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 ){ // andrà tolto
 
-                if(peopleMap->find(mac) == peopleMap->end()){
-                    // device non rilevato nei minuti precedenti
+                auto person = peopleMap->find(mac);
+                if(person == peopleMap->end()){
+                    // nuovo device
 
-                    Person p = Person(mac);
-                    updatePacketsSet(p, shortKey);
-                    //insert new person in peopleMap
-                    (*peopleMap)[mac] = p;
+                    Person p = Person(mac);                    
+                    person = peopleMap->insert(mac, p);
                 }
-                else{
-                    // device già rilevato nei minuti precedenti, controlla se già considerato nel minuto corrente
-                    int count = (*peopleMap)[mac].getMinCount();
-                    if(count < this->currMinute){
-                        // aggiorna i pacchetti del device con quelli rilevati al minuto corrente
-                        Person p = (*peopleMap)[mac];
-                        (*peopleMap)[mac].setMinCount(count+1);
-                        updatePacketsSet((*peopleMap)[mac], shortKey);
+
+                // cerco pacchetti nella packetMap associati a quello corrente di packetsDetectioMap
+                QList<Packet> packetsList = getPacketsList(shortKey);
+
+                // ricavo posizioni esp che hanno rilevato i pacchetti
+                QPointF posA, posB, posC;
+                Esp espA, espB, espC;
+                double d1, d2, d3; // distanze tra device e i vari esp
+
+                auto packet = packetsList.begin();
+                for(auto esp : *espMap){
+                    if(esp.getId().compare(packet->getEspId())==0){
+                        espA = esp;
+                        posA = esp.getPosition();
+                        d1 = Utility::dbToMeters(packet->getSignal());
+                        if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                            qDebug().noquote() << QString::number(d1) + " " + QString::number(packet->getSignal()) + "\n";
                     }
                 }
-            }
+                packet++;
+                for(auto esp : *espMap){
+                    if(esp.getId().compare(packet->getEspId())==0){
+                        espB = esp;
+                        posB = esp.getPosition();
+                        d2 = Utility::dbToMeters(packet->getSignal());
+                        if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                            qDebug().noquote() << QString::number(d2) + " " + QString::number(packet->getSignal()) + "\n";
+                    }
+                }
+                packet++;
+                for(auto esp : *espMap){
+                    if(esp.getId().compare(packet->getEspId())==0){
+                        espC = esp;
+                        posC = esp.getPosition();
+                        d3 = Utility::dbToMeters(packet->getSignal());
+                        if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                            qDebug().noquote() << QString::number(d3) + " " + QString::number(packet->getSignal()) + "\n";
+                    }
+                }
+
+                QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
+                if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                    qDebug() << "posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
+                person->addPosition(pos);
+
+//            }
         }
     }
+    packetsMap->clear();
+    packetsDetectionMap->clear();
+    // TODO: si può fare la media delle trilaterazioni per ogni persona
 }
 
 /**
@@ -117,84 +157,41 @@ void ElaborateThread::manageCurrentMinute(){
  */
 void ElaborateThread::manageLastMinute() {
 
-    //calcolo posizione dispositivi solo se almeno 3 client connessi
-    if(! Utility::canTriangulate(connectedClients) ){
-        emit log("Non ci sono abbastanza dispositivi connessi\n");
-        return;
-    }
-
-    //calcola lista di posizioni dei device nell'area e la salva in devicesCoords
-    calculateDevicesPosition();
+    //calcola media triangolazioni
+    calculateAvgPosition();
 }
 
 /**
  * @brief ElaborateThread::calculateDevicesPosition
- * calcola posizione dei device nell'area
+ * medie delle trilaterazioni
  */
-void ElaborateThread::calculateDevicesPosition(){
-    QPointF posA, posB, posC;
-    Esp espA, espB, espC;
-    QMap<QString, Esp>::iterator it;
+void ElaborateThread::calculateAvgPosition(){
 
-    // prende 3 esp dall'elenco
-    it = espMap->begin();
-    espA = it.value();
-    it++;
-    espB = it.value();
-    it++;
-    espC = it.value();
-    posA = espA.getPosition(); // coord espA
-    posB = espB.getPosition(); // coord espB
-    posC = espC.getPosition(); // coord espC
-
-    //calcola posizioni dispositivi nell'area
+    // media trilaterazioni
     QMap<QString, Person>::iterator person;
-    for(person = peopleMap->begin(); person != peopleMap->end(); person++){
-        qDebug().noquote() << "Mac: " + person.key();
-        qDebug().noquote() << " con i seguenti pacchetti:\n";
-
-        // set di pacchetti associati a quel device (stesso pacchetto ma rilevato dai vari esp)
-        QList<Packet> set = person.value().getPacketsList();
-
-        double d1, d2, d3; // distanze tra device e i vari esp
-
-        // conversione da intensità segnale a metri
-        for (auto p : set) {
-            if (p.getEspId().compare(espA.getId())==0){
-                d1 = Utility::dbToMeters(p.getSignal());
-                if(p.getMac().compare("30:74:96:94:e3:2d")==0 || p.getMac().compare("94:65:2d:41:f7:8c")==0)
-                    qDebug().noquote() << QString::number(d1) + " " + QString::number(p.getSignal()) + "\n";
-            }
-            else if (p.getEspId().compare(espB.getId())==0){
-                d2 = Utility::dbToMeters(p.getSignal());
-                if(p.getMac().compare("30:74:96:94:e3:2d")==0 || p.getMac().compare("94:65:2d:41:f7:8c")==0)
-                    qDebug().noquote() << QString::number(d2) + " " + QString::number(p.getSignal()) + "\n";
-            }
-            else if (p.getEspId().compare(espC.getId())==0){
-                d3 = Utility::dbToMeters(p.getSignal());
-                if(p.getMac().compare("30:74:96:94:e3:2d")==0 || p.getMac().compare("94:65:2d:41:f7:8c")==0)
-                    qDebug().noquote() << QString::number(d3) + " " + QString::number(p.getSignal()) + "\n";
-            }
-            qDebug().noquote() << p.getHash() + "\n";
-
+    for(person=peopleMap->begin(); person!=peopleMap->end(); person++){
+        QList<QPointF> positionsList = person->getPositionsList();
+        QPointF avg;
+        for(auto pos : positionsList){
+            avg += pos;
         }
-
-        QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
-        qDebug() << "posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
-        if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
-            //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
-            devicesCoords->append(pos);
-        }
-        else{
-            QMap<QString, Person>::iterator temp = person+1;
-            //togli persone dall'elenco
-            peopleMap->erase(person);
-            person = temp;
-
-            if(peopleMap->size()==0)
-                break;
-        }
+        avg /= positionsList.length();
+        person->setAvgPosition(avg);
     }
+
+//    if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
+//        //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
+//        devicesCoords->append(pos);
+//    }
+//    else{
+//        QMap<QString, Person>::iterator temp = person+1;
+//        //togli persone dall'elenco
+//        peopleMap->erase(person);
+//        person = temp;
+
+//        if(peopleMap->size()==0)
+//            break;
+//    }
 }
 
 /**
@@ -204,16 +201,17 @@ void ElaborateThread::calculateDevicesPosition(){
  * @param p: device considerato
  * @param shortKey: identifica un pacchetto (quindi un device)
  */
-void ElaborateThread::updatePacketsSet(Person &p, QString shortKey){
+QList<Packet> ElaborateThread::getPacketsList(QString shortKey){
     QMap<QString, Packet>::iterator itLow, i;
     int n;
+    QList<Packet> packetsList;
 
     // iteratore che punta al primo dei pacchetti con key = shortKey inviati nel minuto corrente dal device
     itLow = packetsMap->lowerBound(shortKey);
 
-    p.clearPacketsSet();
+    // pacchetto con key=shortKey ripetuto almeno 3 volte
+    for(i=itLow, n=0; n<3; i++, n++)
+        packetsList.append(i.value());
 
-    // pacchetto con key=shortKey ripetuto n=connecteedClients volte
-    for(i=itLow, n=0; n<connectedClients; i++, n++)
-        p.insertPacket(i.value());
+    return packetsList;
 }

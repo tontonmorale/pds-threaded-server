@@ -21,7 +21,7 @@ private:
     int connectedClients;
     QMap<QString, Esp> *espMap;
     QPointF maxEspCoords;
-    void calculateDevicesPosition();
+    void calculateAvgPosition();
     QList<QPointF> *devicesCoords;
     void manageCurrentMinute();
     void manageLastMinute();
@@ -37,7 +37,8 @@ public:
                     QMap<QString, Esp> *espMap,
                     QPointF maxEspCoords,
                     QList<QPointF> *devicesCoords);
-    void updatePacketsSet(Person &p, QString shortKey);
+
+    QList<Packet> getPacketsList(QString shortKey);
     void signalsConnection(QThread *thread);
 
 public slots:

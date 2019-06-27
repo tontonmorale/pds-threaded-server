@@ -5,32 +5,16 @@ Person::Person(){
 
 }
 
-Person::Person(QString mac){
-    this->mac = mac;
-    this->minutesCount = 1;
-    this->point = QPointF(NAN, NAN);
+Person::Person(QString mac): mac(mac){}
+
+void Person::addPosition(QPointF pos){
+    positionsList.append(pos);
 }
 
-int Person::getMinCount(){
-    return this->minutesCount;
+QList<QPointF> Person::getPositionsList(){
+    return positionsList;
 }
 
-void Person::setMinCount(int minutesCount){
-    this->minutesCount = minutesCount;
-}
-
-void Person::setPacketsList(QList<Packet> packetsList){
-    this->packetsList = packetsList;
-}
-
-void Person::insertPacket(Packet p){
-    this->packetsList.append(p);
-}
-
-QList<Packet> Person::getPacketsList(){
-    return this->packetsList;
-}
-
-void Person::clearPacketsSet(){
-    this->packetsList.clear();
+void Person::setAvgPosition(QPointF pos){
+    avgPosition = pos;
 }

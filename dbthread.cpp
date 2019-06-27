@@ -120,45 +120,12 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
         return;
     }
 
-
-    QString timestamp;
-    if(peopleMap.size()==0){
-        QDateTime curr_timestamp = QDateTime::currentDateTime();
-        QDateTime correct_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour(), curr_timestamp.time().minute()-3));
-        timestamp = correct_timestamp.toString("yyyy/MM/dd_hh:mm:ss");
-    }
-    else{
-        QMap<QString, Person>::iterator pm = peopleMap.begin();
-        QList<Packet> ps = pm.value().getPacketsList();
-        for (auto prova : ps){
-            timestamp = prova.getTimestamp();
-            break;
-        }
-
-        //inserisco le persone rilevate nell'altra tabella
-        //nota: vado a considerare il timestamp preso prima come timestamp generico per tutte le persone presenti nella peopleMap attuale
-        queryString = "INSERT INTO LPStats (timestamp, mac) VALUES ";
-        for(pm=peopleMap.begin(); pm!=peopleMap.end(); pm++){
-            queryString += "('" + timestamp + "', '" + pm.key() + "'),";
-        }
-        //tolgo l'ultima virgola
-        queryString = queryString.left(queryString.length()-1); //da verificare
-        queryString += ";";
-
-        qDebug().noquote() << "query: " + queryString;
-        if (query.exec(queryString)) {
-            qDebug() << "Query di inserzione delle persone nella tabella LPStats andata a buon fine";
-        }
-        else{
-            qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
-            return;
-        }
-    }
-
+    // calcola timestamp unico per lo slot attuale di 5 minuti
+    QDateTime timestampDT = calculateTimestamp();
+    QString timestamp = timestampDT.toString("yyyy/MM/dd_hh:mm");
 
     //Il timestamp ricevuto è del tipo: 2019/03/22_17:52:14
     //in questa maniera vado a memorizzare l'intera stringa tranne i secondi
-    timestamp = timestamp.left(timestamp.length()-3);
     qDebug().noquote() << "Timestamp delle persone nella peopleMap: " + timestamp;
 
     queryString = "INSERT INTO Timestamps (timestamp, count) "
@@ -175,14 +142,45 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
         emit logSig("Cannot update data on db");
     }
 
+    if(peopleMap.size()!=0){
+        //inserisco le persone rilevate nell'altra tabella
+        //nota: vado a considerare il timestamp preso prima come timestamp generico per tutte le persone presenti nella peopleMap attuale
+        queryString = "INSERT INTO LPStats (timestamp, mac) VALUES ";
+        for(auto pm=peopleMap.begin(); pm!=peopleMap.end(); pm++){
+            queryString += "('" + timestamp + "', '" + pm.key() + "'),";
+        }
+        //tolgo l'ultima virgola
+        queryString = queryString.left(queryString.length()-1); //da verificare
+        queryString += ";";
 
+        qDebug().noquote() << "query: " + queryString;
+        if (query.exec(queryString)) {
+            qDebug() << "Query di inserzione delle persone nella tabella LPStats andata a buon fine";
+        }
+        else{
+            qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
+            return;
+        }
+    }
 
-    QString begintime, endtime;
-    QDateTime curr_timestamp = QDateTime::currentDateTime();
-    endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
-    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour()-1, curr_timestamp.time().minute()));
+    QString begintime;
+    QDateTime old_timestamp(QDate(timestampDT.date()), QTime(timestampDT.time().hour()-1, timestampDT.time().minute()));
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
-    getChartDataFromDb(begintime, endtime);
+    getChartDataFromDb(begintime, timestamp);
+}
+
+QDateTime DBThread::calculateTimestamp(){
+    QDateTime timestamp = QDateTime::currentDateTime();
+    begintime = timestamp.toString("yyyy/MM/dd_hh:mm");
+    int minute = timestamp.toString("mm").toInt();
+    QDateTime correct_timestamp;
+    if (int resto = (minute % 5 != 0)){
+        correct_timestamp = QDateTime(QDate(timestamp.date()), QTime(timestamp.time().hour(), timestamp.time().minute()-resto));
+        return correct_timestamp;
+    }
+    else {
+        return timestamp;
+    }
 }
 
 void DBThread::dbDisconnect(){

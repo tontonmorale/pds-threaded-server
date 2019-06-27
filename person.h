@@ -12,19 +12,14 @@ class Person
 public:
     Person();
     Person(QString mac);
-    int getMinCount();
-    void setMinCount(int minutesCount);
-    void flushPacketsSet();
-    void setPacketsList(QList<Packet> packetsList);
-    QList<Packet> getPacketsList();
-    void insertPacket(Packet p);
-    void clearPacketsSet();
+    void addPosition(QPointF pos);
+    QList<QPointF> getPositionsList();
+    void setAvgPosition(QPointF);
 
 private:
     QString mac;
-    QList<Packet> packetsList;
-    int minutesCount;
-    QPointF point;
+    QPointF avgPosition;
+    QList<QPointF> positionsList;
 };
 
 #endif // PERSON_H

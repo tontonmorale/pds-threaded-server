@@ -23,6 +23,7 @@ public:
     void dbDisconnect();
     bool isDbOpen();
     void getChartDataFromDb(QString begintime, QString endtime);
+    QDateTime calculateTimestamp();
 
 public slots:
     void sendChartDataToDbSlot(QMap<QString, Person> peopleMap);
