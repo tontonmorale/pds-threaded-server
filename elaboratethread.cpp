@@ -37,8 +37,6 @@ void ElaborateThread::work() {
     // minuto attuale
     manageCurrentMinute();
 
-    // todo: controllare se si possono svuotare packetsMap e packetsDetectionMap !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     qDebug() << "[elaborate thread] gestito minuto corrente";
 
     // ultimo minuto

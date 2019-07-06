@@ -35,7 +35,9 @@ public:
     void newPacket(QString line);
     void signalsConnection(QThread *thread);
     QString getId();
+    bool getEndPacketSent();
     ~ListenerThread();
+    bool endPacketSent;
 
 public slots:
     void work();
@@ -61,6 +63,7 @@ private:
     QTimer* disconnectionTimer;
     double maxSignal;
     int& totClients;
+
 };
 
 #endif // LISTENEROBJ_H

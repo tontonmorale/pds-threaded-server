@@ -22,7 +22,7 @@ ListenerThread::ListenerThread(MyServer *server,
       espMap(espMap),      
       server(server),
       maxSignal(maxSignal),
-      totClients(totClients){
+      totClients(totClients), endPacketSent(false){
 }
 
 /**
@@ -38,6 +38,7 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(server, &MyServer::start2ClientsSig, this, &ListenerThread::sendStart);
     connect(this, &ListenerThread::log, server, &MyServer::emitLogSlot);
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
+//    connect(server, &MyServer::closeConnectionSig, this, &ListenerThread::closeConnection);
 
     connect(this, &ListenerThread::finished, thread, &QThread::quit);
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
@@ -124,9 +125,14 @@ void ListenerThread::clientSetup(){
 void ListenerThread::sendStart(){
     //start timer per rilevare disconnessioni
     disconnectionTimer->start(MyServer::intervalTime * 2 + 5000);
+    endPacketSent = false;
 
     socket->write("START\r\n");
     qDebug() << "mando Start";
+}
+
+bool ListenerThread::getEndPacketSent(){
+    return endPacketSent;
 }
 
 /**
@@ -157,6 +163,7 @@ void ListenerThread::readFromClient(){
         if(firstWord.compare("END")==0){
             // ricevuto fine dell'elenco di pacchetti
             qDebug() << "end ricevuto da: " << id;
+            endPacketSent = true;
             emit endPackets();
         }
 

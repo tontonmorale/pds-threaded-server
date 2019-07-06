@@ -23,6 +23,18 @@ MyServer::MyServer(QObject *parent):
     packetsDetectionMap = new QMap<QString, int>;
     peopleMap = new QMap<QString, Person>;
     devicesCoords = new QList<QPointF>;
+
+    connect(&disconnectionTimer, &QTimer::timeout, this, &MyServer::timeout);
+}
+
+void MyServer::timeout(){
+
+    // todo: distruggere i thread che non hanno mandato end packet
+    for(auto t : listenerThreadPool.values()){
+        if(!t->endPacketSent)
+            emit closeConnectionSig();
+    }
+    createElaborateThread();
 }
 
 /**
@@ -117,18 +129,18 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
  * -> manda segnale di start per il nuovo minuto
  */
 void MyServer::createElaborateThreadSlot(){
-    QMutex mutex;
-
     // controlla se ricevuto endPackets da tutte le schede
-    mutex.lock();
     endPkClients ++;
     if(endPkClients<connectedClients){
         return;
     }
 
+    createElaborateThread();
+}
+
+void MyServer::createElaborateThread(){
     // ricevuto end file da tutte le schede
     endPkClients = 0;
-    mutex.unlock();
 
     QThread *thread = new QThread();
     ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, connectedClients,
@@ -172,7 +184,7 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
         startToClientsSlot();
     }
     else{
-        //todo: ??
+        //todo: ?? in teoria niente
     }
 
 }
@@ -193,6 +205,7 @@ void MyServer::startToClientsSlot(){
         currMinute++;
         emit logSig("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");        
         emit start2ClientsSig();
+        disconnectionTimer.start(MyServer::intervalTime + 3000);
 //    }
 //    else {
 //        // todo: meno di 3 client connessi => ?????

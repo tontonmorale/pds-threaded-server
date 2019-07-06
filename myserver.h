@@ -34,6 +34,7 @@ signals:
     void getStatsSig(QString begintime, QString endtime);
     void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void dbConnectedSig();
+    void closeConnectionSig(QString s);
 
 public slots:
 //    void onClientConnection();
@@ -48,6 +49,7 @@ public slots:
     void disconnectClientSlot(ListenerThread *lt);
     void dbConnectedSlot();
 //    void drawMapSlot();
+    void timeout();
 
 private:
     QMutex* mutex;
@@ -71,6 +73,8 @@ private:
     QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
     QList<QPointF> *devicesCoords;
     bool firstStart;
+    QTimer disconnectionTimer;
+    void createElaborateThread();
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
