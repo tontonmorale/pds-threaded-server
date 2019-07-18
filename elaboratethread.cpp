@@ -64,7 +64,7 @@ void ElaborateThread::signalsConnection(QThread *thread){
 
     connect(this, &ElaborateThread::log, server, &MyServer::emitLogSlot);
     connect(this, &ElaborateThread::elabFinishedSig, server, &MyServer::onChartDataReadySlot);
-    connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
+//    connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
 
     connect(this, SIGNAL(finished()), thread, SLOT(quit()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));

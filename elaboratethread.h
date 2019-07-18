@@ -48,7 +48,7 @@ signals:
     void finished();
     void log(QString message);
     void elabFinishedSig();
-    void ready();
+//    void ready();
     void drawMapSig();
 };
 

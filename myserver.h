@@ -49,7 +49,7 @@ public slots:
     void disconnectClientSlot(ListenerThread *lt);
     void dbConnectedSlot();
 //    void drawMapSlot();
-    void timeout();
+//    void timeout();
 
 private:
     QMutex* mutex;

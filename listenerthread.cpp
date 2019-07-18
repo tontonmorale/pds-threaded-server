@@ -15,14 +15,15 @@ ListenerThread::ListenerThread(MyServer *server,
                                QMap<QString, Esp> *espMap,
                                double maxSignal,
                                int& totClients)
-    : mutex(mutex),
+    : endPacketSent(false),
+      mutex(mutex),
       packetsMap(packetsMap),
       packetsDetectionMap(packetsDetectionMap),      
       socketDescriptor(socketDescriptor),
       espMap(espMap),      
       server(server),
       maxSignal(maxSignal),
-      totClients(totClients), endPacketSent(false){
+      totClients(totClients){
 }
 
 /**
@@ -125,7 +126,7 @@ void ListenerThread::clientSetup(){
 void ListenerThread::sendStart(){
     //start timer per rilevare disconnessioni
     disconnectionTimer->start(MyServer::intervalTime * 2 + 5000);
-    endPacketSent = false;
+//    endPacketSent = false;
 
     socket->write("START\r\n");
     qDebug() << "mando Start";

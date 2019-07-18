@@ -24,18 +24,18 @@ MyServer::MyServer(QObject *parent):
     peopleMap = new QMap<QString, Person>;
     devicesCoords = new QList<QPointF>;
 
-    connect(&disconnectionTimer, &QTimer::timeout, this, &MyServer::timeout);
+//    connect(&disconnectionTimer, &QTimer::timeout, this, &MyServer::timeout);
 }
 
-void MyServer::timeout(){
+//void MyServer::timeout(){
 
-    // todo: distruggere i thread che non hanno mandato end packet
-    for(auto t : listenerThreadPool.values()){
-        if(!t->endPacketSent)
-            emit closeConnectionSig();
-    }
-    createElaborateThread();
-}
+//    // todo: distruggere i thread che non hanno mandato end packet
+//    for(auto t : listenerThreadPool.values()){
+//        if(!t->endPacketSent)
+//            emit closeConnectionSig();
+//    }
+//    createElaborateThread();
+//}
 
 /**
  * @brief MyServer::setMaxEspCoords
@@ -131,16 +131,27 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
 void MyServer::createElaborateThreadSlot(){
     // controlla se ricevuto endPackets da tutte le schede
     endPkClients ++;
-    if(endPkClients<connectedClients){
+
+    if(endPkClients==1){
+        if(currMinute<5) {
+            // inizio prossimo minuto se non è finito lo slot di 5 minuti attuale
+            qDebug() << "createElaborateThreadSlot, currMinute = " << currMinute;
+            startToClientsSlot();
+            return;
+        }
+    }
+    if(endPkClients<connectedClients){ //TODO: se scheda staccata => timeout in ritardo => non riceviamo l'end packet => non elaboriamo mai
         return;
     }
 
+    qDebug() << "createElaborateThreadSlot, currMinute = " << currMinute << ", endPkClients: " << endPkClients;
+    endPkClients = 0;
     createElaborateThread();
+
 }
 
 void MyServer::createElaborateThread(){
     // ricevuto end file da tutte le schede
-    endPkClients = 0;
 
     QThread *thread = new QThread();
     ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, connectedClients,
@@ -149,11 +160,7 @@ void MyServer::createElaborateThread(){
     qDebug() << "[server] ----------> new elab thread creato";
     et->moveToThread(thread);
     et->signalsConnection(thread);
-    thread->start();
-
-    // inizio prossimo minuto se non è finito lo slot di 5 minuti attuale
-    if(currMinute<5)
-        startToClientsSlot();
+    thread->start();    
 }
 
 void MyServer::emitLogSlot(QString message){
@@ -181,6 +188,7 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
         firstStart = false;
         currMinute = 0;
         // inizio blocco N minuti
+        qDebug() << "readyFromClientSlot(), currMinute = 0";
         startToClientsSlot();
     }
     else{
@@ -201,11 +209,10 @@ void MyServer::startToClientsSlot(){
 //            )
 //    {
         qDebug() << "Start to clients\n";
-        endPkClients = 0;
         currMinute++;
         emit logSig("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");        
         emit start2ClientsSig();
-        disconnectionTimer.start(MyServer::intervalTime + 3000);
+//        disconnectionTimer.start(MyServer::intervalTime + 3000);
 //    }
 //    else {
 //        // todo: meno di 3 client connessi => ?????
@@ -289,6 +296,7 @@ void MyServer::onChartDataReadySlot(){
     devicesCoords->clear();
     //fine dell'elaborazione di tutto, riparto con i nuovi 5 minuti
     currMinute = 0;
+    qDebug() << "onChartDataReadySlot(), currMinute = 0";
     startToClientsSlot();
 
 }
