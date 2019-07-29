@@ -60,7 +60,7 @@ private:
     qintptr socketDescriptor;
     shared_ptr<QMap<QString, Esp>> espMap;
     MyServer *server;
-    QTimer* disconnectionTimer;
+    QTimer *disconnectionTimer;
     double maxSignal;
     int& totClients;
 

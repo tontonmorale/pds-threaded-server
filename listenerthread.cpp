@@ -41,7 +41,7 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
 //    connect(server, &MyServer::closeConnectionSig, this, &ListenerThread::closeConnection);
 
-    connect(this, &ListenerThread::finished, thread, &QThread::quit);
+//    connect(this, &ListenerThread::finished, thread, &QThread::quit);
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 }
@@ -125,7 +125,7 @@ void ListenerThread::clientSetup(){
  */
 void ListenerThread::sendStart(){
     //start timer per rilevare disconnessioni
-    disconnectionTimer->start(MyServer::intervalTime * 2 + 5000);
+    disconnectionTimer->start(MyServer::intervalTime + 2000);
 //    endPacketSent = false;
 
     socket->write("START\r\n");
@@ -226,7 +226,7 @@ void ListenerThread::newPacket(QString line){
 }
 
 void ListenerThread::closeConnection(){
-    socket->write("DISCONNECTED\r\n");
+//    socket->write("DISCONNECTED\r\n");
     qDebug() << "mando disconnection";
     socket->disconnect();
     socket->disconnectFromHost();

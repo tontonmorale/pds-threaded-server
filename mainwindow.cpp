@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&server, &MyServer::drawChartSig, this, &MainWindow::drawChartSlot);
     connect(&server, &MyServer::drawMapSig, this, &MainWindow::drawMapSlot);
     connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);    
+
     ui = new Ui::MainWindow;
     ui->setupUi(this);
     connect(ui->pushButton, &QPushButton::clicked, this, &MainWindow::onButtonClicked);

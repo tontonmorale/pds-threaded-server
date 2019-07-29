@@ -24,6 +24,7 @@ public:
     void Connects(QString slot);
     ~MyServer() override;
     static const int intervalTime = 15000;
+    static const int elaborateTime = 3000;
 
 signals:
     void start2ClientsSig();
@@ -52,7 +53,7 @@ public slots:
 //    void timeout();
 
 private:
-    QMutex* mutex;
+    QMutex *mutex;
 //    void onClientConnection(qintptr socketDescriptor);
 //    QPlainTextEdit *log;
     QMap<QString, Packet> *packetsMap;
@@ -73,8 +74,12 @@ private:
     QPointF setMaxEspCoords(QMap<QString, Esp> *espMap);
     QList<QPointF> *devicesCoords;
     bool firstStart;
-    QTimer disconnectionTimer;
+    QTimer elaborateTimer; // tempo max di attesa, da quando scade il minuto, prima di far partire
+                           // l'elaborazione se non ho ricevuto tutti gli end file
+    QTimer startTimer;
     void createElaborateThread();
+    bool elabTimerTimeout;
+    bool startCalled;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
