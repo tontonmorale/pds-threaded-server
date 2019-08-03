@@ -43,7 +43,8 @@ void ListenerThread::signalsConnection(QThread *thread){
 
 //    connect(this, &ListenerThread::finished, thread, &QThread::quit);
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    connect(this, &ListenerThread::finished, this, &ListenerThread::deleteLater);
 }
 
 /**
@@ -52,8 +53,8 @@ void ListenerThread::signalsConnection(QThread *thread){
  */
 void ListenerThread::work(){
     // crea timer disconnessione e connetti segnali
-    disconnectionTimer = new QTimer();
-    connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::closeConnection);
+    disconnectionTimer = new QTimer(this);
+    connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::closeConnection,  Qt::DirectConnection);
 
     socket = new QTcpSocket();
     if(!socket->setSocketDescriptor(socketDescriptor)){
@@ -126,6 +127,7 @@ void ListenerThread::clientSetup(){
 void ListenerThread::sendStart(){
     //start timer per rilevare disconnessioni
     disconnectionTimer->start(MyServer::intervalTime + 2000);
+    qDebug() << "timer time left: " << disconnectionTimer->remainingTime();
 //    endPacketSent = false;
 
     socket->write("START\r\n");
@@ -146,6 +148,8 @@ void ListenerThread::readFromClient(){
 //    Packet p;
 
 //    socketTimerMap[conn]->start(MAX_WAIT+5000);
+
+    qDebug() << "timer time left: " << disconnectionTimer->remainingTime();
 
     while ( socket->canReadLine() ) {
         line = QString(socket->readLine());
@@ -228,17 +232,17 @@ void ListenerThread::newPacket(QString line){
 void ListenerThread::closeConnection(){
 //    socket->write("DISCONNECTED\r\n");
     qDebug() << "mando disconnection";
-    socket->disconnect();
-    socket->disconnectFromHost();
-    socket->deleteLater();
-    socket = nullptr;
+    disconnectionTimer->stop();
 
     qDebug("Disconnessione client");
-    emit finished(this);
+    emit finished(id);
 }
 
 ListenerThread::~ListenerThread(){
+    socket->disconnect();
+    socket->disconnectFromHost();
     delete socket;
+    socket = nullptr;
 }
 
 

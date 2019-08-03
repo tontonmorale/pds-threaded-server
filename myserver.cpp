@@ -233,16 +233,15 @@ void MyServer::startToClientsSlot(){
     }
 }
 
-void MyServer::disconnectClientSlot(ListenerThread *thread){
-    QString id = thread->getId();
-    auto it = listenerThreadPool.find(id);
+void MyServer::disconnectClientSlot(QString espId){
+    auto it = listenerThreadPool.find(espId);
 
     if(it!=listenerThreadPool.end())
         listenerThreadPool.erase(it);
-    thread->deleteLater();
+
     connectedClients--;
     QString s = "Client ";
-    s += id;
+    s += espId;
     s += " disconnected";
     logSig(s);
 }

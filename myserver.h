@@ -47,7 +47,7 @@ public slots:
     void errorFromThreadSlot(QString errorMsg);
     void emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap);
     void addListenerThreadSlot(ListenerThread *lt);
-    void disconnectClientSlot(ListenerThread *lt);
+    void disconnectClientSlot(QString);
     void dbConnectedSlot();
 //    void drawMapSlot();
 //    void timeout();

@@ -31,7 +31,7 @@ public:
                 int& totClients);
 //    void clientSetup(QTcpSocket *socket);
     void clientSetup();
-    void closeConnection();
+
     void newPacket(QString line);
     void signalsConnection(QThread *thread);
     QString getId();
@@ -43,10 +43,11 @@ public slots:
     void work();
     void readFromClient();
     void sendStart();
+    void closeConnection();
 
 signals:
     void ready(ListenerThread *);
-    void finished(ListenerThread*);
+    void finished(QString);
     void log(QString message);
     void endPackets();
 
