@@ -125,8 +125,7 @@ void ListenerThread::clientSetup(){
  * scrive start all'esp per iniziare l'ascolto dei pacchetti e setta il timer
  */
 void ListenerThread::sendStart(){
-    //start timer per rilevare disconnessioni
-    disconnectionTimer->start(MyServer::intervalTime + 2000);
+
     qDebug() << "timer time left: " << disconnectionTimer->remainingTime();
 //    endPacketSent = false;
 
@@ -150,6 +149,8 @@ void ListenerThread::readFromClient(){
 //    socketTimerMap[conn]->start(MAX_WAIT+5000);
 
     qDebug() << "timer time left: " << disconnectionTimer->remainingTime();
+    //start timer per rilevare disconnessioni
+    disconnectionTimer->start(MyServer::intervalTime + 2000);
 
     while ( socket->canReadLine() ) {
         line = QString(socket->readLine());
