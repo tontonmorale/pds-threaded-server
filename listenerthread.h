@@ -64,6 +64,7 @@ private:
     QTimer *disconnectionTimer;
     double maxSignal;
     int& totClients;
+    bool firstStart;
 
 };
 

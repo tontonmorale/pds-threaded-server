@@ -23,7 +23,8 @@ ListenerThread::ListenerThread(MyServer *server,
       espMap(espMap),      
       server(server),
       maxSignal(maxSignal),
-      totClients(totClients){
+      totClients(totClients),
+      firstStart(true){
 }
 
 /**
@@ -41,10 +42,10 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
 //    connect(server, &MyServer::closeConnectionSig, this, &ListenerThread::closeConnection);
 
-//    connect(this, &ListenerThread::finished, thread, &QThread::quit);
+    connect(this, &ListenerThread::finished, thread, &QThread::quit);
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
 //    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-    connect(this, &ListenerThread::finished, this, &ListenerThread::deleteLater);
+//    connect(this, &ListenerThread::finished, this, &ListenerThread::deleteLater);
 }
 
 /**
@@ -126,11 +127,16 @@ void ListenerThread::clientSetup(){
  */
 void ListenerThread::sendStart(){
 
-    qDebug() << "timer time left: " << disconnectionTimer->remainingTime();
 //    endPacketSent = false;
 
     socket->write("START\r\n");
     qDebug() << "mando Start";
+
+    if(firstStart){
+        //start timer per rilevare disconnessioni
+        disconnectionTimer->start(MyServer::intervalTime + 2000);
+        firstStart = false;
+    }
 }
 
 bool ListenerThread::getEndPacketSent(){
@@ -147,12 +153,16 @@ void ListenerThread::readFromClient(){
 //    Packet p;
 
 //    socketTimerMap[conn]->start(MAX_WAIT+5000);
+    QString toLog = "disconnectionTimer scheda " + id;
+    toLog += " time left: ";
+    toLog += QString::number(disconnectionTimer->remainingTime());
 
-    qDebug() << "timer time left: " << disconnectionTimer->remainingTime();
+
     //start timer per rilevare disconnessioni
     disconnectionTimer->start(MyServer::intervalTime + 2000);
 
     while ( socket->canReadLine() ) {
+        qDebug() << "disconnectionTimer scheda " << id << " time left: " << disconnectionTimer->remainingTime();
         line = QString(socket->readLine());
 
         qDebug() << line;
@@ -233,7 +243,6 @@ void ListenerThread::newPacket(QString line){
 void ListenerThread::closeConnection(){
 //    socket->write("DISCONNECTED\r\n");
     qDebug() << "mando disconnection";
-    disconnectionTimer->stop();
 
     qDebug("Disconnessione client");
     emit finished(id);
