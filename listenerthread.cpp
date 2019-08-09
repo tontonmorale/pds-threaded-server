@@ -54,14 +54,27 @@ void ListenerThread::signalsConnection(QThread *thread){
  */
 void ListenerThread::work(){
     // crea timer disconnessione e connetti segnali
-    disconnectionTimer = new QTimer(this);
-    connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::closeConnection,  Qt::DirectConnection);
-
-    socket = new QTcpSocket();
-    if(!socket->setSocketDescriptor(socketDescriptor)){
-        emit log("Errore set sock descriptor\n");
+    try {
+        disconnectionTimer = new QTimer(this);
+        connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::closeConnection,  Qt::DirectConnection);
+    } catch (bad_alloc e) {
+        emit log("Errore nell'allocazione del disconnection timer, non proseguo.");
         return;
     }
+
+    try {
+        socket = new QTcpSocket();
+        if(!socket->setSocketDescriptor(socketDescriptor)){
+            throw("Errore nel set socket descriptor\n");
+        }
+    } catch (bad_alloc e) {
+       emit log("Errore nell'allocazione del socket, non proseguo.");
+        return;
+    } catch (exception e) {
+        emit log(e.what());
+        return;
+    }
+
 
     // setup iniziale dell' esp
     clientSetup();
@@ -88,37 +101,46 @@ void ListenerThread::clientSetup(){
 
     emit log("[ listener thread ] New connection");
 
-    socket->waitForReadyRead();
-    helloFromClient = QString(socket->readLine());
-    mac = helloFromClient.split(" ").at(2); // mi aspetto "ciao sono <mac>\r\n"
-    mac.remove('\r');
-    mac.remove('\n');
-    if(mac == nullptr){
-        closeConnection();
-    }
-
-    // cerca id dell'esp a partire dal mac, ricavandolo dalla espMap
-    auto it = espMap->find(mac);
-    if(it != espMap->end())
-        id = it.value().getId();
-    else{
-        totClients ++;
-        if(totClients<10){
-            id = "0";
-            id += QString::number(totClients);
+    try {
+        socket->waitForReadyRead();
+        helloFromClient = QString(socket->readLine());
+        mac = helloFromClient.split(" ").at(2); // mi aspetto "ciao sono <mac>\r\n"
+        mac.remove('\r');
+        mac.remove('\n');
+        if(mac == nullptr){
+            closeConnection();
         }
+
+        // cerca id dell'esp a partire dal mac, ricavandolo dalla espMap
+        auto it = espMap->find(mac);
+        if(it != espMap->end())
+            id = it.value().getId();
         else{
-            id = QString::number(totClients);
+            totClients ++;
+            if(totClients<10){
+                id = "0";
+                id += QString::number(totClients);
+            }
+            else{
+                id = QString::number(totClients);
+            }
+
+            // inserisco nuovo client nella mappa
+            espMap->insert(mac, Esp(id, mac, QPointF(NAN, NAN)));
         }
 
-        // inserisco nuovo client nella mappa
-        espMap->insert(mac, Esp(id, mac, QPointF(NAN, NAN)));
+        emit log("\tclient info: mac = " + mac + ", id = " + id);
+        hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
+        msg = hello2Client.toStdString().c_str();
+        socket->write(msg);
+    } catch (out_of_range e) {
+        emit log("[ListenerThread] problemi di out of range nella clientSetUp");
+        //anche qui, che fare?
+    } catch (exception e) {
+        emit log("Probabile errore nel socket");
+        //TODO: che faccio se ho un errore sul socket?
     }
 
-    emit log("\tclient info: mac = " + mac + ", id = " + id);
-    hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
-    msg = hello2Client.toStdString().c_str();
-    socket->write(msg);
 }
 
 /**
@@ -128,14 +150,25 @@ void ListenerThread::clientSetup(){
 void ListenerThread::sendStart(){
 
 //    endPacketSent = false;
+    int retry = 3;
+    while (retry) {
+        try {
+            socket->write("START\r\n");
+            qDebug() << "mando Start";
 
-    socket->write("START\r\n");
-    qDebug() << "mando Start";
-
-    if(firstStart){
-        //start timer per rilevare disconnessioni
-        disconnectionTimer->start(MyServer::intervalTime + 2000);
-        firstStart = false;
+            if(firstStart){
+                //start timer per rilevare disconnessioni
+                disconnectionTimer->start(MyServer::intervalTime + 2000);
+                firstStart = false;
+            }
+            break;
+        } catch (...) {
+            retry--;
+            if (!retry) {
+                emit log("Impossibile mandare start, probabili errori sul socket, considero il client disconnesso."); //possibile soluzione
+                closeConnection();
+            }
+        }
     }
 }
 
@@ -160,30 +193,45 @@ void ListenerThread::readFromClient(){
 
     //start timer per rilevare disconnessioni
     disconnectionTimer->start(MyServer::intervalTime + 2000);
+    int retry = 3;
+    while (retry) {
+        try {
+            while ( socket->canReadLine() ) {
+                qDebug() << "disconnectionTimer scheda " << id << " time left: " << disconnectionTimer->remainingTime();
+                line = QString(socket->readLine());
 
-    while ( socket->canReadLine() ) {
-        qDebug() << "disconnectionTimer scheda " << id << " time left: " << disconnectionTimer->remainingTime();
-        line = QString(socket->readLine());
+                qDebug() << line;
 
-        qDebug() << line;
+                line.remove('\r');
+                line.remove('\n');
 
-        line.remove('\r');
-        line.remove('\n');
+                firstWord = line.split(" ").at(0);
 
-        firstWord = line.split(" ").at(0);
-
-        if(firstWord.compare("PKT")==0){
-            // ricevuto nuovo pacchetto
-            newPacket(line);
+                if(firstWord.compare("PKT")==0){
+                    // ricevuto nuovo pacchetto
+                    newPacket(line);
+                }
+                if(firstWord.compare("END")==0){
+                    // ricevuto fine dell'elenco di pacchetti
+                    qDebug() << "end ricevuto da: " << id;
+                    endPacketSent = true;
+                    emit endPackets();
+                }
+            }
+        } catch (out_of_range e) {
+            emit log("Eccezione out of range, vado avanti senza considerare il pacchetto corrente");
+            continue;
+        } catch (...) {
+            retry--;
+            if (!retry) {
+                emit log("Impossibile leggere dal socket, probabili errori sul socket, considero il client disconnesso.");
+                closeConnection();
+                return;
+                //possibile soluzione
+            }
         }
-        if(firstWord.compare("END")==0){
-            // ricevuto fine dell'elenco di pacchetti
-            qDebug() << "end ricevuto da: " << id;
-            endPacketSent = true;
-            emit endPackets();
-        }
-
     }
+
 }
 
 /**

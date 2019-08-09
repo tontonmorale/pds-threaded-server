@@ -18,16 +18,22 @@ MyServer::MyServer(QObject *parent):
     elabTimerTimeout(false),
     startCalled(false){
 
-    espMap = new QMap<QString, Esp>();
-    mutex = new QMutex();
-//    listenerThreadList = new QList<ListenerThread*>();
-    packetsMap = new QMap<QString, Packet>;
-    packetsDetectionMap = new QMap<QString, int>;
-    peopleMap = new QMap<QString, Person>;
-    devicesCoords = new QList<QPointF>;
+    try {
+        espMap = new QMap<QString, Esp>();
+        mutex = new QMutex();
+    //    listenerThreadList = new QList<ListenerThread*>();
+        packetsMap = new QMap<QString, Packet>;
+        packetsDetectionMap = new QMap<QString, int>;
+        peopleMap = new QMap<QString, Person>;
+        devicesCoords = new QList<QPointF>;
 
-    connect(&startTimer, &QTimer::timeout, this, &MyServer::startToClientsSlot);
-    connect(&elaborateTimer, &QTimer::timeout, this, &MyServer::createElaborateThread);
+        connect(&startTimer, &QTimer::timeout, this, &MyServer::startToClientsSlot);
+        connect(&elaborateTimer, &QTimer::timeout, this, &MyServer::createElaborateThread);
+    } catch (bad_alloc e) {
+        fatalErrorSig("Errore nell'acquisizione delle risorse del server");
+        exit(-3);
+    }
+
 }
 
 //void MyServer::timeout(){
@@ -76,12 +82,18 @@ void MyServer::init(){
         maxSignal = Utility::metersToDb(maxEspCoords.y());
     else
         maxSignal = Utility::metersToDb(maxEspCoords.x());
-
-    QThread *thread = new QThread();
-    dbthread = new DBThread(this);
-    dbthread->moveToThread(thread);
-    dbthread->signalsConnection(thread);
-    thread->start();
+    try {
+        QThread *thread = new QThread();
+        dbthread = new DBThread(this);
+        dbthread->moveToThread(thread);
+        dbthread->signalsConnection(thread);
+        thread->start();
+    } catch (bad_alloc e) {
+        fatalErrorSig("Errore nell'inizializzazione delle risorse per il dbThread (bad_alloc)");
+        exit(-3);
+    } catch (exception e) {
+        fatalErrorSig("Errore nella fase di inizializzazione del dbThread: " + QString(e.what()));
+    }
 }
 
 void MyServer::dbConnectedSlot(){
@@ -98,13 +110,17 @@ void MyServer::dbConnectedSlot(){
  * @param socketDescriptor: descrittore del socket in ascolto
  */
 void MyServer::incomingConnection(qintptr socketDescriptor){
-    QThread *thread = new QThread();
-    ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal, totClients);
+    try {
+        QThread *thread = new QThread();
+        ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal, totClients);
 
-    lt->moveToThread(thread);
-    lt->signalsConnection(thread);
+        lt->moveToThread(thread);
+        lt->signalsConnection(thread);
 
-    thread->start();
+        thread->start();
+    } catch (exception e) {
+        emit logSig("Errore nell'inizializzazione di un listener thread: " + QString(e.what()));
+    }
 }
 
 /**
@@ -162,14 +178,20 @@ void MyServer::createElaborateThread(){
     endPkClients = 0;
     startCalled = false;
 
-    QThread *thread = new QThread();
-    ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, connectedClients,
-                                              peopleMap, currMinute, espMap, maxEspCoords, devicesCoords);
-
-    qDebug() << "[server] ----------> new elab thread creato";
-    et->moveToThread(thread);
-    et->signalsConnection(thread);
-    thread->start();    
+    try {
+        QThread *thread = new QThread();
+        ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, mutex, connectedClients,
+                                                  peopleMap, currMinute, espMap, maxEspCoords, devicesCoords); 
+        qDebug() << "[server] ----------> new elab thread creato";
+        et->moveToThread(thread);
+        et->signalsConnection(thread);
+        thread->start();
+    } catch (bad_alloc e) {
+        emit logSig("exception in allocating Elaborate thread, skipping elaboration of current minute.");
+        return;
+    } catch(exception e) {
+        emit logSig(e.what());
+    }
 }
 
 void MyServer::emitLogSlot(QString message){
@@ -248,6 +270,7 @@ void MyServer::disconnectClientSlot(QString espId){
 
 void MyServer::errorFromThreadSlot(QString errorMsg){
     emit fatalErrorSig(errorMsg);
+    return;
 }
 
 /**
@@ -260,39 +283,41 @@ void MyServer::confFromFile(){
     string id, mac, x_str, y_str;
     QString qmac;
     double x_double, y_double;
+    int retry = 3;
 
-    for(i=0; i<3; i++){
-        inputFile.open(ESP_FILE_PATH);
-        if (inputFile) {
-            break;
+    while(retry) {
+        try {
+           inputFile.open(ESP_FILE_PATH);
+           inputFile >> totClients;
+           for(i=0; i< totClients; i++){
+               inputFile >> id >> mac >> x_str >> y_str;
+               x_double = stod(x_str.c_str());
+               y_double = stod(y_str.c_str());
+               QPointF point = QPointF(x_double, y_double);
+               qmac = QString::fromStdString(mac);
+               const Esp esp = Esp(QString::fromStdString(id), qmac, point);
+               espMap->insert(qmac, esp);
+           }
+           inputFile.close();
+        } catch (...) {
+            retry--;
+            if (!retry) {
+                qDebug() << "Errore apertura file";
+                emit fatalErrorSig("Impossibile aprire il file degli esp");
+                this->~MyServer();
+                exit(-2);
+            }
         }
     }
-    if(i>=3){
-        // segnale di errore
-        qDebug() << "Errore apertura file";
-        emit fatalErrorSig("Impossibile aprire il file degli esp");
-        return;
-    }
 
-    inputFile >> totClients;
-    for(i=0; i< totClients; i++){
-        inputFile >> id >> mac >> x_str >> y_str;
-        x_double = stod(x_str.c_str());
-        y_double = stod(y_str.c_str());
-        QPointF point = QPointF(x_double, y_double);
-        qmac = QString::fromStdString(mac);
-        const Esp esp = Esp(QString::fromStdString(id), qmac, point);
-        espMap->insert(qmac, esp);
-    }
 
-    inputFile.close();
 }
 
 /**
  * @brief MyServer::dataForDb
  */
 void MyServer::onChartDataReadySlot(){
-
+    mutex->lock();
     // pulisce le strutture dati per il time slot successivo
     packetsMap->clear();
 //    packetsMap = new QMap<QString, Packet>(); // todo: da rivedere
@@ -307,7 +332,7 @@ void MyServer::onChartDataReadySlot(){
     QList<QPointF> coordsForMap = *devicesCoords;
     emit drawMapSig(coordsForMap, maxEspCoords);
     devicesCoords->clear();
-
+    mutex->unlock();
 }
 
 /**

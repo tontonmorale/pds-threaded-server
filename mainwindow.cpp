@@ -108,7 +108,7 @@ void MainWindow::serverListenSlot(){
 void MainWindow::fatalErrorSlot(QString message){
     qDebug().noquote() << message;
     QMessageBox::critical(this, "", message);
-    exit(-1);
+//    exit(-1);
 }
 
 void MainWindow::printToLogSlot(QString message){

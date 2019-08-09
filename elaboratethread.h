@@ -5,6 +5,7 @@
 #include "packet.h"
 #include "person.h"
 #include "esp.h"
+#include <QMutex>
 
 class MyServer;
 
@@ -13,6 +14,7 @@ class ElaborateThread : public QObject
     Q_OBJECT
 
 private:
+    QMutex *mutex;
     QMap<QString, Packet> *packetsMap;
     QMap<QString, int> *packetsDetectionMap;
     int totClients;
@@ -31,6 +33,7 @@ public:
     ElaborateThread();
     ElaborateThread(MyServer* server, QMap<QString, Packet> *packetsMap,
                     QMap<QString, int> *packetsDetectionMap,
+                    QMutex* mutex,
                     int connectedClients,
                     QMap<QString, Person> *peopleMap,
                     int currMinute,
