@@ -301,6 +301,7 @@ ListenerThread::~ListenerThread(){
     socket->disconnectFromHost();
     delete socket;
     socket = nullptr;
+    delete disconnectionTimer;
 }
 
 

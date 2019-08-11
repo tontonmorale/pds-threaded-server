@@ -8,8 +8,8 @@ int main(int argc, char *argv[])
     MainWindow w;
 
 
-    uint curr_timestamp = QDateTime::currentDateTime().toTime_t();
-    QString endtime = QString::number(curr_timestamp);
+//    uint curr_timestamp = QDateTime::currentDateTime().toTime_t();
+//    QString endtime = QString::number(curr_timestamp);
 
     w.serverInit();
     w.show();

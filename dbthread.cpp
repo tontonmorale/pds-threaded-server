@@ -269,6 +269,12 @@ void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
     }
 }
 
+DBThread::~DBThread() {
+    qDebug() << "Distruttore DBThread";
+    if(db.isOpen())
+        db.close();
+}
+
 
 
 

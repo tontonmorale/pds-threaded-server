@@ -287,18 +287,19 @@ void MyServer::confFromFile(){
 
     while(retry) {
         try {
-           inputFile.open(ESP_FILE_PATH);
-           inputFile >> totClients;
-           for(i=0; i< totClients; i++){
-               inputFile >> id >> mac >> x_str >> y_str;
-               x_double = stod(x_str.c_str());
-               y_double = stod(y_str.c_str());
-               QPointF point = QPointF(x_double, y_double);
-               qmac = QString::fromStdString(mac);
-               const Esp esp = Esp(QString::fromStdString(id), qmac, point);
-               espMap->insert(qmac, esp);
-           }
-           inputFile.close();
+            inputFile.open(ESP_FILE_PATH);
+            inputFile >> totClients;
+            for(i=0; i< totClients; i++){
+                inputFile >> id >> mac >> x_str >> y_str;
+                x_double = stod(x_str.c_str());
+                y_double = stod(y_str.c_str());
+                QPointF point = QPointF(x_double, y_double);
+                qmac = QString::fromStdString(mac);
+                const Esp esp = Esp(QString::fromStdString(id), qmac, point);
+                espMap->insert(qmac, esp);
+            }
+            inputFile.close();
+            retry = 0;
         } catch (...) {
             retry--;
             if (!retry) {
@@ -371,11 +372,11 @@ void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
 //}
 
 MyServer::~MyServer() {
-//    espMap = new QMap<QString, Esp>();
-//    mutex = new QMutex();
-//    listenerThreadList = new QList<ListenerThread*>();
-//    packetsMap = new QMap<QString, QSharedPointer<Packet>>();
-//    packetsDetectionMap = new QMap<QString, int>;
-//    peopleMap = new QMap<QString, Person>;
-//    devicesCoords = new QList<QPointF>;
+    qDebug() << "Distruttore MyServer";
+    delete espMap;
+    delete mutex;
+    delete packetsMap;
+    delete packetsDetectionMap;
+    delete peopleMap;
+    delete devicesCoords;
 }

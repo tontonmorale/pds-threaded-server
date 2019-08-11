@@ -24,6 +24,7 @@ public:
     bool isDbOpen();
     void getChartDataFromDb(QString begintime, QString endtime);
     QDateTime calculateTimestamp();
+    ~DBThread();
 
 public slots:
     void sendChartDataToDbSlot(QMap<QString, Person> peopleMap);
@@ -38,7 +39,6 @@ signals:
 
 private:
     QSqlDatabase db;
-    QList<QPointF> drawOldContMap(QMap<QString, int> *oldCountMap);
     QString begintime, endtime;
     MyServer* server;
 };

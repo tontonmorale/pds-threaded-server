@@ -39,7 +39,7 @@ void ElaborateThread::work() {
     // minuto attuale
     try {
        manageCurrentMinute();
-    } catch (out_of_range e) {
+    } catch (exception e) {
         throw e;
     }
 
@@ -52,7 +52,7 @@ void ElaborateThread::work() {
 //        emit ready(); // manda start alle schede per nuovo timeslot
         try {
            manageLastMinute();
-        } catch (out_of_range e) {
+        } catch (exception e) {
             throw e;
         }
         emit elabFinishedSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
@@ -245,4 +245,8 @@ QList<Packet> ElaborateThread::getPacketsList(QString shortKey){
         packetsList.append(i.value());
 
     return packetsList;
+}
+
+ElaborateThread::~ElaborateThread() {
+
 }

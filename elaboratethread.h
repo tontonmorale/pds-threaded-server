@@ -43,6 +43,7 @@ public:
 
     QList<Packet> getPacketsList(QString shortKey);
     void signalsConnection(QThread *thread);
+    ~ElaborateThread();
 
 public slots:
     void work();
