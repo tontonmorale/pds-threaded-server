@@ -227,7 +227,7 @@ void ListenerThread::readFromClient(){
                 emit log("Impossibile leggere dal socket, probabili errori sul socket, considero il client disconnesso.");
                 closeConnection();
                 return;
-                //possibile soluzione
+                //TODO: possibile soluzione
             }
         }
     }
@@ -298,10 +298,11 @@ void ListenerThread::closeConnection(){
 
 ListenerThread::~ListenerThread(){
     socket->disconnect();
+    disconnectionTimer->stop();
+    delete disconnectionTimer;
     socket->disconnectFromHost();
     delete socket;
     socket = nullptr;
-    delete disconnectionTimer;
 }
 
 

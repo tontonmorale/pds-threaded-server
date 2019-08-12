@@ -260,6 +260,7 @@ void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
         //popolo la mappa delle persone
+        //TODO:
 
         //disegna grafico con persone ricevute dal db
     }

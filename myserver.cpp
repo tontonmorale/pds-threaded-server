@@ -373,10 +373,15 @@ void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
 
 MyServer::~MyServer() {
     qDebug() << "Distruttore MyServer";
+
+//    qDeleteAll(listenerThreadPool.begin(), listenerThreadPool.end()); // TODO: errore nel distruttore dei listener thread
+//    listenerThreadPool.clear();
+
     delete espMap;
     delete mutex;
     delete packetsMap;
     delete packetsDetectionMap;
     delete peopleMap;
-    delete devicesCoords;
+    delete devicesCoords;    
+    //TODO: elaborate thread
 }
