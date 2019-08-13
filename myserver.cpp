@@ -258,8 +258,10 @@ void MyServer::startToClientsSlot(){
 void MyServer::disconnectClientSlot(QString espId){
     auto it = listenerThreadPool.find(espId);
 
-    if(it!=listenerThreadPool.end())
-        listenerThreadPool.erase(it);
+    if(it!=listenerThreadPool.end()){
+        delete it.value();
+        listenerThreadPool.erase(it); //TODO: testare
+    }
 
     connectedClients--;
     QString s = "Client ";
