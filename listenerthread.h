@@ -65,7 +65,7 @@ private:
     double maxSignal;
     int& totClients;
     bool firstStart;
-
+    QString tag;
 };
 
 #endif // LISTENEROBJ_H

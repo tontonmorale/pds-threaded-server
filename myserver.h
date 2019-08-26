@@ -24,7 +24,7 @@ public:
     void Connects(QString slot);
     ~MyServer() override;
     static const int intervalTime = 15000;
-    static const int elaborateTime = 3000;
+    static const int elaborateTime = intervalTime/3;
 
 signals:
     void start2ClientsSig();
@@ -80,6 +80,7 @@ private:
     void createElaborateThread();
     bool elabTimerTimeout;
     bool startCalled;
+    QString tag;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

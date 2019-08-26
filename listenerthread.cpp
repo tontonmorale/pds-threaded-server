@@ -24,7 +24,8 @@ ListenerThread::ListenerThread(MyServer *server,
       server(server),
       maxSignal(maxSignal),
       totClients(totClients),
-      firstStart(true){
+      firstStart(true),
+      tag("ListenerThread") {
 }
 
 /**
@@ -58,7 +59,7 @@ void ListenerThread::work(){
         disconnectionTimer = new QTimer(this);
         connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::closeConnection,  Qt::DirectConnection);
     } catch (bad_alloc e) {
-        emit log("Errore nell'allocazione del disconnection timer, non proseguo.");
+        emit log(tag + ": Errore nell'allocazione del disconnection timer, non proseguo.");
         return;
     }
 
@@ -68,10 +69,10 @@ void ListenerThread::work(){
             throw("Errore nel set socket descriptor\n");
         }
     } catch (bad_alloc e) {
-       emit log("Errore nell'allocazione del socket, non proseguo.");
+       emit log(tag + ": Errore nell'allocazione del socket, non proseguo.");
         return;
     } catch (exception e) {
-        emit log(e.what());
+        emit log(tag + ": " + e.what());
         return;
     }
 
@@ -99,7 +100,7 @@ void ListenerThread::clientSetup(){
     QString line, clientId, hello2Client, mac, helloFromClient;
     const char* msg;
 
-    emit log("[ listener thread ] New connection");
+    emit log("---------------------------------------\n" + tag + ": New connection");
 
     try {
         socket->waitForReadyRead();
@@ -129,15 +130,15 @@ void ListenerThread::clientSetup(){
             espMap->insert(mac, Esp(id, mac, QPointF(NAN, NAN)));
         }
 
-        emit log("\tclient info: mac = " + mac + ", id = " + id);
+        emit log("client info: mac = " + mac + ", id = " + id);
         hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
         msg = hello2Client.toStdString().c_str();
         socket->write(msg);
     } catch (out_of_range e) {
-        emit log("[ListenerThread] problemi di out of range nella clientSetUp");
+        emit log(tag + ": problemi di out of range nella clientSetUp");
         //anche qui, che fare?
     } catch (exception e) {
-        emit log("Probabile errore nel socket");
+        emit log(tag + ": Probabile errore nel socket");
         //TODO: che faccio se ho un errore sul socket?
     }
 
@@ -154,18 +155,18 @@ void ListenerThread::sendStart(){
     while (retry) {
         try {
             socket->write("START\r\n");
-            qDebug() << "mando Start";
+            qDebug() << tag << ": mando Start a " << id;
 
             if(firstStart){
                 //start timer per rilevare disconnessioni
-                disconnectionTimer->start(MyServer::intervalTime + 2000);
+                disconnectionTimer->start(2*MyServer::intervalTime + 2000);
                 firstStart = false;
             }
             break;
         } catch (...) {
             retry--;
             if (!retry) {
-                emit log("Impossibile mandare start, probabili errori sul socket, considero il client disconnesso."); //possibile soluzione
+                emit log(tag + ": Impossibile mandare start, probabili errori sul socket, considero il client disconnesso."); //possibile soluzione
                 closeConnection();
             }
         }
@@ -179,6 +180,7 @@ bool ListenerThread::getEndPacketSent(){
 /**
  * @brief ListenerThread::readFromClient
  * ricezione di nuovi dati dall'esp, geestisce il caso in cui ci sia un pacchetto nuovo o la fine dell'elenco di pacchetti
+ * se errore => chiude connessione
  */
 void ListenerThread::readFromClient(){
     QString line, firstWord, hash, timestamp, mac, signal, microsec_str, espId, ssid;
@@ -192,46 +194,36 @@ void ListenerThread::readFromClient(){
 
 
     //start timer per rilevare disconnessioni
-    disconnectionTimer->start(MyServer::intervalTime + 2000);
-    int retry = 3;
-    while (retry) {
-        try {
-            while ( socket->canReadLine() ) {
-                qDebug() << "disconnectionTimer scheda " << id << " time left: " << disconnectionTimer->remainingTime();
-                line = QString(socket->readLine());
+    disconnectionTimer->start(MyServer::intervalTime + 5000);
 
-                qDebug() << line;
+    try{
+        while ( socket->canReadLine() ) {
+            line = QString(socket->readLine());
 
-                line.remove('\r');
-                line.remove('\n');
+            qDebug() << tag << ": " << line;
 
-                firstWord = line.split(" ").at(0);
+            line.remove('\r');
+            line.remove('\n');
 
-                if(firstWord.compare("PKT")==0){
-                    // ricevuto nuovo pacchetto
-                    newPacket(line);
-                }
-                if(firstWord.compare("END")==0){
-                    // ricevuto fine dell'elenco di pacchetti
-                    qDebug() << "end ricevuto da: " << id;
-                    endPacketSent = true;
-                    emit endPackets();
-                }
+            firstWord = line.split(" ").at(0);
+
+            if(firstWord.compare("PKT")==0){
+                // ricevuto nuovo pacchetto
+                newPacket(line);
             }
-        } catch (out_of_range e) {
-            emit log("Eccezione out of range, vado avanti senza considerare il pacchetto corrente");
-            continue;
-        } catch (...) {
-            retry--;
-            if (!retry) {
-                emit log("Impossibile leggere dal socket, probabili errori sul socket, considero il client disconnesso.");
-                closeConnection();
-                return;
-                //TODO: possibile soluzione
+            if(firstWord.compare("END")==0){
+                // ricevuto fine dell'elenco di pacchetti
+                qDebug() << tag << ": end ricevuto da: " << id;
+                endPacketSent = true;
+                emit endPackets();
             }
         }
+    } catch (...) {
+        // errore socket, disconnetto
+        emit log("Impossibile leggere dal socket, probabili errori sul socket, considero il client disconnesso.");
+        closeConnection();
+        return;
     }
-
 }
 
 /**
@@ -260,7 +252,7 @@ void ListenerThread::newPacket(QString line){
     espId = sl.at(5);
 
     if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
-        emit log("[scheda " + espId + "] " + line);
+        emit log(tag + ": " + "[esp " + espId + "] " + line);
 
     //scarto pacchetto se valore intensità segnale sballata
 //    if(abs(signal) > abs(maxSignal)){
@@ -290,9 +282,9 @@ void ListenerThread::newPacket(QString line){
 
 void ListenerThread::closeConnection(){
 //    socket->write("DISCONNECTED\r\n");
-    qDebug() << "mando disconnection";
+    qDebug() << tag << ": mando disconnection";
 
-    qDebug("Disconnessione client");
+    qDebug() << tag << ": Disconnessione client";
     emit finished(id);
 }
 

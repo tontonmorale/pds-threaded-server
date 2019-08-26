@@ -15,15 +15,15 @@ DBThread::DBThread()
 }
 
 DBThread::DBThread(MyServer* server) :
-    server(server) {
-
+    server(server),
+    tag("DBThread") {
 }
 
 void DBThread::run() {
 
     if (!dbConnect()){
         dbDisconnect();
-        emit fatalErrorSig("Database connection failed");
+        emit fatalErrorSig(tag + ": Database connection failed");
         return;
     }
 
@@ -38,15 +38,15 @@ void DBThread::run() {
             ");";
 
 
-    qDebug().noquote() << "query: " + queryString;
+//    qDebug().noquote() << "query: " + queryString;
 
     if (query.exec(queryString)) {
-        qDebug() << "Query di creazione tabella Timestamps andata a buon fine";
+        qDebug() << tag << " : CREATE tabella Timestamps ok";
     }
     else{
-        qDebug() << "Query di creazione tabella timestamp fallita";
+        qDebug() << tag << " : CREATE tabella Timestamp fallita";
         dbDisconnect();
-        emit fatalErrorSig("TIMESTAMPS table creation failed");
+        emit fatalErrorSig(tag + ": TIMESTAMPS table creation failed");
         return;
     }
 
@@ -58,15 +58,15 @@ void DBThread::run() {
             "PRIMARY KEY (ts, mac)"
             ");";
 
-    qDebug().noquote() << "query: " + queryString;
+//    qDebug().noquote() << "query: " + queryString;
 
     if (query.exec(queryString)) {
-        qDebug() << "Query di creazione tabella timestamp andata a buon fine";
+        qDebug() << tag << " : Create timestamp ok";
     }
     else{
-        qDebug() << "Query di creazione tabella timestamp fallita";
+        qDebug() << tag << " : Create tabella Timestamp fallita";
         dbDisconnect();
-        emit fatalErrorSig("LPSTATS table creation failed");
+        emit fatalErrorSig(tag + ": LPSTATS table creation failed");
         return;
     }
 
@@ -78,7 +78,7 @@ void DBThread::run() {
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
     getChartDataFromDb(begintime, endtime);
 
-    emit logSig("[ db thread ] Db connection established");
+    emit logSig(tag + ": Db connection established");
     emit dbConnectedSig();
 
     return;
@@ -86,7 +86,7 @@ void DBThread::run() {
 
 void DBThread::signalsConnection(QThread *thread){
 
-    qDebug().noquote() << "signalsConnection()";
+    qDebug().noquote() << tag << " : signalsConnection()";
 
     qRegisterMetaType<QMap<QString, int>>("QMap<QString, int>");
     qRegisterMetaType<QMap<QString, Person>>("QMap<QString, Person>");
@@ -111,12 +111,12 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     QSqlQuery query(QSqlDatabase::database("connection"));
     QString queryString;
 
-    qDebug().noquote() << "send()";
+    qDebug().noquote() << tag << " : sendChartDataToDbSlot()";
 
     //inserisco la nuova entry timestamp-numero di persone rilevate a quel timestamp nella tabella timestamp
     if (!isDbOpen()) {
-        qDebug().noquote() << "send(): db not open";
-        emit fatalErrorSig("Db is not open");
+        qDebug().noquote() << tag << " : sendChartDataToDbSlot(): db not open";
+        emit fatalErrorSig(tag + ": Db is not open");
         return;
     }
 
@@ -126,20 +126,20 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
 
     //Il timestamp ricevuto è del tipo: 2019/03/22_17:52:14
     //in questa maniera vado a memorizzare l'intera stringa tranne i secondi
-    qDebug().noquote() << "Timestamp delle persone nella peopleMap: " + timestamp;
+    qDebug().noquote() << tag << " : Timestamp delle persone nella peopleMap: " + timestamp;
 
     queryString = "INSERT INTO Timestamps (timestamp, count) "
                               "VALUES ('" + timestamp + "', " + QString::number(size) + ");";
     if (DBThread::db.open())
-        qDebug().noquote() << "il db è open.";
+        qDebug().noquote() << tag << " : il db è open";
 
-    qDebug().noquote() << "query: " + queryString;
+//    qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
-        qDebug() << "Query di inserzione della nuova entry nella tabella timestamp andata a buon fine";
+        qDebug() << tag << " : INSERT in Timestamp ok";
     }
     else{
-        qDebug() << "Query di inserzione della nuova entry nella tabella timestamp fallita";
-        emit logSig("Cannot update data on db");
+        qDebug() << tag << " : INSERT in Timestamp fallita";
+        emit logSig(tag + ": Cannot update data on db");
     }
 
     if(peopleMap.size()!=0){
@@ -153,9 +153,9 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
         queryString = queryString.left(queryString.length()-1); //da verificare
         queryString += ";";
 
-        qDebug().noquote() << "query: " + queryString;
+//        qDebug().noquote() << "query: " + queryString;
         if (query.exec(queryString)) {
-            qDebug() << "Query di inserzione delle persone nella tabella LPStats andata a buon fine";
+            qDebug() << tag << " : Query di inserzione delle persone nella tabella LPStats andata a buon fine";
         }
         else{
             qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
@@ -201,11 +201,11 @@ bool DBThread::dbConnect() {
     this->db.setPassword("");
 
     if (db.open()){
-        qDebug().noquote() << "Connection to db extablished\n";
+        qDebug().noquote() << tag << " : Connection to db extablished\n";
         return true;
     }
     else{
-        qDebug().noquote() << "Impossible to connect to db\n";
+        qDebug().noquote() << tag << " : Impossible to connect to db\n";
         return false;
     }
 }
@@ -220,10 +220,10 @@ void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
                   "FROM Timestamps "
                   "WHERE timestamp > '" + begintime + "' AND timestamp <= '" + endtime + "';";
 
-    qDebug().noquote() << "query: " + queryString;
+//    qDebug().noquote() << tag << " : query: " + queryString;
     if (query.exec(queryString)) {
         //popolo la mappa delle persone
-        qDebug() << "Query di select dalla tabella Timestamps good";
+        qDebug() << tag << " : Query di select dalla tabella Timestamps good";
         while (query.next()) {
             chartDataToDrawMap.insert(query.value(0).toString(), query.value(1).toInt());
         }
@@ -232,7 +232,7 @@ void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
 
     }
     else{
-        qDebug() << "Query di select dalla tabella Timestamps fallita";
+        qDebug() << tag << " : Query di select dalla tabella Timestamps fallita";
         return;
     }
 }

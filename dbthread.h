@@ -41,6 +41,7 @@ private:
     QSqlDatabase db;
     QString begintime, endtime;
     MyServer* server;
+    QString tag;
 };
 
 

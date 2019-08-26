@@ -16,7 +16,8 @@ MyServer::MyServer(QObject *parent):
     DBinitialized(false),
     firstStart(true),
     elabTimerTimeout(false),
-    startCalled(false){
+    startCalled(false),
+    tag("MyServer") {
 
     try {
         espMap = new QMap<QString, Esp>();
@@ -76,7 +77,7 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
 void MyServer::init(){
     firstStart = true;
     confFromFile();
-    emit logSig("[ server ] Esp configuration acquired from file");
+    emit logSig(tag + ": Esp configuration acquired from file");
     maxEspCoords = setMaxEspCoords(espMap);
     if(maxEspCoords.x() > maxEspCoords.y())
         maxSignal = Utility::metersToDb(maxEspCoords.y());
@@ -119,7 +120,7 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
         thread->start();
     } catch (exception e) {
-        emit logSig("Errore nell'inizializzazione di un listener thread: " + QString(e.what()));
+        emit logSig(tag + ": Errore nell'inizializzazione di un listener thread: " + QString(e.what()));
     }
 }
 
@@ -145,7 +146,7 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
  * @brief MyServer::createElaborateThread
  * -> controlla se ha ricevuto il segnale di "pacchetti ricevuti" da tutti i listenerThread
  * -> genera l'elaborateThread per ottenere i device nell'area nel minuto passato
- * -> manda segnale di start per il nuovo minuto
+ * -> se minuto 5 allora manda segnale di start per il nuovo minuto
  */
 void MyServer::createElaborateThreadSlot(){
     // todo: lock
@@ -166,11 +167,11 @@ void MyServer::createElaborateThreadSlot(){
     }
 
     if(endPkClients==connectedClients){
-        qDebug() << "createElaborateThreadSlot, currMinute = " << currMinute << ", endPkClients: " << endPkClients;
+        qDebug() << tag << ": createElaborateThreadSlot, currMinute = " << currMinute << ", endPkClients: " << endPkClients;
         if(elaborateTimer.isActive()){
             elaborateTimer.stop();
-            createElaborateThread();
         }
+        createElaborateThread();
     }
 }
 
@@ -181,16 +182,16 @@ void MyServer::createElaborateThread(){
     try {
         QThread *thread = new QThread();
         ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, mutex, connectedClients,
-                                                  peopleMap, currMinute, espMap, maxEspCoords, devicesCoords); 
-        qDebug() << "[server] ----------> new elab thread creato";
+                                                  peopleMap, currMinute, espMap, maxEspCoords, devicesCoords);
         et->moveToThread(thread);
         et->signalsConnection(thread);
         thread->start();
     } catch (bad_alloc e) {
-        emit logSig("exception in allocating Elaborate thread, skipping elaboration of current minute.");
+        emit logSig(tag + ": Exception in allocating Elaborate thread, skipping elaboration of current minute.");
+        //TODO: free di elab thread
         return;
     } catch(exception e) {
-        emit logSig(e.what());
+        emit logSig(tag + ": " + e.what());
     }
 }
 
@@ -219,7 +220,7 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
         firstStart = false;
         currMinute = 0;
         // inizio blocco N minuti
-        qDebug() << "readyFromClientSlot(), currMinute = 0";
+        qDebug() << tag << ": readyFromClientSlot(), currMinute = " << currMinute;
         startToClientsSlot();
     }
     else{
@@ -236,7 +237,7 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
  */
 void MyServer::startToClientsSlot(){
     if(connectedClients >= 2){
-        qDebug() << "Start to clients\n";
+        qDebug() << tag + ": Start to clients\n";
         currMinute++;
         startCalled = true;
         if(currMinute != 1)
@@ -244,14 +245,14 @@ void MyServer::startToClientsSlot(){
 
         if(currMinute > 5)
             return;
-        emit logSig("\n[server] Current minute " + QString::number(currMinute) + ": sending start...\n");        
+        emit logSig("---------------------------------------\n" + tag + ": Current minute = " + QString::number(currMinute) + ": sending start...\n");
         emit start2ClientsSig();
         startTimer.start(MyServer::intervalTime);
 
     }
     else {
         // todo: meno di 2 client connessi => ?????
-        // paccio partire timer di reboot
+        // faccio partire timer di reboot
     }
 }
 
@@ -305,8 +306,8 @@ void MyServer::confFromFile(){
         } catch (...) {
             retry--;
             if (!retry) {
-                qDebug() << "Errore apertura file";
-                emit fatalErrorSig("Impossibile aprire il file degli esp");
+                qDebug() << tag << ": Errore apertura file";
+                emit fatalErrorSig(tag + ": Impossibile aprire il file degli esp");
                 this->~MyServer();
                 exit(-2);
             }
@@ -374,7 +375,7 @@ void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
 //}
 
 MyServer::~MyServer() {
-    qDebug() << "Distruttore MyServer";
+    qDebug() << tag << ": Distruttore MyServer";
 
 //    qDeleteAll(listenerThreadPool.begin(), listenerThreadPool.end()); // TODO: errore nel distruttore dei listener thread
 //    listenerThreadPool.clear();

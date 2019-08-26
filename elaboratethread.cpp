@@ -26,9 +26,8 @@ ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packet
     espMap(espMap),
     maxEspCoords(maxEspCoords),
     devicesCoords(devicesCoords),
-    server(server)
-{
-
+    server(server),
+    tag("ElaborateThread") {
 }
 
 /**
@@ -43,9 +42,6 @@ void ElaborateThread::work() {
         throw e;
     }
 
-
-    qDebug() << "[elaborate thread] gestito minuto corrente";
-
     // ultimo minuto
     if(currMinute >= MAX_MINUTES){
         currMinute = 0;
@@ -56,10 +52,7 @@ void ElaborateThread::work() {
             throw e;
         }
         emit elabFinishedSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
-        qDebug() << "[elaborate thread] gestito ultimo minuto";
-
     }
-    qDebug() << "[elaborate thread] in teoria sto per morire";
 
     emit finished();
 }
@@ -125,7 +118,7 @@ void ElaborateThread::manageCurrentMinute(){
                             posA = esp.getPosition();
                             d1 = Utility::dbToMeters(packet->getSignal());
                             if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                                qDebug().noquote() << QString::number(d1) + " " + QString::number(packet->getSignal()) + "\n";
+                                qDebug().noquote() << tag << ": " << QString::number(d1) + " " + QString::number(packet->getSignal()) + "\n";
                         }
                     }
                     packet++;
@@ -135,7 +128,7 @@ void ElaborateThread::manageCurrentMinute(){
                             posB = esp.getPosition();
                             d2 = Utility::dbToMeters(packet->getSignal());
                             if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                                qDebug().noquote() << QString::number(d2) + " " + QString::number(packet->getSignal()) + "\n";
+                                qDebug().noquote() << tag << ": " << QString::number(d2) + " " + QString::number(packet->getSignal()) + "\n";
                         }
                     }
                     packet++;
@@ -145,13 +138,13 @@ void ElaborateThread::manageCurrentMinute(){
                             posC = esp.getPosition();
                             d3 = Utility::dbToMeters(packet->getSignal());
                             if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                                qDebug().noquote() << QString::number(d3) + " " + QString::number(packet->getSignal()) + "\n";
+                                qDebug().noquote() << tag << ": " << QString::number(d3) + " " + QString::number(packet->getSignal()) + "\n";
                         }
                     }
 
                     QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
                     if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                        qDebug() << "posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
+                        qDebug() << tag << ": posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
                     person->addPosition(pos);
 
     //            }

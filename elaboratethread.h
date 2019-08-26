@@ -28,6 +28,7 @@ private:
     void manageCurrentMinute();
     void manageLastMinute();
     MyServer* server;
+    QString tag;
 
 public:
     ElaborateThread();
