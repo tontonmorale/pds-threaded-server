@@ -27,7 +27,7 @@ public:
     static const int elaborateTime = intervalTime/3;
 
 signals:
-    void start2ClientsSig();
+    void start2ClientsSig(int currMinute);
     void fatalErrorSig(QString message);
     void logSig(QString message);
     void drawChartSig(QMap<QString, int> chartDataToDrawMap);

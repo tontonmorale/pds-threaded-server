@@ -146,16 +146,16 @@ void ListenerThread::clientSetup(){
 
 /**
  * @brief ListenerThread::sendStart
- * scrive start all'esp per iniziare l'ascolto dei pacchetti e setta il timer
+ * scrive start all'esp per iniziare l'ascolto dei pacchetti e setta il timer di disconnessione
  */
-void ListenerThread::sendStart(){
+void ListenerThread::sendStart(int currMinute){
 
 //    endPacketSent = false;
     int retry = 3;
     while (retry) {
         try {
             socket->write("START\r\n");
-            qDebug() << tag << ": mando Start a " << id;
+            qDebug() << tag << ": mando Start a " << id << "(minuto " << currMinute << ")";
 
             if(firstStart){
                 //start timer per rilevare disconnessioni

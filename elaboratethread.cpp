@@ -82,8 +82,9 @@ void ElaborateThread::signalsConnection(QThread *thread){
  * aggiunge in peopleMap le nuove persone rilevate da tutti gli esp nel minuto corrente
  */
 void ElaborateThread::manageCurrentMinute(){
-    mutex->lock();
+
     try {
+        mutex->lock();
         QMap<QString, int>::iterator i;
         for(i=packetsDetectionMap->begin(); i!=packetsDetectionMap->end(); i++){
 
@@ -182,8 +183,9 @@ void ElaborateThread::manageLastMinute() {
  * medie delle trilaterazioni
  */
 void ElaborateThread::calculateAvgPosition(){
-    mutex->lock();
+
     try {
+        mutex->lock();
         QMap<QString, Person>::iterator person;
         for(person=peopleMap->begin(); person!=peopleMap->end(); person++){
             QList<QPointF> positionsList = person->getPositionsList();
@@ -192,9 +194,9 @@ void ElaborateThread::calculateAvgPosition(){
                 avg += pos;
             }
             avg /= positionsList.length();
-            person->setAvgPosition(avg);
-            mutex->unlock();
+            person->setAvgPosition(avg);            
         }
+        mutex->unlock();
     } catch (out_of_range e) {
         mutex->unlock();
         throw out_of_range("Note: there was some problem with ranges in structures calculating the average positions.");

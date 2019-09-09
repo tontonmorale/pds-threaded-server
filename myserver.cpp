@@ -246,7 +246,7 @@ void MyServer::startToClientsSlot(){
         if(currMinute > 5)
             return;
         emit logSig("---------------------------------------\n" + tag + ": Current minute = " + QString::number(currMinute) + ": sending start...\n");
-        emit start2ClientsSig();
+        emit start2ClientsSig(currMinute);
         startTimer.start(MyServer::intervalTime);
 
     }
@@ -318,25 +318,31 @@ void MyServer::confFromFile(){
 }
 
 /**
- * @brief MyServer::dataForDb
+ * @brief MyServer::onChartDataReadySlot
+ * richiamata dopo l'elaborazione del quinto minuto: pulisce strutture, passa dati al db e alla gui
  */
 void MyServer::onChartDataReadySlot(){
-    mutex->lock();
-    // pulisce le strutture dati per il time slot successivo
-    packetsMap->clear();
-//    packetsMap = new QMap<QString, Packet>(); // todo: da rivedere
-    packetsDetectionMap->clear();
+    try {
+        mutex->lock();
+        // pulisce le strutture dati per il time slot successivo
+        packetsMap->clear();
+    //    packetsMap = new QMap<QString, Packet>(); // todo: da rivedere
+        packetsDetectionMap->clear();
 
-    //emetto segnale verso dbthread
-    QMap<QString, Person> people = *peopleMap;
-    peopleMap->clear();
-    emit chartDataToDbSig(people);
+        //emetto segnale verso dbthread
+        QMap<QString, Person> people = *peopleMap;
+        peopleMap->clear();
+        emit chartDataToDbSig(people);
 
-    //passo copia dati da disegnare alla mappa e cancello quelli vecchi
-    QList<QPointF> coordsForMap = *devicesCoords;
-    emit drawMapSig(coordsForMap, maxEspCoords);
-    devicesCoords->clear();
-    mutex->unlock();
+        //passo copia dati da disegnare alla mappa e cancello quelli vecchi
+        QList<QPointF> coordsForMap = *devicesCoords;
+        emit drawMapSig(coordsForMap, maxEspCoords);
+        devicesCoords->clear();
+        mutex->unlock();
+    } catch (...) {
+        mutex->unlock();
+    }
+
 }
 
 /**

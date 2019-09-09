@@ -42,7 +42,7 @@ public:
 public slots:
     void work();
     void readFromClient();
-    void sendStart();
+    void sendStart(int currMinute);
     void closeConnection();
 
 signals:
