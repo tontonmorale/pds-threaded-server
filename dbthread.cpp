@@ -55,7 +55,7 @@ void DBThread::run() {
     queryString = "CREATE TABLE IF NOT EXISTS LPStats ("
             "timestamp VARCHAR(255) NOT NULL, "
             "mac VARCHAR(255) NOT NULL, "
-            "PRIMARY KEY (ts, mac)"
+            "PRIMARY KEY (timestamp, mac)"
             ");";
 
 //    qDebug().noquote() << "query: " + queryString;
@@ -64,7 +64,7 @@ void DBThread::run() {
         qDebug() << tag << " : Create timestamp ok";
     }
     else{
-        qDebug() << tag << " : Create tabella Timestamp fallita";
+        qDebug() << tag << " : Create tabella LPStats fallita";
         dbDisconnect();
         emit fatalErrorSig(tag + ": LPSTATS table creation failed");
         return;
@@ -90,6 +90,7 @@ void DBThread::signalsConnection(QThread *thread){
 
     qRegisterMetaType<QMap<QString, int>>("QMap<QString, int>");
     qRegisterMetaType<QMap<QString, Person>>("QMap<QString, Person>");
+    qRegisterMetaType<QMap<QString, QList<QString>>>("QMap<QString, QList<QString>>");
 
     connect(thread, SIGNAL(started()), this, SLOT(run()));
 
@@ -103,6 +104,11 @@ void DBThread::signalsConnection(QThread *thread){
     connect(this, &DBThread::fatalErrorSig, server, &MyServer::errorFromThreadSlot);
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     connect(this, &DBThread::dbConnectedSig, server, &MyServer::dbConnectedSlot);
+    connect(server, &MyServer::getMinDateForLPStatsSig, this, &DBThread::getMinDateForLPSTATSSlot);
+    connect(this, &DBThread::LPStatsWindowCreationSig, server, &MyServer::LPStatsWindowCreationSlot);
+    connect(server, &MyServer::getLPStatsSig, this, &DBThread::GetLPSFromDB);
+    connect(this, &DBThread::LPStatsSig, server, &MyServer::LPStatsSlot);
+
 }
 
 void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
@@ -247,25 +253,70 @@ void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
 //    return peopleCounter;
 //}
 
-void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
+void DBThread::getMinDateForLPSTATSSlot() {
     QSqlQuery query(QSqlDatabase::database("connection"));
     QString queryString;
 
-    queryString = "SELECT mac, COUNT(*) "
-                  "FROM LPStats "
-                  "WHERE timestamp > " + begintime + " AND timestamp < " + endtime +
-                  "GROUP BY mac"
-                  "ORDER BY COUNT(*);";
+    queryString = "SELECT MIN(timestamp), MAX(timestamp) "
+                  "FROM LPStats;";
+    if (query.exec(queryString)) {
+        if (query.next()){
+            QString min = query.value(0).toString(), max = query.value(1).toString();
+            emit LPStatsWindowCreationSig(min, max);
+        }
+        else emit LPStatsWindowCreationSig("", "");
+    }
+    else {
+        return emit LPStatsWindowCreationSig("", "");
+    }
+}
+
+void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
+    QSqlQuery query(QSqlDatabase::database("connection"));
+    QString queryString, queryString2;
+    QList<QString> macList;
+    QMap<QString, QList<QString>> map;
+
+    queryString = "SELECT * "
+                  "FROM (SELECT mac, COUNT(mac) as counter "
+                   "FROM LPStats "
+                   "WHERE timestamp >= '" + begintime + "' AND timestamp <= '" + endtime + "' "
+                   "GROUP BY mac) as Tabella "
+                   "ORDER BY Tabella.counter "
+                   "LIMIT 3;";
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
-        //popolo la mappa delle persone
-        //TODO:
-
-        //disegna grafico con persone ricevute dal db
+        qDebug().noquote() << "Funge";
+        while(query.next()) {
+            macList.append(query.value(0).toString());
+        }
+        for (auto mac : macList){
+            queryString2 = "SELECT timestamp "
+                           "FROM LPStats "
+                           "WHERE timestamp >= '" + begintime + "' AND timestamp <= '" + endtime + "' "
+                           "AND mac = '" + mac + "' "
+                           "ORDER BY timestamp;";
+            qDebug().noquote() << "query: " + queryString2;
+            if (query.exec(queryString2)) {
+                qDebug().noquote() << "Funge 2";
+                while (query.next()) {
+                    if (map.find(mac)==map.end()){
+                        QList<QString> list;
+                        map.insert(mac, list);
+                    }
+                        map.find(mac)->append(query.value(0).toString());
+                }
+            }
+            else {
+                qDebug() << "Query per LPStats fallita "  + query.lastError().text();
+                return;
+            }
+        }
+        emit LPStatsSig(map);
     }
     else{
-        qDebug() << "Query di select dalla tabella Timestamps fallita";
+        qDebug() << "Query per i timestamp di LPStats fallita: " + query.lastError().text();
         return;
     }
 }

@@ -36,6 +36,10 @@ signals:
     void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void dbConnectedSig();
     void closeConnectionSig(QString s);
+    void getMinDateForLPStatsSig();
+    void LPStatsWindowCreationSig(QString, QString);
+    void getLPStatsSig(QString, QString);
+    void LPStatsSig(QMap<QString, QList<QString>>);
 
 public slots:
 //    void onClientConnection();
@@ -49,6 +53,10 @@ public slots:
     void addListenerThreadSlot(ListenerThread *lt);
     void disconnectClientSlot(QString);
     void dbConnectedSlot();
+    void getMinDateForLPSTATSSlot();
+    void LPStatsWindowCreationSlot(QString, QString);
+    void getLPStatsSlot(QString, QString);
+    void LPStatsSlot(QMap<QString, QList<QString>>);
 //    void drawMapSlot();
 //    void timeout();
 

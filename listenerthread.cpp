@@ -289,6 +289,7 @@ void ListenerThread::closeConnection(){
 }
 
 ListenerThread::~ListenerThread(){
+    qDebug() << tag << ": Distruttore ListenerThread";
     socket->disconnect();
     disconnectionTimer->stop();
     delete disconnectionTimer;

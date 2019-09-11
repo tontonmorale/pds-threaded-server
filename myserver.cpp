@@ -5,8 +5,8 @@
 #include <memory>
 using namespace std;
 
-//#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_prova/pds-threaded-server/esp.txt"
-#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
+#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
+//#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
     QTcpServer (parent),
@@ -343,6 +343,22 @@ void MyServer::onChartDataReadySlot(){
         mutex->unlock();
     }
 
+}
+
+void MyServer::getMinDateForLPSTATSSlot() {
+    emit getMinDateForLPStatsSig();
+}
+
+void MyServer::LPStatsWindowCreationSlot(QString minDate, QString maxDate) {
+    emit LPStatsWindowCreationSig(minDate, maxDate);
+}
+
+void MyServer::getLPStatsSlot(QString begintime, QString endtime) {
+    emit getLPStatsSig(begintime, endtime);
+}
+
+void MyServer::LPStatsSlot(QMap<QString, QList<QString>> map) {
+    emit LPStatsSig(map);
 }
 
 /**

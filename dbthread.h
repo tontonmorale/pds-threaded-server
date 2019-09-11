@@ -29,6 +29,7 @@ public:
 public slots:
     void sendChartDataToDbSlot(QMap<QString, Person> peopleMap);
     void run();
+    void getMinDateForLPSTATSSlot();
 
 signals:
     void finished();
@@ -36,6 +37,8 @@ signals:
     void logSig(QString logMsg);
     void drawChartSig(QMap<QString, int> chartDataToDrawMap);
     void dbConnectedSig();
+    void LPStatsWindowCreationSig(QString, QString);
+    void LPStatsSig(QMap<QString, QList<QString>>);
 
 private:
     QSqlDatabase db;
