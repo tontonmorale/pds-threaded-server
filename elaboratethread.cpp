@@ -241,5 +241,5 @@ QList<Packet> ElaborateThread::getPacketsList(QString shortKey){
 }
 
 ElaborateThread::~ElaborateThread() {
-
+qDebug() << tag << ": Distruttore ElaborateThread";
 }

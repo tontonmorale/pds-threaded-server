@@ -29,19 +29,25 @@ public:
 
 signals:
     void fatalErrorSig(QString message);
+    void getMinDateForLPSTATSSig();
+    void getLPStatsSig(QString, QString);
 
 public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
     void drawChartSlot(QMap<QString, int> chartDataToDrawMap);
     void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords);
+    void submitDatesForLPStatsSlot();
     void drawOldCountChartSlot();
     void serverListenSlot();
     void onButtonClicked();
     void setMinuteSlot(int minute);
+    void LPStatsWindowCreationSlot(QString, QString);
+    void drawLPStatsSlot(QMap<QString, QList<QString>>);
 
 private:
     Ui::MainWindow *ui;
+    QWidget *newWindow;
     MyServer server;
 };
 
