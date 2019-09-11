@@ -38,6 +38,7 @@ public slots:
     void drawOldCountChartSlot();
     void serverListenSlot();
     void onButtonClicked();
+    void setMinuteSlot(int minute);
 
 private:
     Ui::MainWindow *ui;

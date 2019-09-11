@@ -112,6 +112,8 @@ void MyServer::dbConnectedSlot(){
  */
 void MyServer::incomingConnection(qintptr socketDescriptor){
     try {
+        QMap<QString, ListenerThread*> listenerThreadPool;
+
         QThread *thread = new QThread();
         ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal, totClients);
 
@@ -137,6 +139,11 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
         listenerThreadPool.erase(it);
         connectedClients--;
     }
+    else{
+        emit logSig("---------------------------------------------------------------------------------------");
+        emit logSig(tag + ": New connection");
+        emit logSig("client info: id = " + newId);
+    }
 
     connectedClients++;
     listenerThreadPool.insert(newId, lt);
@@ -161,8 +168,9 @@ void MyServer::createElaborateThreadSlot(){
     endPkClients ++;
 
     // se ultimo minuto e arrivati almeno 2 end packet fai partire i nuovi 5 minuti
-    if(currMinute>5 && endPkClients==2){
+    if(currMinute>MAX_MINUTES && endPkClients==2){
         currMinute = 0;
+        emit setMinuteSig(currMinute);
         startToClientsSlot();
     }
 
@@ -213,20 +221,14 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
     s += QString::number(connectedClients);
     logSig(s);
 
-    if(connectedClients==totClients
-//            && Utility::canTriangulate(connectedClients)
-            && firstStart
-            ){
+    if(connectedClients>=2 && firstStart){
         firstStart = false;
         currMinute = 0;
+        emit setMinuteSig(currMinute);
         // inizio blocco N minuti
         qDebug() << tag << ": readyFromClientSlot(), currMinute = " << currMinute;
         startToClientsSlot();
     }
-    else{
-        //todo: ?? in teoria niente
-    }
-
 }
 
 /**
@@ -239,13 +241,15 @@ void MyServer::startToClientsSlot(){
     if(connectedClients >= 2){
         qDebug() << tag + ": Start to clients\n";
         currMinute++;
+        emit setMinuteSig(currMinute);
         startCalled = true;
         if(currMinute != 1)
             elaborateTimer.start(MyServer::elaborateTime);
 
-        if(currMinute > 5)
+        if(currMinute > MAX_MINUTES)
             return;
-        emit logSig("---------------------------------------\n" + tag + ": Current minute = " + QString::number(currMinute) + ": sending start...\n");
+        emit logSig("---------------------------------------------------------------------------------------");
+        emit logSig(tag + ": Current minute = " + QString::number(currMinute) + ": sending start...\n");
         emit start2ClientsSig(currMinute);
         startTimer.start(MyServer::intervalTime);
 
@@ -383,8 +387,8 @@ void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
 MyServer::~MyServer() {
     qDebug() << tag << ": Distruttore MyServer";
 
-//    qDeleteAll(listenerThreadPool.begin(), listenerThreadPool.end()); // TODO: errore nel distruttore dei listener thread
-//    listenerThreadPool.clear();
+    qDeleteAll(listenerThreadPool.begin(), listenerThreadPool.end()); // TODO: errore nel distruttore dei listener thread
+    listenerThreadPool.clear();
 
     delete espMap;
     delete mutex;

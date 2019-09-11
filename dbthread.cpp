@@ -169,18 +169,20 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     getChartDataFromDb(begintime, timestamp);
 }
 
+// TODO: cambio slot da 5 min a 1 min e ripeto 4 minuti invece che 5. Da ricambiare nella versione finale
 QDateTime DBThread::calculateTimestamp(){
     QDateTime timestamp = QDateTime::currentDateTime();
-    begintime = timestamp.toString("yyyy/MM/dd_hh:mm");
-    int minute = timestamp.toString("mm").toInt();
-    QDateTime correct_timestamp;
-    if (int resto = (minute % 5 != 0)){
-        correct_timestamp = QDateTime(QDate(timestamp.date()), QTime(timestamp.time().hour(), timestamp.time().minute()-resto));
-        return correct_timestamp;
-    }
-    else {
-        return timestamp;
-    }
+//    begintime = timestamp.toString("yyyy/MM/dd_hh:mm");
+//    int minute = timestamp.toString("mm").toInt();
+//    QDateTime correct_timestamp;
+//    if (int resto = (minute % 5 != 0)){
+//        correct_timestamp = QDateTime(QDate(timestamp.date()), QTime(timestamp.time().hour(), timestamp.time().minute()-resto));
+//        return correct_timestamp;
+//    }
+//    else {
+//        return timestamp;
+//    }
+    return timestamp;
 }
 
 void DBThread::dbDisconnect(){
@@ -226,6 +228,15 @@ void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
         qDebug() << tag << " : Query di select dalla tabella Timestamps good";
         while (query.next()) {
             chartDataToDrawMap.insert(query.value(0).toString(), query.value(1).toInt());
+        }
+
+        //se un solo dato => ne aggiungo uno prima, con y a 0
+        if(chartDataToDrawMap.size()==1){
+            const QString& date_string = chartDataToDrawMap.firstKey();
+            QDateTime date_dt = QDateTime::fromString(date_string,"yyyy/MM/dd_hh:mm");
+            QDateTime newDate_dt = date_dt.addSecs(-60);
+            QString newDate_str = newDate_dt.toString("yyyy/MM/dd_hh:mm");
+            chartDataToDrawMap.insert(newDate_str, 0);
         }
         emit drawChartSig(chartDataToDrawMap);
         return;

@@ -9,7 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&server, &MyServer::logSig, this, &MainWindow::printToLogSlot);
     connect(&server, &MyServer::drawChartSig, this, &MainWindow::drawChartSlot);
     connect(&server, &MyServer::drawMapSig, this, &MainWindow::drawMapSlot);
-    connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);    
+    connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);
+    connect(&server, &MyServer::setMinuteSig, this, &MainWindow::setMinuteSlot);
 
     ui = new Ui::MainWindow;
     ui->setupUi(this);
@@ -18,6 +19,10 @@ MainWindow::MainWindow(QWidget *parent) :
 //    i->insert("2019/03/22_17:52", 3);
 //    i->insert("2019/03/22_17:52", 1);
 //    setChartDataSlot(i);
+}
+
+void MainWindow::setMinuteSlot(int minute){
+    ui->minute->setPlainText(QString::number(minute));
 }
 
 void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords){

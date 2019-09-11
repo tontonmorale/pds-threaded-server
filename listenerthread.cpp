@@ -43,10 +43,15 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
 //    connect(server, &MyServer::closeConnectionSig, this, &ListenerThread::closeConnection);
 
-    connect(this, &ListenerThread::finished, thread, &QThread::quit);
+//    connect(this, &ListenerThread::finished, thread, &QThread::quit);
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
+    connect(this, &ListenerThread::beforeDestructionSig, this, &ListenerThread::beforeDestructionSlot);
 //    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 //    connect(this, &ListenerThread::finished, this, &ListenerThread::deleteLater);
+}
+
+void ListenerThread::beforeDestructionSlot(){
+    disconnectionTimer->stop();
 }
 
 /**
@@ -100,8 +105,6 @@ void ListenerThread::clientSetup(){
     QString line, clientId, hello2Client, mac, helloFromClient;
     const char* msg;
 
-    emit log("---------------------------------------\n" + tag + ": New connection");
-
     try {
         socket->waitForReadyRead();
         helloFromClient = QString(socket->readLine());
@@ -129,8 +132,6 @@ void ListenerThread::clientSetup(){
             // inserisco nuovo client nella mappa
             espMap->insert(mac, Esp(id, mac, QPointF(NAN, NAN)));
         }
-
-        emit log("client info: mac = " + mac + ", id = " + id);
         hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
         msg = hello2Client.toStdString().c_str();
         socket->write(msg);
@@ -154,6 +155,7 @@ void ListenerThread::sendStart(int currMinute){
     int retry = 3;
     while (retry) {
         try {
+            mutex->lock();
             socket->write("START\r\n");
             qDebug() << tag << ": mando Start a " << id << "(minuto " << currMinute << ")";
 
@@ -162,6 +164,7 @@ void ListenerThread::sendStart(int currMinute){
                 disconnectionTimer->start(2*MyServer::intervalTime + 2000);
                 firstStart = false;
             }
+            mutex->unlock();
             break;
         } catch (...) {
             retry--;
@@ -169,6 +172,7 @@ void ListenerThread::sendStart(int currMinute){
                 emit log(tag + ": Impossibile mandare start, probabili errori sul socket, considero il client disconnesso."); //possibile soluzione
                 closeConnection();
             }
+            mutex->unlock();
         }
     }
 }
@@ -290,10 +294,8 @@ void ListenerThread::closeConnection(){
 
 ListenerThread::~ListenerThread(){
     socket->disconnect();
-    disconnectionTimer->stop();
-    delete disconnectionTimer;
-    socket->disconnectFromHost();
-    delete socket;
+    disconnectionTimer->deleteLater();
+    socket->deleteLater();
     socket = nullptr;
 }
 

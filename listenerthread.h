@@ -44,12 +44,14 @@ public slots:
     void readFromClient();
     void sendStart(int currMinute);
     void closeConnection();
+    void beforeDestructionSlot();
 
 signals:
     void ready(ListenerThread *);
     void finished(QString);
     void log(QString message);
     void endPackets();
+    void beforeDestructionSig();
 
 
 private:

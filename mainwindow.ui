@@ -17,12 +17,18 @@
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
      <widget class="QChartView" name="countChartView" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <widget class="QPlainTextEdit" name="noChartData">
        <property name="geometry">
         <rect>
-         <x>160</x>
-         <y>80</y>
-         <width>191</width>
+         <x>230</x>
+         <y>60</y>
+         <width>181</width>
          <height>41</height>
         </rect>
        </property>
@@ -35,13 +41,10 @@
       </widget>
      </widget>
     </item>
-    <item row="0" column="1">
-     <widget class="QChartView" name="mapView" native="true"/>
-    </item>
     <item row="1" column="0">
      <widget class="QPlainTextEdit" name="log">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
@@ -49,12 +52,31 @@
       <property name="readOnly">
        <bool>true</bool>
       </property>
+      <property name="maximumBlockCount">
+       <number>50</number>
+      </property>
      </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QChartView" name="mapView" native="true"/>
     </item>
     <item row="1" column="1">
      <widget class="QPushButton" name="pushButton">
       <property name="text">
        <string>Get LP Stats</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QPlainTextEdit" name="minute">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
       </property>
      </widget>
     </item>

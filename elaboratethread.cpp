@@ -4,8 +4,6 @@
 
 #include <QMap>
 
-#define MAX_MINUTES 5
-
 ElaborateThread::ElaborateThread() {}
 
 ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packetsMap,

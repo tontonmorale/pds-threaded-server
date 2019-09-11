@@ -12,6 +12,8 @@
 #include "dbthread.h"
 #include "elaboratethread.h"
 
+#define MAX_MINUTES 4
+
 class MyServer : public QTcpServer
 {
     Q_OBJECT
@@ -36,6 +38,7 @@ signals:
     void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void dbConnectedSig();
     void closeConnectionSig(QString s);
+    void setMinuteSig(int minute);
 
 public slots:
 //    void onClientConnection();
