@@ -1,5 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QtCharts/QChart>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QSplineSeries>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -65,39 +68,6 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords)
     mapView->setChart(chart);
 }
 
-//void MainWindow::drawPeopleCountChart(){
-//    QChart *chart = new QChart();
-//    this->chartSeries = new QLineSeries();
-
-////    QDateTime dateTime(QDate(19, 6, 13), QTime(13, 10));
-////    chartSeries->append(dateTime.toMSecsSinceEpoch(), 5);
-////    dateTime = QDateTime(QDate(19, 6, 13), QTime(13, 15));
-////    chartSeries->append(dateTime.toMSecsSinceEpoch(), 15);
-
-//    // setta chart
-//    chart->addSeries(chartSeries);
-//    chart->legend()->hide();
-//    chart->setTitle("People count");
-
-//    // setta gli assi
-//    QDateTimeAxis *axisX = new QDateTimeAxis;
-//    axisX->setTickCount(chartSeries->count());
-//    axisX->setFormat("yy/MM/dd <br> hh:mm");
-//    axisX->setTitleText("Date");
-//    chart->addAxis(axisX, Qt::AlignBottom);
-//    chartSeries->attachAxis(axisX);
-
-//    QValueAxis *axisY = new QValueAxis;
-//    axisY->setLabelFormat("%i");
-//    axisY->setTitleText("People count");
-//    chart->addAxis(axisY, Qt::AlignLeft);
-//    chartSeries->attachAxis(axisY);
-
-//    // crea chart view
-//    QChartView *chartView = ui->countChartView;
-//    chartView->setChart(chart);
-//    chartView->setRenderHint(QPainter::Antialiasing);
-//}
 
 void MainWindow::serverInit(){
     // server init
@@ -269,8 +239,10 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
     QScatterSeries *mac1 = new QScatterSeries();
     QScatterSeries *mac2 = new QScatterSeries();
     QScatterSeries *mac3 = new QScatterSeries();
+
     QList<QString> timestampList;
     QStringList macs;
+    QList<qint64> timestamps;
     int j = 1;
     for (auto i = map.begin(); i != map.end(); i++) {
         macs.append(i.key());
@@ -286,28 +258,37 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
                 mac2->append(dateTime.toMSecsSinceEpoch(), j);
             else if (j == 3)
                 mac3->append(dateTime.toMSecsSinceEpoch(), j);
+            if (!timestamps.contains(dateTime.toMSecsSinceEpoch())){
+                timestamps.append(dateTime.toMSecsSinceEpoch());
+            }
         }
         j++;
     }
+
+    qint64 delta = (timestamps.back() - timestamps.front())/8;
 
     QChart *chart = new QChart();
     chart->addSeries(mac1);
     chart->addSeries(mac2);
     chart->addSeries(mac3);
+    this->setMouseTracking(true);
 
     // setta gli assi
     QDateTimeAxis *axisX = new QDateTimeAxis;
     axisX->setFormat("yy/MM/dd <br> hh:mm");
+    axisX->setMin(QDateTime::fromMSecsSinceEpoch(timestamps.front()-delta));
+    axisX->setMax(QDateTime::fromMSecsSinceEpoch(delta + timestamps.back()));
     axisX->setTitleText("timestamp");
     chart->addAxis(axisX, Qt::AlignBottom);
     mac1->attachAxis(axisX);
     mac2->attachAxis(axisX);
     mac3->attachAxis(axisX);
 
+
     QValueAxis *axisY = new QValueAxis;
     axisY->setLabelFormat("%d");
-    axisY->setRange(0, 5);
-    axisY->setTickCount(1);
+    axisY->setRange(0, 4);
+//    axisY->setTickCount(1);
     axisY->setTitleText("mac");
     chart->addAxis(axisY, Qt::AlignLeft);
     mac1->attachAxis(axisY);
@@ -316,6 +297,8 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
 
     QList<QAbstractSeries *> series = chart->series();
     chart->setTitle("Long period statistics");
+    chart->setAcceptHoverEvents(true);
+    view.init(mac1, mac2, mac3, macs);
 
     QChartView *mapView = newWindow->findChild<QChartView *>("LPStatsChart");
     mapView->setRenderHint(QPainter::Antialiasing);
@@ -324,35 +307,6 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
 
 }
 
-//QGroupBox* MainWindow::createTimeChartGroup(QList<QPointF> points)
-//{
-//    QGroupBox *groupBox = new QGroupBox(tr("Temporal chart"));
-
-//    QLineSeries *series = new QLineSeries();
-
-//    for(QList<QPointF>::iterator i=points.begin(); i!=points.end(); i++)
-//        *series << *i;
-
-//    QChart *chart = new QChart();
-//    chart->legend()->hide();
-//    chart->addSeries(series);
-//    chart->createDefaultAxes();
-//    chart->setTitle("Number of people in area");
-
-//    QValueAxis *axisX = new QValueAxis;
-//    axisX->setRange(0, 60);
-//    axisX->setTickCount(13);
-//    chart->setAxisX(axisX, series);
-
-
-//    QChartView *chartView = new QChartView(chart);
-//    chartView->setRenderHint(QPainter::Antialiasing);
-//    QHBoxLayout *layout = new QHBoxLayout;
-//    layout->addWidget(chartView);
-//    groupBox->setLayout(layout);
-
-//    return groupBox;
-//}
 
 MainWindow::~MainWindow()
 {
