@@ -38,7 +38,6 @@ public slots:
     void drawChartSlot(QMap<QString, int> chartDataToDrawMap);
     void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords);
     void submitDatesForLPStatsSlot();
-    void drawOldCountChartSlot();
     void serverListenSlot();
     void onButtonClicked();
     void setMinuteSlot(int minute);

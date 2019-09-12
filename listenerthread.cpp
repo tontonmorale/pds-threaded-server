@@ -286,7 +286,6 @@ void ListenerThread::newPacket(QString line){
 
 void ListenerThread::closeConnection(){
 //    socket->write("DISCONNECTED\r\n");
-    qDebug() << tag << ": mando disconnection";
 
     qDebug() << tag << ": Disconnessione client";
     emit finished(id);

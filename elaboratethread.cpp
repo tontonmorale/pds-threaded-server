@@ -52,7 +52,7 @@ void ElaborateThread::work() {
         emit elabFinishedSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
     }
 
-    emit finished();
+    emit finish();
 }
 
 /**
@@ -62,15 +62,16 @@ void ElaborateThread::work() {
  */
 void ElaborateThread::signalsConnection(QThread *thread){
 
-    connect(thread, SIGNAL(started()), this, SLOT(work()));
+    connect(thread, &QThread::started, this, &ElaborateThread::work);
 
     connect(this, &ElaborateThread::log, server, &MyServer::emitLogSlot);
     connect(this, &ElaborateThread::elabFinishedSig, server, &MyServer::onChartDataReadySlot);
-//    connect(this, &ElaborateThread::ready, server, &MyServer::startToClientsSlot);
 
-    connect(this, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    connect(this, &ElaborateThread::finish, this, &ElaborateThread::deleteLater);
+    connect(this, &ElaborateThread::finish, thread, &QThread::deleteLater);
+
+    connect(thread, &QThread::finished, this, &ElaborateThread::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
 //    connect(this, &ElaborateThread::drawMapSig, server, &MyServer::drawMapSlot);
 }

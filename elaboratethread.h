@@ -50,11 +50,11 @@ public slots:
     void work();
 
 signals:
-    void finished();
     void log(QString message);
     void elabFinishedSig();
 //    void ready();
     void drawMapSig();
+    void finish();
 };
 
 #endif // ELABORATETHREAD_H

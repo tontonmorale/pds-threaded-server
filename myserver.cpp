@@ -5,8 +5,8 @@
 #include <memory>
 using namespace std;
 
-#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
-//#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
+//#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
+#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
     QTcpServer (parent),
@@ -196,7 +196,6 @@ void MyServer::createElaborateThread(){
         thread->start();
     } catch (bad_alloc e) {
         emit logSig(tag + ": Exception in allocating Elaborate thread, skipping elaboration of current minute.");
-        //TODO: free di elab thread
         return;
     } catch(exception e) {
         emit logSig(tag + ": " + e.what());
