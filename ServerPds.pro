@@ -14,6 +14,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+    callout.cpp \
         main.cpp \
         mainwindow.cpp \
     myserver.cpp \
@@ -23,9 +24,11 @@ SOURCES += \
     dbthread.cpp \
     elaboratethread.cpp \
     listenerthread.cpp \
-    utility.cpp
+    utility.cpp \
+    view.cpp
 
 HEADERS += \
+    callout.h \
         mainwindow.h \
     myserver.h \
     packet.h \
@@ -34,7 +37,8 @@ HEADERS += \
     dbthread.h \
     elaboratethread.h \
     listenerthread.h \
-    utility.h
+    utility.h \
+    view.h
 
 FORMS += \
         mainwindow.ui

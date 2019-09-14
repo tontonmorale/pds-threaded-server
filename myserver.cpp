@@ -5,8 +5,8 @@
 #include <memory>
 using namespace std;
 
-//#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
-#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
+#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
+//#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
     QTcpServer (parent),
@@ -392,31 +392,6 @@ void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
     emit drawChartSig(chartDataToDrawMap);
 }
 
-/**
- * @brief MyServer::DrawOldCountMap
- * @param begintime
- * @param endtime
- * @return
- */
-//QList<QPointF> *MyServer::DrawOldCountMap(QString begintime, QString endtime) {
-//    //da sistemare
-//    QList<QPointF> *peopleCounter = new QList<QPointF>();
-//    emit getStatsSig(begintime, endtime);
-
-//    //controlla
-//    return peopleCounter;
-
-
-//}
-
-//void MyServer::Connects(QString slot) {
-//    QThread *thread = new QThread();
-//    DBThread *dbthread = new DBThread(peopleMap, devicesCoords->size(), DBinitialized);
-//    dbthread->moveToThread(thread);
-//    connect(dbthread, SIGNAL(finished()), thread, SLOT(quit()));
-//    connect(dbthread, SIGNAL(finished()), dbthread, SLOT(deleteLater()));
-//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-//}
 
 MyServer::~MyServer() {
     mutex->lock();

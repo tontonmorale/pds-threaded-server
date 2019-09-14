@@ -1,5 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QtCharts/QChart>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QSplineSeries>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -71,39 +74,6 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords)
     }
 }
 
-//void MainWindow::drawPeopleCountChart(){
-//    QChart *chart = new QChart();
-//    this->chartSeries = new QLineSeries();
-
-////    QDateTime dateTime(QDate(19, 6, 13), QTime(13, 10));
-////    chartSeries->append(dateTime.toMSecsSinceEpoch(), 5);
-////    dateTime = QDateTime(QDate(19, 6, 13), QTime(13, 15));
-////    chartSeries->append(dateTime.toMSecsSinceEpoch(), 15);
-
-//    // setta chart
-//    chart->addSeries(chartSeries);
-//    chart->legend()->hide();
-//    chart->setTitle("People count");
-
-//    // setta gli assi
-//    QDateTimeAxis *axisX = new QDateTimeAxis;
-//    axisX->setTickCount(chartSeries->count());
-//    axisX->setFormat("yy/MM/dd <br> hh:mm");
-//    axisX->setTitleText("Date");
-//    chart->addAxis(axisX, Qt::AlignBottom);
-//    chartSeries->attachAxis(axisX);
-
-//    QValueAxis *axisY = new QValueAxis;
-//    axisY->setLabelFormat("%i");
-//    axisY->setTitleText("People count");
-//    chart->addAxis(axisY, Qt::AlignLeft);
-//    chartSeries->attachAxis(axisY);
-
-//    // crea chart view
-//    QChartView *chartView = ui->countChartView;
-//    chartView->setChart(chart);
-//    chartView->setRenderHint(QPainter::Antialiasing);
-//}
 
 void MainWindow::serverInit(){
     // server init
@@ -194,64 +164,60 @@ void MainWindow::onButtonClicked(){
 }
 
 void MainWindow::LPStatsWindowCreationSlot(QString minDate, QString maxDate) {
-    try{
-        if (minDate.compare("")==0){
-            emit fatalErrorSig("Impossibile reperire data minima.");
-        }
-        else {
-            this->newWindow = new QWidget;
-            newWindow->resize(800, 800);
+    if (minDate.compare("")==0){
+        emit fatalErrorSig("Impossibile reperire data minima.");
+    }
+    else {
+        this->newWindow = new QWidget;
+        newWindow->resize(800, 800);
 
-            QGridLayout *layout = new QGridLayout, *mainlayout = new QGridLayout;
-            QGroupBox *box = new QGroupBox(tr("LPStats"));
-            QStringList minDateAndTime = minDate.split("_");
-            QStringList minSplitDate = minDateAndTime[0].split("/");
-            QStringList minDplitTime = minDateAndTime[1].split(":");
-            QDateTime minDateTime(QDate(minSplitDate[0].toInt(), minSplitDate[1].toInt(), minSplitDate[2].toInt()), QTime(minDplitTime[0].toInt(), minDplitTime[1].toInt()));
+        QGridLayout *layout = new QGridLayout, *mainlayout = new QGridLayout;
+        QGroupBox *box = new QGroupBox(tr("LPStats"));
+        QStringList minDateAndTime = minDate.split("_");
+        QStringList minSplitDate = minDateAndTime[0].split("/");
+        QStringList minDplitTime = minDateAndTime[1].split(":");
+        QDateTime minDateTime(QDate(minSplitDate[0].toInt(), minSplitDate[1].toInt(), minSplitDate[2].toInt()), QTime(minDplitTime[0].toInt(), minDplitTime[1].toInt()));
 
-            QStringList maxDateAndTime = maxDate.split("_");
-            QStringList maxSplitDate = maxDateAndTime[0].split("/");
-            QStringList maxSplitTime = maxDateAndTime[1].split(":");
-            QDateTime maxDateTime(QDate(maxSplitDate[0].toInt(), maxSplitDate[1].toInt(), maxSplitDate[2].toInt()), QTime(maxSplitTime[0].toInt(), maxSplitTime[1].toInt()));
+        QStringList maxDateAndTime = maxDate.split("_");
+        QStringList maxSplitDate = maxDateAndTime[0].split("/");
+        QStringList maxSplitTime = maxDateAndTime[1].split(":");
+        QDateTime maxDateTime(QDate(maxSplitDate[0].toInt(), maxSplitDate[1].toInt(), maxSplitDate[2].toInt()), QTime(maxSplitTime[0].toInt(), maxSplitTime[1].toInt()));
 
-            QDateTimeEdit *minDateTimePicker = new QDateTimeEdit;
-            minDateTimePicker->setObjectName("minDateTimePicker");
-            minDateTimePicker->setDisplayFormat("dd.MM.yyyy HH:mm");
-            QLabel *minDateTimePickerLabel = new QLabel(tr("&Select minimum date and time:"));
-            minDateTimePickerLabel->setBuddy(minDateTimePicker);
-            minDateTimePicker->setMinimumDate(minDateTime.date());
-            minDateTimePicker->setMinimumTime(minDateTime.time());
+        QDateTimeEdit *minDateTimePicker = new QDateTimeEdit;
+        minDateTimePicker->setObjectName("minDateTimePicker");
+        minDateTimePicker->setDisplayFormat("dd.MM.yyyy HH:mm");
+        QLabel *minDateTimePickerLabel = new QLabel(tr("&Select minimum date and time:"));
+        minDateTimePickerLabel->setBuddy(minDateTimePicker);
+        minDateTimePicker->setMinimumDate(minDateTime.date());
+        minDateTimePicker->setMinimumTime(minDateTime.time());
 
-            QDateTimeEdit *maxDateTimePicker = new QDateTimeEdit;
-            maxDateTimePicker->setObjectName("maxDateTimePicker");
-            maxDateTimePicker->setDisplayFormat("dd.MM.yyyy HH:mm");
-            QLabel *maxDateTimePickerLabel = new QLabel(tr("&Select maximum date and time:"));
-            maxDateTimePickerLabel->setBuddy(maxDateTimePicker);
-            maxDateTimePicker->setMaximumDate(maxDateTime.date());
-            maxDateTimePicker->setMaximumTime(maxDateTime.time());
-            maxDateTimePicker->setDate(maxDateTime.date());
-            maxDateTimePicker->setTime(maxDateTime.time());
+        QDateTimeEdit *maxDateTimePicker = new QDateTimeEdit;
+        maxDateTimePicker->setObjectName("maxDateTimePicker");
+        maxDateTimePicker->setDisplayFormat("dd.MM.yyyy HH:mm");
+        QLabel *maxDateTimePickerLabel = new QLabel(tr("&Select maximum date and time:"));
+        maxDateTimePickerLabel->setBuddy(maxDateTimePicker);
+        maxDateTimePicker->setMaximumDate(maxDateTime.date());
+        maxDateTimePicker->setMaximumTime(maxDateTime.time());
+        maxDateTimePicker->setDate(maxDateTime.date());
+        maxDateTimePicker->setTime(maxDateTime.time());
 
-            layout->addWidget(minDateTimePickerLabel, 0, 0);
-            layout->addWidget(minDateTimePicker, 0, 1);
-            layout->addWidget(maxDateTimePickerLabel, 1, 0);
-            layout->addWidget(maxDateTimePicker, 1, 1);
+        layout->addWidget(minDateTimePickerLabel, 0, 0);
+        layout->addWidget(minDateTimePicker, 0, 1);
+        layout->addWidget(maxDateTimePickerLabel, 1, 0);
+        layout->addWidget(maxDateTimePicker, 1, 1);
 
-            QPushButton *submit = new QPushButton;
-            submit->setText("Submit");
-            connect(submit, &QPushButton::clicked, this, &MainWindow::submitDatesForLPStatsSlot);
-            layout->addWidget(submit, 2, 1);
-            QChartView *LPStatsChart = new QChartView;
-            LPStatsChart->setObjectName("LPStatsChart");
-            layout->addWidget(LPStatsChart, 3, 0);
-            box->setLayout(layout);
-            mainlayout->addWidget(box);
-            newWindow->setLayout(mainlayout);
+        QPushButton *submit = new QPushButton;
+        submit->setText("Submit");
+        connect(submit, &QPushButton::clicked, this, &MainWindow::submitDatesForLPStatsSlot);
+        layout->addWidget(submit, 2, 1);
+        QChartView *LPStatsChart = new QChartView;
+        LPStatsChart->setObjectName("LPStatsChart");
+        layout->addWidget(LPStatsChart, 3, 0);
+        box->setLayout(layout);
+        mainlayout->addWidget(box);
+        newWindow->setLayout(mainlayout);
 
-            newWindow->show();
-        }
-    }catch (...) {
-        printToLogSlot("Problemi nella LPStatsWindowCreationSlot");
+        newWindow->show();
     }
 }
 
@@ -286,93 +252,74 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
     QScatterSeries *mac1 = new QScatterSeries();
     QScatterSeries *mac2 = new QScatterSeries();
     QScatterSeries *mac3 = new QScatterSeries();
+
     QList<QString> timestampList;
     QStringList macs;
+    QList<qint64> timestamps;
     int j = 1;
-    try{
-        for (auto i = map.begin(); i != map.end(); i++) {
-            macs.append(i.key());
-            timestampList = i.value();
-            for (auto timestamp : timestampList) {
-                QStringList dateAndTime = timestamp.split("_");
-                QStringList splitDate = dateAndTime[0].split("/");
-                QStringList splitTime = dateAndTime[1].split(":");
-                QDateTime dateTime(QDate(splitDate[0].toInt(), splitDate[1].toInt(), splitDate[2].toInt()), QTime(splitTime[0].toInt(), splitTime[1].toInt()));
-                if (j == 1)
-                    mac1->append(dateTime.toMSecsSinceEpoch(), j);
-                else if (j == 2)
-                    mac2->append(dateTime.toMSecsSinceEpoch(), j);
-                else if (j == 3)
-                    mac3->append(dateTime.toMSecsSinceEpoch(), j);
+    for (auto i = map.begin(); i != map.end(); i++) {
+        macs.append(i.key());
+        timestampList = i.value();
+        for (auto timestamp : timestampList) {
+            QStringList dateAndTime = timestamp.split("_");
+            QStringList splitDate = dateAndTime[0].split("/");
+            QStringList splitTime = dateAndTime[1].split(":");
+            QDateTime dateTime(QDate(splitDate[0].toInt(), splitDate[1].toInt(), splitDate[2].toInt()), QTime(splitTime[0].toInt(), splitTime[1].toInt()));
+            if (j == 1)
+                mac1->append(dateTime.toMSecsSinceEpoch(), j);
+            else if (j == 2)
+                mac2->append(dateTime.toMSecsSinceEpoch(), j);
+            else if (j == 3)
+                mac3->append(dateTime.toMSecsSinceEpoch(), j);
+            if (!timestamps.contains(dateTime.toMSecsSinceEpoch())){
+                timestamps.append(dateTime.toMSecsSinceEpoch());
             }
-            j++;
         }
-
-        QChart *chart = new QChart();
-        chart->addSeries(mac1);
-        chart->addSeries(mac2);
-        chart->addSeries(mac3);
-
-        // setta gli assi
-        QDateTimeAxis *axisX = new QDateTimeAxis;
-        axisX->setFormat("yy/MM/dd <br> hh:mm");
-        axisX->setTitleText("timestamp");
-        chart->addAxis(axisX, Qt::AlignBottom);
-        mac1->attachAxis(axisX);
-        mac2->attachAxis(axisX);
-        mac3->attachAxis(axisX);
-
-        QValueAxis *axisY = new QValueAxis;
-        axisY->setLabelFormat("%d");
-        axisY->setRange(0, 5);
-        axisY->setTickCount(1);
-        axisY->setTitleText("mac");
-        chart->addAxis(axisY, Qt::AlignLeft);
-        mac1->attachAxis(axisY);
-        mac2->attachAxis(axisY);
-        mac3->attachAxis(axisY);
-
-        QList<QAbstractSeries *> series = chart->series();
-        chart->setTitle("Long period statistics");
-
-        QChartView *mapView = newWindow->findChild<QChartView *>("LPStatsChart");
-        mapView->setRenderHint(QPainter::Antialiasing);
-        mapView->setChart(chart);
-    }catch (...) {
-        printToLogSlot("Problemi nella drawLPStatsSlot");
+        j++;
     }
+
+    qint64 delta = (timestamps.back() - timestamps.front())/8;
+
+    QChart *chart = new QChart();
+    chart->addSeries(mac1);
+    chart->addSeries(mac2);
+    chart->addSeries(mac3);
+    this->setMouseTracking(true);
+
+    // setta gli assi
+    QDateTimeAxis *axisX = new QDateTimeAxis;
+    axisX->setFormat("yy/MM/dd <br> hh:mm");
+    axisX->setMin(QDateTime::fromMSecsSinceEpoch(timestamps.front()-delta));
+    axisX->setMax(QDateTime::fromMSecsSinceEpoch(delta + timestamps.back()));
+    axisX->setTitleText("timestamp");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    mac1->attachAxis(axisX);
+    mac2->attachAxis(axisX);
+    mac3->attachAxis(axisX);
+
+
+    QValueAxis *axisY = new QValueAxis;
+    axisY->setLabelFormat("%d");
+    axisY->setRange(0, 4);
+//    axisY->setTickCount(1);
+    axisY->setTitleText("mac");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    mac1->attachAxis(axisY);
+    mac2->attachAxis(axisY);
+    mac3->attachAxis(axisY);
+
+    QList<QAbstractSeries *> series = chart->series();
+    chart->setTitle("Long period statistics");
+    chart->setAcceptHoverEvents(true);
+    view.init(mac1, mac2, mac3, macs);
+
+    QChartView *mapView = newWindow->findChild<QChartView *>("LPStatsChart");
+    mapView->setRenderHint(QPainter::Antialiasing);
+    mapView->setChart(chart);
+
 
 }
 
-//QGroupBox* MainWindow::createTimeChartGroup(QList<QPointF> points)
-//{
-//    QGroupBox *groupBox = new QGroupBox(tr("Temporal chart"));
-
-//    QLineSeries *series = new QLineSeries();
-
-//    for(QList<QPointF>::iterator i=points.begin(); i!=points.end(); i++)
-//        *series << *i;
-
-//    QChart *chart = new QChart();
-//    chart->legend()->hide();
-//    chart->addSeries(series);
-//    chart->createDefaultAxes();
-//    chart->setTitle("Number of people in area");
-
-//    QValueAxis *axisX = new QValueAxis;
-//    axisX->setRange(0, 60);
-//    axisX->setTickCount(13);
-//    chart->setAxisX(axisX, series);
-
-
-//    QChartView *chartView = new QChartView(chart);
-//    chartView->setRenderHint(QPainter::Antialiasing);
-//    QHBoxLayout *layout = new QHBoxLayout;
-//    layout->addWidget(chartView);
-//    groupBox->setLayout(layout);
-
-//    return groupBox;
-//}
 
 MainWindow::~MainWindow()
 {

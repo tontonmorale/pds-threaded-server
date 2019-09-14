@@ -8,8 +8,11 @@
 #include <QtCharts>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
+#include <QtWidgets/QGraphicsView>
+#include <QtCharts/QChartGlobal>
 #include <QValueAxis>
 #include <myserver.h>
+#include "view.h"
 
 
 namespace Ui {
@@ -48,6 +51,7 @@ private:
     Ui::MainWindow *ui;
     QWidget *newWindow;
     MyServer server;
+    View view;
 };
 
 #endif // MAINWINDOW_H
