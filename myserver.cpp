@@ -112,10 +112,8 @@ void MyServer::dbConnectedSlot(){
  */
 void MyServer::incomingConnection(qintptr socketDescriptor){
     try {
-        QMap<QString, ListenerThread*> listenerThreadPool;
-
         QThread *thread = new QThread();
-        ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal, totClients);
+        ListenerThread *lt = new ListenerThread(this, socketDescriptor, mutex, packetsMap, packetsDetectionMap, espMap, maxSignal, totClients, &currMinute);
 
         lt->moveToThread(thread);
         lt->signalsConnection(thread);
@@ -138,6 +136,9 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
     if( it != listenerThreadPool.end()){
         listenerThreadPool.erase(it);
         connectedClients--;
+        emit logSig("---------------------------------------------------------------------------------------");
+        emit logSig(tag + ": Reconnection");
+        emit logSig("client info: id = " + newId);
     }
     else{
         emit logSig("---------------------------------------------------------------------------------------");
@@ -156,22 +157,17 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
  * -> se minuto 5 allora manda segnale di start per il nuovo minuto
  */
 void MyServer::createElaborateThreadSlot(){
-    // todo: lock
-
-//    if(!startCalled)
-        // todo: unlock
-    while(!startCalled){
-    }
-    // todo: lock
+    mutex->lock();
 
     // todo: controllare che l'esp che ha mandato l'end packet non sia disconnesso
     endPkClients ++;
 
-    // se ultimo minuto e arrivati almeno 2 end packet fai partire i nuovi 5 minuti
-    if(currMinute>MAX_MINUTES && endPkClients==2){
-        currMinute = 0;
-        emit setMinuteSig(currMinute);
+    // se ultimo minuto e arrivati tutti gli end packet fai partire i nuovi 5 minuti
+    if(currMinute>=MAX_MINUTES && endPkClients==connectedClients){
+//        currMinute = 0;
+        mutex->unlock();
         startToClientsSlot();
+        mutex->lock();
     }
 
     if(endPkClients==connectedClients){
@@ -179,27 +175,36 @@ void MyServer::createElaborateThreadSlot(){
         if(elaborateTimer.isActive()){
             elaborateTimer.stop();
         }
+        mutex->unlock();
         createElaborateThread();
     }
+    else
+        mutex->unlock();
+}
+
+void MyServer::setMinuteSlot(int minute){
+    emit setMinuteSig(minute);
 }
 
 void MyServer::createElaborateThread(){
+    mutex->lock();
     endPkClients = 0;
     startCalled = false;
 
     try {
         QThread *thread = new QThread();
         ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, mutex, connectedClients,
-                                                  peopleMap, currMinute, espMap, maxEspCoords, devicesCoords);
+                                                  peopleMap, &currMinute, espMap, maxEspCoords, devicesCoords);
         et->moveToThread(thread);
         et->signalsConnection(thread);
         thread->start();
     } catch (bad_alloc e) {
         emit logSig(tag + ": Exception in allocating Elaborate thread, skipping elaboration of current minute.");
-        return;
     } catch(exception e) {
         emit logSig(tag + ": " + e.what());
     }
+    mutex->unlock();
+
 }
 
 void MyServer::emitLogSlot(QString message){
@@ -220,10 +225,11 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
     s += QString::number(connectedClients);
     logSig(s);
 
-    if(connectedClients>=2 && firstStart){
-        firstStart = false;
-        currMinute = 0;
+    if(connectedClients==totClients && firstStart){
+        currMinute = 1;
+        endPkClients = 0;
         emit setMinuteSig(currMinute);
+        emit logSig(tag + ": Current minute = " + QString::number(currMinute));
         // inizio blocco N minuti
         qDebug() << tag << ": readyFromClientSlot(), currMinute = " << currMinute;
         startToClientsSlot();
@@ -237,18 +243,28 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
     -> le volte successive se almeno 3 client connessi
  */
 void MyServer::startToClientsSlot(){
+    mutex->lock();
+    //TODO: vedere 2
     if(connectedClients >= 2){
         qDebug() << tag + ": Start to clients\n";
-        currMinute++;
-        emit setMinuteSig(currMinute);
+//        currMinute++;
+//        emit setMinuteSig(currMinute);
         startCalled = true;
-        if(currMinute != 1)
-            elaborateTimer.start(MyServer::elaborateTime);
 
-        if(currMinute > MAX_MINUTES)
+        if(!firstStart){
+//            elaborateTimer.start(MyServer::elaborateTime);
+            qDebug() << "";
+        }
+        else{
+            firstStart = false;
+        }
+
+        if(currMinute >= MAX_MINUTES){
+            mutex->unlock();
             return;
-        emit logSig("---------------------------------------------------------------------------------------");
-        emit logSig(tag + ": Current minute = " + QString::number(currMinute) + ": sending start...\n");
+        }
+//        emit logSig("---------------------------------------------------------------------------------------");
+//        emit logSig(tag + ": Current minute = " + QString::number(currMinute) + ": sending start...\n");
         emit start2ClientsSig(currMinute);
         startTimer.start(MyServer::intervalTime);
 
@@ -257,21 +273,24 @@ void MyServer::startToClientsSlot(){
         // todo: meno di 2 client connessi => ?????
         // faccio partire timer di reboot
     }
+    mutex->unlock();
 }
 
 void MyServer::disconnectClientSlot(QString espId){
+    mutex->lock();
     auto it = listenerThreadPool.find(espId);
 
     if(it!=listenerThreadPool.end()){
-        delete it.value();
+//        delete it.value();
         listenerThreadPool.erase(it); //TODO: testare
+        closeConnectionSig(espId);
+        connectedClients--;
+        QString s = "Client ";
+        s += espId;
+        s += " disconnected";
+        logSig(s);
     }
-
-    connectedClients--;
-    QString s = "Client ";
-    s += espId;
-    s += " disconnected";
-    logSig(s);
+    mutex->unlock();
 }
 
 void MyServer::errorFromThreadSlot(QString errorMsg){
@@ -400,16 +419,28 @@ void MyServer::emitDrawChartSlot(QMap<QString, int> chartDataToDrawMap) {
 //}
 
 MyServer::~MyServer() {
+    mutex->lock();
     qDebug() << tag << ": Distruttore MyServer";
 
-    qDeleteAll(listenerThreadPool.begin(), listenerThreadPool.end()); // TODO: errore nel distruttore dei listener thread
-    listenerThreadPool.clear();
+//    qDeleteAll(listenerThreadPool.begin(), listenerThreadPool.end()); // TODO: errore nel distruttore dei listener thread
+//    listenerThreadPool.clear();
+    for(auto i : listenerThreadPool){
+        emit closeConnectionSig(i->getId());
+    }
 
     delete espMap;
-    delete mutex;
+    espMap = nullptr;
     delete packetsMap;
+    packetsMap = nullptr;
     delete packetsDetectionMap;
+    packetsDetectionMap = nullptr;
     delete peopleMap;
-    delete devicesCoords;    
+    peopleMap = nullptr;
+    delete devicesCoords;
+    devicesCoords = nullptr;
     //TODO: elaborate thread
+
+    mutex->unlock();
+    delete mutex;
+    mutex = nullptr;
 }

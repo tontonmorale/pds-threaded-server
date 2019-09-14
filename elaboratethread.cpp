@@ -11,7 +11,7 @@ ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packet
                                  QMutex *mutex,
                                  int connectedClients,
                                  QMap<QString, Person> *peopleMap,
-                                 int currMinute,
+                                 int* currMinute,
                                  QMap<QString, Esp> *espMap,
                                  QPointF maxEspCoords,
                                  QList<QPointF> *devicesCoords):
@@ -35,24 +35,37 @@ ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packet
 void ElaborateThread::work() {
     // minuto attuale
     try {
-       manageCurrentMinute();
+        mutex->lock();
+        manageCurrentMinute();
+        (*currMinute)++;
+        if(*currMinute<=MAX_MINUTES)
+            emit log(tag + ": Current minute = " + QString::number(*currMinute));
+        emit setMinuteSig(*currMinute);
+        mutex->unlock();
     } catch (exception e) {
+        emit log(tag + " : " + e.what());
+        mutex->unlock();
         throw e;
     }
 
     // ultimo minuto
-    if(currMinute >= MAX_MINUTES){
-        currMinute = 0;
+    mutex->lock();
+    if(*currMinute >= MAX_MINUTES+1){
+        *currMinute = 1;
+        emit setMinuteSig(*currMinute);
+        emit log(tag + ": Current minute = " + QString::number(*currMinute));
 //        emit ready(); // manda start alle schede per nuovo timeslot
         try {
            manageLastMinute();
         } catch (exception e) {
+            emit log(tag + " : " + e.what());
+            mutex->unlock();
             throw e;
         }
         emit elabFinishedSig(); // manda dati time slot corrente al thread che si occupa del db e alla gui
     }
-
     emit finish();
+    mutex->unlock();
 }
 
 /**
@@ -68,10 +81,12 @@ void ElaborateThread::signalsConnection(QThread *thread){
     connect(this, &ElaborateThread::elabFinishedSig, server, &MyServer::onChartDataReadySlot);
 
     connect(this, &ElaborateThread::finish, this, &ElaborateThread::deleteLater);
-    connect(this, &ElaborateThread::finish, thread, &QThread::deleteLater);
+    connect(this, &ElaborateThread::setMinuteSig, server, &MyServer::setMinuteSlot);
 
-    connect(thread, &QThread::finished, this, &ElaborateThread::deleteLater);
-    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+//    connect(this, &ElaborateThread::finish, thread, &QThread::quit);
+
+//    connect(thread, &QThread::finished, this, &ElaborateThread::deleteLater);
+//    connect(thread, &QThread::quit, thread, &QThread::deleteLater);
 
 //    connect(this, &ElaborateThread::drawMapSig, server, &MyServer::drawMapSlot);
 }
@@ -83,7 +98,6 @@ void ElaborateThread::signalsConnection(QThread *thread){
 void ElaborateThread::manageCurrentMinute(){
 
     try {
-        mutex->lock();
         QMap<QString, int>::iterator i;
         for(i=packetsDetectionMap->begin(); i!=packetsDetectionMap->end(); i++){
 
@@ -152,14 +166,19 @@ void ElaborateThread::manageCurrentMinute(){
         }
         packetsMap->clear();
         packetsDetectionMap->clear();
-        mutex->unlock();
+        qDebug().noquote() << tag << ": gestito minuto corrente";
         // TODO: si può fare la media delle trilaterazioni per ogni persona
     } catch (out_of_range e) {
         packetsMap->clear();
         packetsDetectionMap->clear();
-        mutex->unlock();
         throw out_of_range("There was some problem with ranges in structures, aborting current minute elaboration.");
     }
+    catch (exception e) {
+            packetsMap->clear();
+            packetsDetectionMap->clear();
+            qDebug().noquote() << tag << "problema nella manageCurrentMinute";
+            throw e;
+        }
 
 }
 
@@ -173,6 +192,7 @@ void ElaborateThread::manageLastMinute() {
     try {
         calculateAvgPosition();
     } catch (out_of_range e) {
+        qDebug().noquote() << tag << "problema nella manageLastMinute";
         throw e;
     }
 }
@@ -184,38 +204,39 @@ void ElaborateThread::manageLastMinute() {
 void ElaborateThread::calculateAvgPosition(){
 
     try {
-        mutex->lock();
         QMap<QString, Person>::iterator person;
         for(person=peopleMap->begin(); person!=peopleMap->end(); person++){
             QList<QPointF> positionsList = person->getPositionsList();
             QPointF avg;
             for(auto pos : positionsList){
-                avg += pos;
+                if (pos.x()<2*maxEspCoords.x() && pos.y()<2*maxEspCoords.y())
+                    avg += pos;
             }
             avg /= positionsList.length();
-            person->setAvgPosition(avg);            
+            person->setAvgPosition(avg);
+//            if ((avg.x()>0 && avg.y()>0) && (avg.x()<=maxEspCoords.x() && avg.y()<=maxEspCoords.y())){
+                //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
+                devicesCoords->append(avg);
+//            }
+//            else{
+//                QMap<QString, Person>::iterator temp = person+1;
+//                //togli persone dall'elenco
+//                peopleMap->erase(person);
+//                person = temp;
+
+//                if(peopleMap->size()==0)
+//                    break;
+//            }
         }
-        mutex->unlock();
+        qDebug().noquote() << tag << ": gestito ultimo minuto";
     } catch (out_of_range e) {
-        mutex->unlock();
         throw out_of_range("Note: there was some problem with ranges in structures calculating the average positions.");
     }
+    catch (exception e) {
+            qDebug().noquote() << tag << "problema nella calculateAvgPosition";
+            throw e;
+        }
     // media trilaterazioni
-
-
-//    if ((pos.x()>=0 && pos.y()>=0) && (pos.x()<=maxEspCoords.x() && pos.y()<=maxEspCoords.y())){
-//        //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
-//        devicesCoords->append(pos);
-//    }
-//    else{
-//        QMap<QString, Person>::iterator temp = person+1;
-//        //togli persone dall'elenco
-//        peopleMap->erase(person);
-//        person = temp;
-
-//        if(peopleMap->size()==0)
-//            break;
-//    }
 }
 
 /**

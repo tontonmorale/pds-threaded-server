@@ -14,7 +14,8 @@ ListenerThread::ListenerThread(MyServer *server,
                                QMap<QString, int> *packetsDetectionMap,
                                QMap<QString, Esp> *espMap,
                                double maxSignal,
-                               int& totClients)
+                               int& totClients,
+                               int* currMinute)
     : endPacketSent(false),
       mutex(mutex),
       packetsMap(packetsMap),
@@ -25,7 +26,8 @@ ListenerThread::ListenerThread(MyServer *server,
       maxSignal(maxSignal),
       totClients(totClients),
       firstStart(true),
-      tag("ListenerThread") {
+      tag("ListenerThread"),
+      currMinute(currMinute){
 }
 
 /**
@@ -34,6 +36,7 @@ ListenerThread::ListenerThread(MyServer *server,
  * @param thread
  */
 void ListenerThread::signalsConnection(QThread *thread){
+    this->thread = thread;
 
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 
@@ -41,17 +44,19 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(server, &MyServer::start2ClientsSig, this, &ListenerThread::sendStart);
     connect(this, &ListenerThread::log, server, &MyServer::emitLogSlot);
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
-//    connect(server, &MyServer::closeConnectionSig, this, &ListenerThread::closeConnection);
 
-//    connect(this, &ListenerThread::finished, thread, &QThread::quit);
+    connect(server, &MyServer::closeConnectionSig, this, &ListenerThread::closeConnection);
+
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
-    connect(this, &ListenerThread::beforeDestructionSig, this, &ListenerThread::beforeDestructionSlot);
-//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-//    connect(this, &ListenerThread::finished, this, &ListenerThread::deleteLater);
-}
 
-void ListenerThread::beforeDestructionSlot(){
-    disconnectionTimer->stop();
+    connect(thread, &QThread::finished, thread, &QThread::quit);
+
+    // esempi
+//    connect(this, &ElaborateThread::finish, this, &ElaborateThread::deleteLater);
+//    connect(this, &ElaborateThread::finish, thread, &QThread::deleteLater);
+
+//    connect(thread, &QThread::finished, this, &ElaborateThread::deleteLater);
+//    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 }
 
 /**
@@ -62,7 +67,7 @@ void ListenerThread::work(){
     // crea timer disconnessione e connetti segnali
     try {
         disconnectionTimer = new QTimer(this);
-        connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::closeConnection,  Qt::DirectConnection);
+        connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::beforeClosingSlot,  Qt::DirectConnection);
     } catch (bad_alloc e) {
         emit log(tag + ": Errore nell'allocazione del disconnection timer, non proseguo.");
         return;
@@ -96,6 +101,10 @@ QString ListenerThread::getId(){
     return id;
 }
 
+void ListenerThread::beforeClosingSlot(){
+    emit finished(id);
+}
+
 /**
  * @brief ListenerThread::clientSetup
  * riceve il mac dall'esp e gli invia l'id letto da file
@@ -104,7 +113,7 @@ void ListenerThread::clientSetup(){
     QStringList sl;
     QString line, clientId, hello2Client, mac, helloFromClient;
     const char* msg;
-
+    mutex->lock();
     try {
         socket->waitForReadyRead();
         helloFromClient = QString(socket->readLine());
@@ -112,15 +121,22 @@ void ListenerThread::clientSetup(){
         mac.remove('\r');
         mac.remove('\n');
         if(mac == nullptr){
-            closeConnection();
+            emit finished(id);
+            mutex->unlock();
+            return;
         }
 
         // cerca id dell'esp a partire dal mac, ricavandolo dalla espMap
+        qDebug().noquote() << tag << "find su espMap";
         auto it = espMap->find(mac);
-        if(it != espMap->end())
+        if(it != espMap->end()){
+            qDebug().noquote() << tag << "trovato esp un espMap";
             id = it.value().getId();
+        }
         else{
-            totClients ++;
+
+            totClients ++; //TODO
+
             if(totClients<10){
                 id = "0";
                 id += QString::number(totClients);
@@ -137,12 +153,14 @@ void ListenerThread::clientSetup(){
         socket->write(msg);
     } catch (out_of_range e) {
         emit log(tag + ": problemi di out of range nella clientSetUp");
+        mutex->unlock();
         //anche qui, che fare?
     } catch (exception e) {
         emit log(tag + ": Probabile errore nel socket");
+        mutex->unlock();
         //TODO: che faccio se ho un errore sul socket?
     }
-
+    mutex->unlock();
 }
 
 /**
@@ -157,7 +175,7 @@ void ListenerThread::sendStart(int currMinute){
         try {
             mutex->lock();
             socket->write("START\r\n");
-            qDebug() << tag << ": mando Start a " << id << "(minuto " << currMinute << ")";
+            qDebug() << tag << ": mando Start a " << id;
 
             if(firstStart){
                 //start timer per rilevare disconnessioni
@@ -170,7 +188,7 @@ void ListenerThread::sendStart(int currMinute){
             retry--;
             if (!retry) {
                 emit log(tag + ": Impossibile mandare start, probabili errori sul socket, considero il client disconnesso."); //possibile soluzione
-                closeConnection();
+                emit finished(id);
             }
             mutex->unlock();
         }
@@ -198,13 +216,13 @@ void ListenerThread::readFromClient(){
 
 
     //start timer per rilevare disconnessioni
-    disconnectionTimer->start(MyServer::intervalTime + 5000);
+    disconnectionTimer->start(2*MyServer::intervalTime + 2000);
 
     try{
         while ( socket->canReadLine() ) {
             line = QString(socket->readLine());
 
-            qDebug() << tag << ": " << line;
+            qDebug() << tag << ": " << line << ", currMinute=" << *currMinute;
 
             line.remove('\r');
             line.remove('\n');
@@ -225,7 +243,7 @@ void ListenerThread::readFromClient(){
     } catch (...) {
         // errore socket, disconnetto
         emit log("Impossibile leggere dal socket, probabili errori sul socket, considero il client disconnesso.");
-        closeConnection();
+        emit finished(id);
         return;
     }
 }
@@ -240,63 +258,76 @@ void ListenerThread::newPacket(QString line){
     Packet pkt;
     QStringList sl, tsSplit, macList;
     int signal;
+    try{
 
-    line.remove(',');
-    sl=line.split(" ");
-    if(sl.length()!=6){
-        //wrong parameters number
-        return;
+        line.remove(',');
+        sl=line.split(" ");
+        if(sl.length()!=6){
+            //wrong parameters number
+            mutex->unlock();
+            return;
+        }
+
+        // ricava i campi dalla stringa ricevuta
+        hash = sl.at(1);
+        mac = sl.at(2);
+        signal = sl.at(3).toInt();
+        timestamp = sl.at(4);
+        espId = sl.at(5);
+
+        if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
+            emit log(tag + ": " + "[esp " + espId + "] " + line);
+
+        //scarto pacchetto se valore intensità segnale sballata
+    //    if(abs(signal) > abs(maxSignal)){
+    //        return;
+    //    }
+
+        key = hash + "-" + mac + "-" + espId; // key = "pktHash-mac-espId"
+        shortKey = hash + "-" + mac; // shortKey = "pktHash-mac"
+
+        // --- inserisci nuovo pacchetto ---
+        mutex->lock();
+
+        // nuovo pacchetto
+    //    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i pacchetti rimangono nella mappa una volta uscito dalla funzione !!!
+        (*packetsMap)[key] = Packet(hash, mac, timestamp, signal, espId, "ssid");
+
+        // aggiorna packetsDetectionMap, aggiorna il conto di quante schede hanno rilevato ogni pacchetto
+        if(packetsDetectionMap->find(shortKey) != packetsDetectionMap->end()){
+            (*packetsDetectionMap)[shortKey] ++;
+        }
+        else{
+            (*packetsDetectionMap)[shortKey] = 1;
+        }
+    }catch(...) {
+        qDebug() << tag << ": problema in closeConnection";
+        mutex->unlock();
     }
 
-    // ricava i campi dalla stringa ricevuta
-    hash = sl.at(1);
-    mac = sl.at(2);
-    signal = sl.at(3).toInt();
-    timestamp = sl.at(4);
-    espId = sl.at(5);
-
-    if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
-        emit log(tag + ": " + "[esp " + espId + "] " + line);
-
-    //scarto pacchetto se valore intensità segnale sballata
-//    if(abs(signal) > abs(maxSignal)){
-//        return;
-//    }
-
-    key = hash + "-" + mac + "-" + espId; // key = "pktHash-mac-espId"
-    shortKey = hash + "-" + mac; // shortKey = "pktHash-mac"
-
-    // --- inserisci nuovo pacchetto ---
-    mutex->lock();
-
-    // nuovo pacchetto
-//    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i pacchetti rimangono nella mappa una volta uscito dalla funzione !!!
-    (*packetsMap)[key] = Packet(hash, mac, timestamp, signal, espId, "ssid");
-
-    // aggiorna packetsDetectionMap, aggiorna il conto di quante schede hanno rilevato ogni pacchetto
-    if(packetsDetectionMap->find(shortKey) != packetsDetectionMap->end()){
-        (*packetsDetectionMap)[shortKey] ++;
-    }
-    else{
-        (*packetsDetectionMap)[shortKey] = 1;
-    }
     mutex->unlock();
     // --- inserisci nuovo pacchetto ---
 }
 
-void ListenerThread::closeConnection(){
-//    socket->write("DISCONNECTED\r\n");
-
-    qDebug() << tag << ": Disconnessione client";
-    emit finished(id);
+void ListenerThread::closeConnection(QString id){
+    try{
+        if(this->id.compare(id)==0){
+            qDebug() << tag << ": Disconnessione client";
+            disconnectionTimer->stop();
+            socket->disconnect();
+            socket->deleteLater();
+            this->deleteLater();
+            thread->quit();
+            thread->deleteLater();
+        }
+    } catch(...) {
+        qDebug() << tag << ": problema in closeConnection";
+    }
 }
 
 ListenerThread::~ListenerThread(){
     qDebug() << tag << ": Distruttore ListenerThread";
-    socket->disconnect();
-    disconnectionTimer->deleteLater();
-    socket->deleteLater();
-    socket = nullptr;
+
 }
 
 

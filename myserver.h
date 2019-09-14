@@ -26,7 +26,7 @@ public:
     void Connects(QString slot);
     ~MyServer() override;
     static const int intervalTime = 15000;
-    static const int elaborateTime = intervalTime/3;
+    static const int elaborateTime = intervalTime/2;
 
 signals:
     void start2ClientsSig(int currMinute);
@@ -60,6 +60,7 @@ public slots:
     void LPStatsWindowCreationSlot(QString, QString);
     void getLPStatsSlot(QString, QString);
     void LPStatsSlot(QMap<QString, QList<QString>>);
+    void setMinuteSlot(int minute);
 //    void drawMapSlot();
 //    void timeout();
 

@@ -28,7 +28,8 @@ public:
                 QMap<QString, int> *packetsDetectionMap,
                 QMap<QString, Esp> *espMap,
                 double maxSignal,
-                int& totClients);
+                int& totClients,
+                int* currMinute);
 //    void clientSetup(QTcpSocket *socket);
     void clientSetup();
 
@@ -43,8 +44,8 @@ public slots:
     void work();
     void readFromClient();
     void sendStart(int currMinute);
-    void closeConnection();
-    void beforeDestructionSlot();
+    void closeConnection(QString id);
+    void beforeClosingSlot();
 
 signals:
     void ready(ListenerThread *);
@@ -68,6 +69,8 @@ private:
     int& totClients;
     bool firstStart;
     QString tag;
+    QThread* thread;
+    int* currMinute;
 };
 
 #endif // LISTENEROBJ_H

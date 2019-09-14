@@ -19,7 +19,7 @@ private:
     QMap<QString, int> *packetsDetectionMap;
     int totClients;
     QMap<QString, Person> *peopleMap;
-    int currMinute;
+    int* currMinute;
     int connectedClients;
     QMap<QString, Esp> *espMap;
     QPointF maxEspCoords;
@@ -37,7 +37,7 @@ public:
                     QMutex* mutex,
                     int connectedClients,
                     QMap<QString, Person> *peopleMap,
-                    int currMinute,
+                    int* currMinute,
                     QMap<QString, Esp> *espMap,
                     QPointF maxEspCoords,
                     QList<QPointF> *devicesCoords);
@@ -55,6 +55,7 @@ signals:
 //    void ready();
     void drawMapSig();
     void finish();
+    void setMinuteSig(int);
 };
 
 #endif // ELABORATETHREAD_H

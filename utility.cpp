@@ -56,7 +56,7 @@ QPointF Utility::trilateration(double r1, double r2, double r3, QPointF pos1, QP
     double y = (pow(r1,2) - pow(r3,2) + pow(i,2) + pow(j,2))/(2*j) - i*x/j;
 
     //result coordinates
-    double finalX = pos1.x()+ x*ex.x() + y*ey.y();
+    double finalX = pos1.x()+ x*ex.x() + y*ey.x();
     double finalY = pos1.y()+ x*ex.y() + y*ey.y();
     resultPose.setX(finalX);
     resultPose.setY(finalY);
