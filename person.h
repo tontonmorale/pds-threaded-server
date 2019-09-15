@@ -15,6 +15,7 @@ public:
     void addPosition(QPointF pos);
     QList<QPointF> getPositionsList();
     void setAvgPosition(QPointF);
+    QPointF getAvgPosition();
 
 private:
     QString mac;

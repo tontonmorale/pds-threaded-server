@@ -6,6 +6,7 @@
 #include <QWidget>
 #include <QtCharts>
 #include <QtCharts/QChartGlobal>
+#include "person.h"
 
 QT_BEGIN_NAMESPACE
 class QGraphicsScene;
@@ -34,14 +35,16 @@ protected:
 
 public slots:
     void keepCallout();
-    void tooltip(QPointF point, bool state);
+    void drawChartTooltip(QPointF point, bool state);
+    void drawMapTooltip(QPointF point, bool state);
     void init(QScatterSeries *, QScatterSeries *, QScatterSeries *, QStringList);
+    void mapInit(QScatterSeries *, QMap<QString, Person>);
 
 private:
-    QGraphicsSimpleTextItem *m_coordX;
-    QGraphicsSimpleTextItem *m_coordY;
-    QChart *chart;
-    Callout *m_tooltip;
+    QGraphicsSimpleTextItem *m_coordX, *m_coordY;
+    QChart *chart, *map;
+    QMap<QString, Person> people;
+    Callout *chartTooltip, *mapTooltip;
     QList<Callout *> m_callouts;
     QStringList macs;
 };

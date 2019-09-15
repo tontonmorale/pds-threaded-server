@@ -39,7 +39,7 @@ public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
     void drawChartSlot(QMap<QString, int> chartDataToDrawMap);
-    void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords);
+    void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person>);
     void submitDatesForLPStatsSlot();
     void serverListenSlot();
     void onButtonClicked();
@@ -51,7 +51,7 @@ private:
     Ui::MainWindow *ui;
     QWidget *newWindow;
     MyServer server;
-    View view;
+    View LPStatsView;
 };
 
 #endif // MAINWINDOW_H

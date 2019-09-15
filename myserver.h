@@ -35,7 +35,7 @@ signals:
     void drawChartSig(QMap<QString, int> chartDataToDrawMap);
     void chartDataToDbSig(QMap<QString, Person> peopleMap);
     void getStatsSig(QString begintime, QString endtime);
-    void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords);
+    void drawMapSig(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person>);
     void dbConnectedSig();
     void closeConnectionSig(QString s);
     void setMinuteSig(int minute);

@@ -18,3 +18,7 @@ QList<QPointF> Person::getPositionsList(){
 void Person::setAvgPosition(QPointF pos){
     avgPosition = pos;
 }
+
+QPointF Person::getAvgPosition() {
+    return avgPosition;
+}

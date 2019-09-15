@@ -38,26 +38,26 @@ QPointF Utility::trilateration(double r1, double r2, double r3, QPointF pos1, QP
 
     //unit vector in a direction from point1 to point 2
     double p2p1Distance = pow(pow(pos2.x()-pos1.x(),2) + pow(pos2.y() -  pos1.y(),2),0.5);
-    QPointF ex = {(pos2.x()-pos1.x())/p2p1Distance, (pos2.y()-pos1.y())/p2p1Distance};
-    QPointF aux = {pos3.x()-pos1.x(),pos3.y()-pos1.y()};
+    QPointF cos_sin = {(pos2.x()-pos1.x())/p2p1Distance, (pos2.y()-pos1.y())/p2p1Distance};
+    QPointF p3Byp1 = {pos3.x()-pos1.x(),pos3.y()-pos1.y()};
 
     //signed magnitude of the x component
-    double i = ex.x() * aux.x() + ex.y() * aux.y();
+    double i = cos_sin.x() * p3Byp1.x() + cos_sin.y() * p3Byp1.y();
 
     //the unit vector in the y direction.
-    QPointF aux2 = { pos3.x()-pos1.x()-i*ex.x(), pos3.y()-pos1.y()-i*ex.y()};
+    QPointF aux2 = { pos3.x()-pos1.x()-i*cos_sin.x(), pos3.y()-pos1.y()-i*cos_sin.y()};
     QPointF ey = { aux2.x() / norm(aux2), aux2.y() / norm(aux2) };
 
     //the signed magnitude of the y component
-    double j = ey.x() * aux.x() + ey.y() * aux.y();
+    double j = ey.x() * p3Byp1.x() + ey.y() * p3Byp1.y();
 
     //coordinates
     double x = (pow(r1,2) - pow(r2,2) + pow(p2p1Distance,2))/ (2 * p2p1Distance);
     double y = (pow(r1,2) - pow(r3,2) + pow(i,2) + pow(j,2))/(2*j) - i*x/j;
 
     //result coordinates
-    double finalX = pos1.x()+ x*ex.x() + y*ey.x();
-    double finalY = pos1.y()+ x*ex.y() + y*ey.y();
+    double finalX = pos1.x()+ x*cos_sin.x() + y*ey.x();
+    double finalY = pos1.y()+ x*cos_sin.y() + y*ey.y();
     resultPose.setX(finalX);
     resultPose.setY(finalY);
     return resultPose;

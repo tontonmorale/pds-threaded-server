@@ -358,7 +358,7 @@ void MyServer::onChartDataReadySlot(){
 
         //passo copia dati da disegnare alla mappa e cancello quelli vecchi
         QList<QPointF> coordsForMap = *devicesCoords;
-        emit drawMapSig(coordsForMap, maxEspCoords);
+        emit drawMapSig(coordsForMap, maxEspCoords, people);
         devicesCoords->clear();
         mutex->unlock();
     } catch (...) {

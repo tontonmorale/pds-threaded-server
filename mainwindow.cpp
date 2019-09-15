@@ -31,15 +31,19 @@ void MainWindow::setMinuteSlot(int minute){
     ui->minute->setPlainText(QString::number(minute));
 }
 
-void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords){
+void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person> people){
     try {
 
         qDebug().noquote() << "disegno mappa";
 
         QScatterSeries *mapSeries = new QScatterSeries();
+        QLineSeries *areaSeries = new QLineSeries();
 
         for(QList<QPointF>::iterator i=devicesCoords.begin(); i!=devicesCoords.end(); i++)
             *mapSeries << *i;
+
+        //TODO: disegna area come linee
+
 
         QChart *chart = new QChart();
         chart->legend()->hide();
@@ -62,9 +66,11 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords)
         chart->addAxis(axisY, Qt::AlignLeft);
         mapSeries->attachAxis(axisY);
 
-        //    chart->axisX()->setRange(0.0, maxEspCoords);
-        //    chart->axisY()->setRange(0.0, maxEspCoords);
+        chart->axisX()->setRange((-maxEspCoords.x()*2), maxEspCoords.x()*2);
+        chart->axisY()->setRange((-maxEspCoords.y()*2), maxEspCoords.y()*2);
         chart->setTitle("People in the area");
+        chart->setAcceptHoverEvents(true);
+        LPStatsView.mapInit(mapSeries, people);
 
         QChartView *mapView = ui->mapView;
         mapView->setRenderHint(QPainter::Antialiasing);
@@ -311,7 +317,7 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
     QList<QAbstractSeries *> series = chart->series();
     chart->setTitle("Long period statistics");
     chart->setAcceptHoverEvents(true);
-    view.init(mac1, mac2, mac3, macs);
+    LPStatsView.init(mac1, mac2, mac3, macs);
 
     QChartView *mapView = newWindow->findChild<QChartView *>("LPStatsChart");
     mapView->setRenderHint(QPainter::Antialiasing);
