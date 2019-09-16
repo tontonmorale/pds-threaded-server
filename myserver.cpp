@@ -5,8 +5,8 @@
 #include <memory>
 using namespace std;
 
-#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
-//#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
+//#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
+#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
     QTcpServer (parent),
@@ -148,6 +148,7 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
 
     connectedClients++;
     listenerThreadPool.insert(newId, lt);
+    emit setClientsSig(connectedClients);
 }
 
 /**
@@ -252,7 +253,7 @@ void MyServer::startToClientsSlot(){
         startCalled = true;
 
         if(!firstStart){
-//            elaborateTimer.start(MyServer::elaborateTime);
+            elaborateTimer.start(MyServer::elaborateTime);
             qDebug() << "";
         }
         else{
@@ -285,6 +286,7 @@ void MyServer::disconnectClientSlot(QString espId){
         listenerThreadPool.erase(it); //TODO: testare
         closeConnectionSig(espId);
         connectedClients--;
+        emit setClientsSig(connectedClients);
         QString s = "Client ";
         s += espId;
         s += " disconnected";

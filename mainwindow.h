@@ -45,6 +45,7 @@ public slots:
     void serverListenSlot();
     void onButtonClicked();
     void setMinuteSlot(int minute);
+    void setClientsSlot(int clients);
     void LPStatsWindowCreationSlot(QString, QString);
     void drawLPStatsSlot(QMap<QString, QList<QString>>);
 

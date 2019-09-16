@@ -41,7 +41,7 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(thread, SIGNAL(started()), this, SLOT(work()));
 
     connect(this, &ListenerThread::ready, server, &MyServer::readyFromClientSlot);
-    connect(server, &MyServer::start2ClientsSig, this, &ListenerThread::sendStart);
+
     connect(this, &ListenerThread::log, server, &MyServer::emitLogSlot);
     connect(this, &ListenerThread::endPackets, server, &MyServer::createElaborateThreadSlot);
 
@@ -92,6 +92,7 @@ void ListenerThread::work(){
 
     // imposta lo slot che reagisce alla ricezione di nuovi dati dall'esp
     connect(socket, SIGNAL(readyRead()), this, SLOT(readFromClient()));
+    connect(server, &MyServer::start2ClientsSig, this, &ListenerThread::sendStart);
 
     // segnale di ready verso il server
     emit ready(this);

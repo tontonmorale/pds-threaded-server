@@ -39,6 +39,7 @@ signals:
     void dbConnectedSig();
     void closeConnectionSig(QString s);
     void setMinuteSig(int minute);
+    void setClientsSig(int clients);
     void getMinDateForLPStatsSig();
     void LPStatsWindowCreationSig(QString, QString);
     void getLPStatsSig(QString, QString);

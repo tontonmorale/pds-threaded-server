@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&server, &MyServer::drawMapSig, this, &MainWindow::drawMapSlot);
     connect(&server, &MyServer::dbConnectedSig, this, &MainWindow::serverListenSlot);
     connect(&server, &MyServer::setMinuteSig, this, &MainWindow::setMinuteSlot);
+    connect(&server, &MyServer::setClientsSig, this, &MainWindow::setClientsSlot);
     connect(this, &MainWindow::getMinDateForLPSTATSSig, &server, &MyServer::getMinDateForLPSTATSSlot);
     connect(&server, &MyServer::LPStatsWindowCreationSig, this, &MainWindow::LPStatsWindowCreationSlot);
     connect(this, &MainWindow::getLPStatsSig, &server, &MyServer::getLPStatsSlot);
@@ -31,6 +32,10 @@ void MainWindow::setMinuteSlot(int minute){
     ui->minute->setPlainText(QString::number(minute));
 }
 
+void MainWindow::setClientsSlot(int clients){
+    ui->clients->setPlainText(QString::number(clients));
+}
+
 void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person> people){
     try {
 
@@ -43,11 +48,19 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords,
 //            mapSeries->append(i->x(), i->y());
 
 
-        //TODO: disegna area come linee
-
+        ui->noMapData->setVisible(false);
 
         QChart *chart = new QChart();
         chart->legend()->hide();
+
+        //provaaaaaaaaaaaaaaaaaa
+        QScatterSeries *mySeries = new QScatterSeries();
+        mySeries->append(0.5, 0.5);
+        mySeries->append(1.0, 0.5);
+        mySeries->append(1.0, 1.0);
+
+        chart->addSeries(mySeries);
+
         chart->addSeries(mapSeries);
         this->setMouseTracking(true);
         // setta gli assi
