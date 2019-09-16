@@ -5,8 +5,8 @@
 #include <memory>
 using namespace std;
 
-//#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
-#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
+#define ESP_FILE_PATH "C:/Users/raffy/Desktop/PDS_09-09/pds-threaded-server/esp.txt"
+//#define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
     QTcpServer (parent),
