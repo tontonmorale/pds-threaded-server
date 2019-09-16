@@ -41,6 +41,8 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords,
 
         for(QList<QPointF>::iterator i=devicesCoords.begin(); i!=devicesCoords.end(); i++)
             *mapSeries << *i;
+//            mapSeries->append(i->x(), i->y());
+
 
         //TODO: disegna area come linee
 

@@ -53,7 +53,7 @@ void View::mapInit(QScatterSeries *mapseries, QMap<QString, Person> people) {
 
     scene()->addItem(this->map);
 
-    connect(mapseries, &QScatterSeries::hovered, this, &View::drawChartTooltip);
+    connect(mapseries, &QScatterSeries::hovered, this, &View::drawMapTooltip);
     mapTooltip = new Callout(map);
 
     this->setMouseTracking(true);
