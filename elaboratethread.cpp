@@ -54,9 +54,9 @@ void ElaborateThread::work() {
         *currMinute = 1;
         emit setMinuteSig(*currMinute);
         emit log(tag + ": Current minute = " + QString::number(*currMinute));
-//        emit ready(); // manda start alle schede per nuovo timeslot
+        //        emit ready(); // manda start alle schede per nuovo timeslot
         try {
-           manageLastMinute();
+            manageLastMinute();
         } catch (exception e) {
             emit log(tag + " : " + e.what());
             mutex->unlock();
@@ -83,12 +83,12 @@ void ElaborateThread::signalsConnection(QThread *thread){
     connect(this, &ElaborateThread::finish, this, &ElaborateThread::deleteLater);
     connect(this, &ElaborateThread::setMinuteSig, server, &MyServer::setMinuteSlot);
 
-//    connect(this, &ElaborateThread::finish, thread, &QThread::quit);
+    //    connect(this, &ElaborateThread::finish, thread, &QThread::quit);
 
-//    connect(thread, &QThread::finished, this, &ElaborateThread::deleteLater);
-//    connect(thread, &QThread::quit, thread, &QThread::deleteLater);
+    //    connect(thread, &QThread::finished, this, &ElaborateThread::deleteLater);
+    //    connect(thread, &QThread::quit, thread, &QThread::deleteLater);
 
-//    connect(this, &ElaborateThread::drawMapSig, server, &MyServer::drawMapSlot);
+    //    connect(this, &ElaborateThread::drawMapSig, server, &MyServer::drawMapSlot);
 }
 
 /**
@@ -107,61 +107,61 @@ void ElaborateThread::manageCurrentMinute(){
                 QString shortKey = i.key(); // shortKey = "pktHash-mac"
                 QString mac = shortKey.split('-').at(1);
 
-    //            if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 ){ // andrà tolto
+                //            if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 ){ // andrà tolto
 
-                    auto person = peopleMap->find(mac);
-                    if(person == peopleMap->end()){
-                        // nuovo device
+                auto person = peopleMap->find(mac);
+                if(person == peopleMap->end()){
+                    // nuovo device
 
-                        Person p = Person(mac);
-                        person = peopleMap->insert(mac, p);
+                    Person p = Person(mac);
+                    person = peopleMap->insert(mac, p);
+                }
+
+                // cerco pacchetti nella packetMap associati a quello corrente di packetsDetectioMap
+                QList<Packet> packetsList = getPacketsList(shortKey);
+
+                // ricavo posizioni esp che hanno rilevato i pacchetti
+                QPointF posA, posB, posC;
+                Esp espA, espB, espC;
+                double d1, d2, d3; // distanze tra device e i vari esp
+
+                auto packet = packetsList.begin();
+                for(auto esp : *espMap){
+                    if(esp.getId().compare(packet->getEspId())==0){
+                        espA = esp;
+                        posA = esp.getPosition();
+                        d1 = Utility::dbToMeters(packet->getSignal());
+                        if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                            qDebug().noquote() << tag << ": " << QString::number(d1) + " " + QString::number(packet->getSignal()) + "\n";
                     }
-
-                    // cerco pacchetti nella packetMap associati a quello corrente di packetsDetectioMap
-                    QList<Packet> packetsList = getPacketsList(shortKey);
-
-                    // ricavo posizioni esp che hanno rilevato i pacchetti
-                    QPointF posA, posB, posC;
-                    Esp espA, espB, espC;
-                    double d1, d2, d3; // distanze tra device e i vari esp
-
-                    auto packet = packetsList.begin();
-                    for(auto esp : *espMap){
-                        if(esp.getId().compare(packet->getEspId())==0){
-                            espA = esp;
-                            posA = esp.getPosition();
-                            d1 = Utility::dbToMeters(packet->getSignal());
-                            if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                                qDebug().noquote() << tag << ": " << QString::number(d1) + " " + QString::number(packet->getSignal()) + "\n";
-                        }
+                }
+                packet++;
+                for(auto esp : *espMap){
+                    if(esp.getId().compare(packet->getEspId())==0){
+                        espB = esp;
+                        posB = esp.getPosition();
+                        d2 = Utility::dbToMeters(packet->getSignal());
+                        if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                            qDebug().noquote() << tag << ": " << QString::number(d2) + " " + QString::number(packet->getSignal()) + "\n";
                     }
-                    packet++;
-                    for(auto esp : *espMap){
-                        if(esp.getId().compare(packet->getEspId())==0){
-                            espB = esp;
-                            posB = esp.getPosition();
-                            d2 = Utility::dbToMeters(packet->getSignal());
-                            if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                                qDebug().noquote() << tag << ": " << QString::number(d2) + " " + QString::number(packet->getSignal()) + "\n";
-                        }
+                }
+                packet++;
+                for(auto esp : *espMap){
+                    if(esp.getId().compare(packet->getEspId())==0){
+                        espC = esp;
+                        posC = esp.getPosition();
+                        d3 = Utility::dbToMeters(packet->getSignal());
+                        if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                            qDebug().noquote() << tag << ": " << QString::number(d3) + " " + QString::number(packet->getSignal()) + "\n";
                     }
-                    packet++;
-                    for(auto esp : *espMap){
-                        if(esp.getId().compare(packet->getEspId())==0){
-                            espC = esp;
-                            posC = esp.getPosition();
-                            d3 = Utility::dbToMeters(packet->getSignal());
-                            if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                                qDebug().noquote() << tag << ": " << QString::number(d3) + " " + QString::number(packet->getSignal()) + "\n";
-                        }
-                    }
+                }
 
-                    QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
-                    if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
-                        qDebug() << tag << ": posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
-                    person->addPosition(pos);
+                QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
+                if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
+                    qDebug() << tag << ": posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
+                person->addPosition(pos);
 
-    //            }
+                //            }
             }
         }
         packetsMap->clear();
@@ -174,11 +174,11 @@ void ElaborateThread::manageCurrentMinute(){
         throw out_of_range("There was some problem with ranges in structures, aborting current minute elaboration.");
     }
     catch (exception e) {
-            packetsMap->clear();
-            packetsDetectionMap->clear();
-            qDebug().noquote() << tag << "problema nella manageCurrentMinute";
-            throw e;
-        }
+        packetsMap->clear();
+        packetsDetectionMap->clear();
+        qDebug().noquote() << tag << "problema nella manageCurrentMinute";
+        throw e;
+    }
 
 }
 
@@ -205,37 +205,44 @@ void ElaborateThread::calculateAvgPosition(){
 
     try {
         QMap<QString, Person>::iterator person;
-        for(person=peopleMap->begin(); person!=peopleMap->end(); person++){
+        QPointF min = {(-maxEspCoords.x()*2), (-maxEspCoords.x()*2)}, max = {maxEspCoords.x()*2, maxEspCoords.x()*2};
+        for(person=peopleMap->begin(); person!=peopleMap->end();){
             QList<QPointF> positionsList = person->getPositionsList();
-            QPointF avg;
+            QPointF avg = {NAN, NAN};
             for(auto pos : positionsList){
-                if (pos.x()<2*maxEspCoords.x() && pos.y()<2*maxEspCoords.y())
+                if (pos.x()>=min.x() && pos.y()>=min.y() && pos.x()<=max.x() && pos.y()<=max.y()){
+                    if (isnan(avg.x()) && isnan(avg.y()))
+                        avg = {0.0,0.0};
                     avg += pos;
+                }
             }
-            avg /= positionsList.length();
-            person->setAvgPosition(avg);
-//            if ((avg.x()>0 && avg.y()>0) && (avg.x()<=maxEspCoords.x() && avg.y()<=maxEspCoords.y())){
-                //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
-                devicesCoords->append(avg);
-//            }
-//            else{
-//                QMap<QString, Person>::iterator temp = person+1;
-//                //togli persone dall'elenco
-//                peopleMap->erase(person);
-//                person = temp;
-
-//                if(peopleMap->size()==0)
-//                    break;
-//            }
+//            emit log(person.key() + " : " + QString::number(avg.x()) + ", " + QString::number(avg.y()));
+            qDebug() << person.key() << " : " + QString::number(avg.x()) + ", " + QString::number(avg.y());
+            if (!isnan(avg.x()) && !isnan(avg.y())) {
+                avg /= positionsList.length();
+                person->setAvgPosition(avg);
+                if ((avg.x()>=(-maxEspCoords.x()*2) && avg.y()>=(-maxEspCoords.x()*2))
+                        && (avg.x()<=maxEspCoords.x()*2 && avg.y()<=maxEspCoords.y()*2)){
+                    //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
+                    devicesCoords->append(avg);
+                    person++;
+                }
+            }
+            else {
+                //togli persone dall'elenco
+                auto next = peopleMap->erase(person++);
+                if (next == peopleMap->end()|| peopleMap->size()==0)
+                   break;
+            }
         }
         qDebug().noquote() << tag << ": gestito ultimo minuto";
     } catch (out_of_range e) {
         throw out_of_range("Note: there was some problem with ranges in structures calculating the average positions.");
     }
-    catch (exception e) {
-            qDebug().noquote() << tag << "problema nella calculateAvgPosition";
-            throw e;
-        }
+    catch (exception& e) {
+        qDebug().noquote() << tag << " problema nella calculateAvgPosition: " << e.what();
+        throw e;
+    }
     // media trilaterazioni
 }
 
@@ -263,5 +270,5 @@ QList<Packet> ElaborateThread::getPacketsList(QString shortKey){
 }
 
 ElaborateThread::~ElaborateThread() {
-qDebug() << tag << ": Distruttore ElaborateThread";
+    qDebug() << tag << ": Distruttore ElaborateThread";
 }

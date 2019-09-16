@@ -13,6 +13,7 @@
 #include <QValueAxis>
 #include <myserver.h>
 #include "view.h"
+#include "maphovering.h"
 
 
 namespace Ui {
@@ -52,6 +53,7 @@ private:
     QWidget *newWindow;
     MyServer server;
     View LPStatsView;
+    MapHovering mapHovering;
 };
 
 #endif // MAINWINDOW_H

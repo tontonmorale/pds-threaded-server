@@ -17,6 +17,7 @@ SOURCES += \
     callout.cpp \
         main.cpp \
         mainwindow.cpp \
+    maphovering.cpp \
     myserver.cpp \
     packet.cpp \
     esp.cpp \
@@ -30,6 +31,7 @@ SOURCES += \
 HEADERS += \
     callout.h \
         mainwindow.h \
+    maphovering.h \
     myserver.h \
     packet.h \
     esp.h \

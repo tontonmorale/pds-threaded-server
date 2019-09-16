@@ -37,7 +37,6 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords,
         qDebug().noquote() << "disegno mappa";
 
         QScatterSeries *mapSeries = new QScatterSeries();
-        QLineSeries *areaSeries = new QLineSeries();
 
         for(QList<QPointF>::iterator i=devicesCoords.begin(); i!=devicesCoords.end(); i++)
             *mapSeries << *i;
@@ -50,7 +49,7 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords,
         QChart *chart = new QChart();
         chart->legend()->hide();
         chart->addSeries(mapSeries);
-
+        this->setMouseTracking(true);
         // setta gli assi
         QValueAxis *axisX = new QValueAxis;
 //        axisX->setMin(0.0);
@@ -72,7 +71,7 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords,
         chart->axisY()->setRange((-maxEspCoords.y()*2), maxEspCoords.y()*2);
         chart->setTitle("People in the area");
         chart->setAcceptHoverEvents(true);
-        LPStatsView.mapInit(mapSeries, people);
+        mapHovering.mapInit(mapSeries, people);
 
         QChartView *mapView = ui->mapView;
         mapView->setRenderHint(QPainter::Antialiasing);
@@ -286,7 +285,7 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
         j++;
     }
 
-    qint64 delta = (timestamps.back() - timestamps.front())/8;
+    qint64 delta = (timestamps.front() - timestamps.back())/8;
 
     QChart *chart = new QChart();
     chart->addSeries(mac1);
@@ -316,7 +315,6 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
     mac2->attachAxis(axisY);
     mac3->attachAxis(axisY);
 
-    QList<QAbstractSeries *> series = chart->series();
     chart->setTitle("Long period statistics");
     chart->setAcceptHoverEvents(true);
     LPStatsView.init(mac1, mac2, mac3, macs);

@@ -1,5 +1,7 @@
-#ifndef VIEW_H
-#define VIEW_H
+#ifndef MAPHOVERING_H
+#define MAPHOVERING_H
+
+
 #include <QtWidgets/QGraphicsView>
 #include <QtCharts/QChartGlobal>
 #include <QChartView>
@@ -22,24 +24,25 @@ class Callout;
 
 QT_CHARTS_USE_NAMESPACE
 
-class View: public QGraphicsView
+class MapHovering: public QGraphicsView
 {
     Q_OBJECT
 
 public:
-    View(QWidget *parent = 0);
+    MapHovering(QWidget *parent = 0);
 
 
 public slots:
-    void drawChartTooltip(QPointF point, bool state);
-    void init(QScatterSeries *, QScatterSeries *, QScatterSeries *, QStringList);
+    void drawMapTooltip(QPointF point, bool state);
+    void mapInit(QScatterSeries *, QMap<QString, Person>);
 
 private:
     QChart *chart, *map;
     QMap<QString, Person> people;
-    Callout *chartTooltip;
+    Callout *chartTooltip, *mapTooltip;
     QList<Callout *> m_callouts;
     QStringList macs;
 };
 
-#endif
+
+#endif // MAPHOVERING_H

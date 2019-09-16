@@ -62,7 +62,7 @@ private:
     QMap<QString, int> *packetsDetectionMap;
     QTcpSocket *socket;
     qintptr socketDescriptor;
-    shared_ptr<QMap<QString, Esp>> espMap;
+    QMap<QString, Esp>* espMap;
     MyServer *server;
     QTimer *disconnectionTimer;
     double maxSignal;
