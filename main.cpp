@@ -2,7 +2,6 @@
 #include <QApplication>
 #include <myserver.h>
 #include <utility.h>
-#include "math.h"
 
 double norm(QPointF p){
     double x = p.x(), y=p.y();
