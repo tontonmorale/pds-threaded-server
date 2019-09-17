@@ -304,7 +304,7 @@ void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
                    "FROM LPStats "
                    "WHERE timestamp >= '" + begintime + "' AND timestamp <= '" + endtime + "' "
                    "GROUP BY mac) as Tabella "
-                   "ORDER BY Tabella.counter "
+                   "ORDER BY Tabella.counter DESC "
                    "LIMIT 3;";
 
     qDebug().noquote() << "query: " + queryString;

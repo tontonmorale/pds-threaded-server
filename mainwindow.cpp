@@ -300,13 +300,27 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
             else if (j == 3)
                 mac3->append(dateTime.toMSecsSinceEpoch(), j);
             if (!timestamps.contains(dateTime.toMSecsSinceEpoch())){
-                timestamps.append(dateTime.toMSecsSinceEpoch());
+                int i = 0;
+                if (timestamps.size() == 0)
+                    timestamps.append(dateTime.toMSecsSinceEpoch());
+                for (auto t = timestamps.begin(); t!=timestamps.end(); t++) {
+                    if (*t<dateTime.toMSecsSinceEpoch()) {
+                        timestamps.insert(i, dateTime.toMSecsSinceEpoch());
+                        break;
+                    }
+                    i++;
+                }
+
             }
         }
         j++;
     }
-
-    qint64 delta = (timestamps.front() - timestamps.back())/8;
+    qint64 delta;
+    if (timestamps.size()==1) {
+        delta = timestamps.front()+600000;
+    }
+    else
+        delta = (timestamps.front() - timestamps.back())/8;
 
     QChart *chart = new QChart();
     chart->addSeries(mac1);
@@ -317,8 +331,8 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
     // setta gli assi
     QDateTimeAxis *axisX = new QDateTimeAxis;
     axisX->setFormat("yy/MM/dd <br> hh:mm");
-    axisX->setMin(QDateTime::fromMSecsSinceEpoch(timestamps.front()-delta));
-    axisX->setMax(QDateTime::fromMSecsSinceEpoch(delta + timestamps.back()));
+    axisX->setMin(QDateTime::fromMSecsSinceEpoch(timestamps.back()-delta));
+    axisX->setMax(QDateTime::fromMSecsSinceEpoch(delta + timestamps.front()));
     axisX->setTitleText("timestamp");
     chart->addAxis(axisX, Qt::AlignBottom);
     mac1->attachAxis(axisX);
