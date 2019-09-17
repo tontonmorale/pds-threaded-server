@@ -360,7 +360,7 @@ void MyServer::onChartDataReadySlot(){
 
         //passo copia dati da disegnare alla mappa e cancello quelli vecchi
         QList<QPointF> coordsForMap = *devicesCoords;
-        emit drawMapSig(coordsForMap, maxEspCoords, people);
+        emit drawMapSig(coordsForMap, maxEspCoords, people, espMap);
         devicesCoords->clear();
         mutex->unlock();
     } catch (...) {

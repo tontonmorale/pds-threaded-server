@@ -40,7 +40,7 @@ public slots:
     void fatalErrorSlot(QString message);
     void printToLogSlot(QString message);
     void drawChartSlot(QMap<QString, int> chartDataToDrawMap);
-    void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person>);
+    void drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person>, QMap<QString, Esp> *espMap);
     void submitDatesForLPStatsSlot();
     void serverListenSlot();
     void onButtonClicked();

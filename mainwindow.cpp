@@ -36,52 +36,59 @@ void MainWindow::setClientsSlot(int clients){
     ui->clients->setPlainText(QString::number(clients));
 }
 
-void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person> people){
+void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords, QMap<QString, Person> people, QMap<QString, Esp> *espMap){
     try {
 
         qDebug().noquote() << "disegno mappa";
 
         QScatterSeries *mapSeries = new QScatterSeries();
+        QScatterSeries *mySeries = new QScatterSeries();
 
         for(QList<QPointF>::iterator i=devicesCoords.begin(); i!=devicesCoords.end(); i++)
             *mapSeries << *i;
 //            mapSeries->append(i->x(), i->y());
 
+        //aggiungo posizioni esp
+        for(auto i : *espMap){
+            QPointF p = i.getPosition();
+            mySeries->append(p.x(), p.y());
+        }
+        qDebug().noquote() << mapSeries->points();
 
         ui->noMapData->setVisible(false);
 
         QChart *chart = new QChart();
         chart->legend()->hide();
 
-        //provaaaaaaaaaaaaaaaaaa
-        QScatterSeries *mySeries = new QScatterSeries();
-        mySeries->append(0.5, 0.5);
-        mySeries->append(1.0, 0.5);
-        mySeries->append(1.0, 1.0);
-
         chart->addSeries(mySeries);
-
         chart->addSeries(mapSeries);
         this->setMouseTracking(true);
+
         // setta gli assi
-        QValueAxis *axisX = new QValueAxis;
+//        QValueAxis *axisX = new QValueAxis;
 //        axisX->setMin(0.0);
-        axisX->setLabelFormat("%.2f");
+//        axisX->setLabelFormat("%.2f");
 //        axisX->setMax(100);
-        axisX->setTitleText("x(metri)");
-        chart->addAxis(axisX, Qt::AlignBottom);
-        mapSeries->attachAxis(axisX);
+//        axisX->setTitleText("x(metri)");
+//        chart->addAxis(axisX, Qt::AlignBottom);
+//        mapSeries->attachAxis(axisX);
+//        mySeries->attachAxis(axisX);
 
-        QValueAxis *axisY = new QValueAxis;
+//        QValueAxis *axisY = new QValueAxis;
 //        axisY->setMin(0.0);
-        axisY->setLabelFormat("%.2f");
+//        axisY->setLabelFormat("%.2f");
 //        axisY->setMax(100);
-        axisY->setTitleText("y(metri)");
-        chart->addAxis(axisY, Qt::AlignLeft);
-        mapSeries->attachAxis(axisY);
+//        axisY->setTitleText("y(metri)");
+//        chart->addAxis(axisY, Qt::AlignLeft);
+//        mapSeries->attachAxis(axisY);
+//        mySeries->attachAxis(axisY);
 
+
+
+        chart->createDefaultAxes();
         chart->axisX()->setRange((-maxEspCoords.x()*2), maxEspCoords.x()*2);
         chart->axisY()->setRange((-maxEspCoords.y()*2), maxEspCoords.y()*2);
+
         chart->setTitle("People in the area");
         chart->setAcceptHoverEvents(true);
         mapHovering.mapInit(mapSeries, people);

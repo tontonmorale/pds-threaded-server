@@ -205,12 +205,12 @@ void ElaborateThread::calculateAvgPosition(){
 
     try {
         QMap<QString, Person>::iterator person;
-        QPointF min = {(-maxEspCoords.x()*2), (-maxEspCoords.x()*2)}, max = {maxEspCoords.x()*2, maxEspCoords.x()*2};
+        QPointF min = {(-maxEspCoords.x()*2), (-maxEspCoords.y()*2)}, max = {maxEspCoords.x()*2, maxEspCoords.y()*2};
         for(person=peopleMap->begin(); person!=peopleMap->end();){
             QList<QPointF> positionsList = person->getPositionsList();
             QPointF avg = {NAN, NAN};
             for(auto pos : positionsList){
-                if (pos.x()>=min.x() && pos.y()>=min.y() && pos.x()<=max.x() && pos.y()<=max.y()){
+                if ((pos.x()>=min.x() && pos.x()<=max.x()) && (pos.y()>=min.y() && pos.y()<=max.y())){
                     if (isnan(avg.x()) && isnan(avg.y()))
                         avg = {0.0,0.0};
                     avg += pos;
@@ -221,12 +221,9 @@ void ElaborateThread::calculateAvgPosition(){
             if (!isnan(avg.x()) && !isnan(avg.y())) {
                 avg /= positionsList.length();
                 person->setAvgPosition(avg);
-                if ((avg.x()>=(-maxEspCoords.x()*2) && avg.y()>=(-maxEspCoords.x()*2))
-                        && (avg.x()<=maxEspCoords.x()*2 && avg.y()<=maxEspCoords.y()*2)){
-                    //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
-                    devicesCoords->append(avg);
-                    person++;
-                }
+                //device all'interno dell'area delimitata dagli esp => aggiungilo a devicesCoords
+                devicesCoords->append(avg);
+                person++;
             }
             else {
                 //togli persone dall'elenco
