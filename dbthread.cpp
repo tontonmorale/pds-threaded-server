@@ -74,7 +74,13 @@ void DBThread::run() {
     QString begintime, endtime;
     QDateTime curr_timestamp = QDateTime::currentDateTime();
     endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
-    QDateTime old_timestamp(QDate(curr_timestamp.date()), QTime(curr_timestamp.time().hour(), curr_timestamp.time().minute()-12));
+    QTime t;
+    if(curr_timestamp.time().minute()>=12)
+        t = QTime(curr_timestamp.time().hour(), curr_timestamp.time().minute()-12);
+    else
+        t = QTime(curr_timestamp.time().hour()-1, 60+(curr_timestamp.time().minute()-12));
+
+    QDateTime old_timestamp(QDate(curr_timestamp.date()), t);
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
     getChartDataFromDb(begintime, endtime);
 
@@ -170,7 +176,12 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     }
 
     QString begintime;
-    QDateTime old_timestamp(QDate(timestampDT.date()), QTime(timestampDT.time().hour(), timestampDT.time().minute()-12));
+    QTime t;
+    if(timestampDT.time().minute()>=12)
+        t = QTime(timestampDT.time().hour(), timestampDT.time().minute()-12);
+    else
+        t = QTime(timestampDT.time().hour()-1, 60+(timestampDT.time().minute()-12));
+    QDateTime old_timestamp(QDate(timestampDT.date()), t);
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
     getChartDataFromDb(begintime, timestamp);
 }

@@ -16,11 +16,13 @@ ListenerThread::ListenerThread(MyServer *server,
                                double maxSignal,
                                int& totClients,
                                int* currMinute)
-    : endPacketSent(false),
-      mutex(mutex),
+    :
+      endPacketSent(false),
+      id(""),
+      mutex(mutex),      
       packetsMap(packetsMap),
       packetsDetectionMap(packetsDetectionMap),      
-      socketDescriptor(socketDescriptor),
+      socketDescriptor(socketDescriptor),      
       espMap(espMap),      
       server(server),
       maxSignal(maxSignal),
@@ -28,6 +30,7 @@ ListenerThread::ListenerThread(MyServer *server,
       firstStart(true),
       tag("ListenerThread"),
       currMinute(currMinute){
+
 }
 
 /**
@@ -136,7 +139,7 @@ void ListenerThread::clientSetup(){
         }
         else{
 
-            totClients ++; //TODO
+            totClients ++;
 
             if(totClients<10){
                 id = "0";
@@ -159,7 +162,11 @@ void ListenerThread::clientSetup(){
     } catch (exception e) {
         emit log(tag + ": Probabile errore nel socket");
         mutex->unlock();
-        //TODO: che faccio se ho un errore sul socket?
+        if(id.compare("")!=0)
+            emit finished(id);
+        else
+            closeConnection(id);
+
     }
     mutex->unlock();
 }

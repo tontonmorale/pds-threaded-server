@@ -167,7 +167,6 @@ void ElaborateThread::manageCurrentMinute(){
         packetsMap->clear();
         packetsDetectionMap->clear();
         qDebug().noquote() << tag << ": gestito minuto corrente";
-        // TODO: si può fare la media delle trilaterazioni per ogni persona
     } catch (out_of_range e) {
         packetsMap->clear();
         packetsDetectionMap->clear();

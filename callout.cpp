@@ -9,6 +9,7 @@ Callout::Callout(QChart *chart):
     QGraphicsItem(chart),
     m_chart(chart)
 {
+    m_anchor = {1000, 1000};
 }
 
 QRectF Callout::boundingRect() const

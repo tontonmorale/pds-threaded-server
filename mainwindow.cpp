@@ -108,18 +108,19 @@ void MainWindow::serverInit(){
 }
 
 void MainWindow::serverListenSlot(){
-    if (!server.listen(QHostAddress("192.168.1.172"), 9999)) {
+    if (!server.listen(QHostAddress("192.168.43.97"), 9999)) {
         emit fatalErrorSig("Errore avvio del server");
         return;
     }
 
-    printToLogSlot("[ server ] Server started: ip = 192.168.1.172, port = 9999\n\n Waiting for incoming connections...\n");
+    printToLogSlot("[ server ] Server started: ip = 192.168.43.97, port = 9999\n\n Waiting for incoming connections...\n");
 }
 
 void MainWindow::fatalErrorSlot(QString message){
     qDebug().noquote() << message;
     QMessageBox::critical(this, "", message);
-    //    exit(-1);
+//    this->deleteLater();
+    exit(-1);
 }
 
 void MainWindow::printToLogSlot(QString message){
