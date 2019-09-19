@@ -34,7 +34,7 @@ public slots:
 signals:
     void finished();
     void fatalErrorSig(QString errorMsg);
-    void logSig(QString logMsg);
+    void logSig(QString logMsg, QString color);
     void drawChartSig(QMap<QString, int> chartDataToDrawMap);
     void dbConnectedSig();
     void LPStatsWindowCreationSig(QString, QString);

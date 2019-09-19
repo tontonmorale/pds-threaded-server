@@ -16,18 +16,18 @@ ListenerThread::ListenerThread(MyServer *server,
                                double maxSignal,
                                int& totClients,
                                int* currMinute)
-    :
-      endPacketSent(false),
+    : endPacketSent(false),
       id(""),
-      mutex(mutex),      
+      mac(""),
+      mutex(mutex),
       packetsMap(packetsMap),
       packetsDetectionMap(packetsDetectionMap),      
       socketDescriptor(socketDescriptor),      
       espMap(espMap),      
-      server(server),
+      server(server),      
       maxSignal(maxSignal),
       totClients(totClients),
-      firstStart(true),
+      firstStart(true),      
       tag("ListenerThread"),
       currMinute(currMinute){
 
@@ -72,7 +72,7 @@ void ListenerThread::work(){
         disconnectionTimer = new QTimer(this);
         connect(disconnectionTimer, &QTimer::timeout, this, &ListenerThread::beforeClosingSlot,  Qt::DirectConnection);
     } catch (bad_alloc e) {
-        emit log(tag + ": Errore nell'allocazione del disconnection timer, non proseguo.");
+        emit log(tag + ": errore nell'allocazione del disconnection timer, disconenssione", "red");
         return;
     }
 
@@ -82,10 +82,10 @@ void ListenerThread::work(){
             throw("Errore nel set socket descriptor\n");
         }
     } catch (bad_alloc e) {
-       emit log(tag + ": Errore nell'allocazione del socket, non proseguo.");
+       emit log(tag + ": Errore nell'allocazione del socket, disconnessione client " + id, "red");
         return;
     } catch (exception e) {
-        emit log(tag + ": " + e.what());
+        emit log(tag + ": disconnessione client " + id, "red");
         return;
     }
 
@@ -105,6 +105,10 @@ QString ListenerThread::getId(){
     return id;
 }
 
+QString ListenerThread::getMac(){
+    return mac;
+}
+
 void ListenerThread::beforeClosingSlot(){
     if(id.compare("")==0)
         this->deleteLater();
@@ -118,7 +122,7 @@ void ListenerThread::beforeClosingSlot(){
  */
 void ListenerThread::clientSetup(){
     QStringList sl;
-    QString line, clientId, hello2Client, mac, helloFromClient;
+    QString line, clientId, hello2Client, helloFromClient;
     const char* msg;
     mutex->lock();
     try {
@@ -159,12 +163,8 @@ void ListenerThread::clientSetup(){
         msg = hello2Client.toStdString().c_str();
         socket->write(msg);
         disconnectionTimer->start(3*MyServer::intervalTime);
-    } catch (out_of_range e) {
-        emit log(tag + ": problemi di out of range nella clientSetUp");
-        mutex->unlock();
-        //anche qui, che fare?
     } catch (exception e) {
-        emit log(tag + ": Probabile errore nel socket");
+        emit log(tag + ": Probabile errore nel socket", "red");
         mutex->unlock();
         if(id.compare("")!=0)
             emit finished(id);
@@ -199,7 +199,7 @@ void ListenerThread::sendStart(int currMinute){
         } catch (...) {
             retry--;
             if (!retry) {
-                emit log(tag + ": Impossibile mandare start, probabili errori sul socket, considero il client disconnesso."); //possibile soluzione
+                emit log(tag + ": Impossibile mandare start, probabili errori sul socket, disconnessione client " + id, "red"); //possibile soluzione
                 emit finished(id);
             }
             mutex->unlock();
@@ -234,7 +234,7 @@ void ListenerThread::readFromClient(){
         while ( socket->canReadLine() ) {
             line = QString(socket->readLine());
 
-            qDebug() << tag << ": " << line << ", currMinute=" << *currMinute;
+            qDebug() << tag << ": " << line;
 
             line.remove('\r');
             line.remove('\n');
@@ -254,7 +254,7 @@ void ListenerThread::readFromClient(){
         }
     } catch (...) {
         // errore socket, disconnetto
-        emit log("Impossibile leggere dal socket, probabili errori sul socket, considero il client disconnesso.");
+        emit log("Impossibile leggere dal socket, probabili errori sul socket, disconnessione client " + id, "red");
         emit finished(id);
         return;
     }
@@ -288,7 +288,7 @@ void ListenerThread::newPacket(QString line){
         espId = sl.at(5);
 
 //        if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
-            emit log(tag + ": " + "[esp " + espId + "] " + line);
+            emit log(tag + ": " + "[esp " + espId + "] " + line, "black");
 
         //scarto pacchetto se valore intensità segnale sballata
     //    if(abs(signal) > abs(maxSignal)){

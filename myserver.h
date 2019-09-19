@@ -31,7 +31,7 @@ public:
 signals:
     void start2ClientsSig(int currMinute);
     void fatalErrorSig(QString message);
-    void logSig(QString message);
+    void logSig(QString message, QString color);
     void drawChartSig(QMap<QString, int> chartDataToDrawMap);
     void chartDataToDbSig(QMap<QString, Person> peopleMap);
     void getStatsSig(QString begintime, QString endtime);
@@ -48,7 +48,7 @@ signals:
 public slots:
 //    void onClientConnection();
     void startToClientsSlot();
-    void emitLogSlot(QString message);
+    void emitLogSlot(QString message, QString color);
     void createElaborateThreadSlot();
     void onChartDataReadySlot();
     void readyFromClientSlot(ListenerThread *lt);
@@ -92,8 +92,10 @@ private:
     QTimer startTimer;
     void createElaborateThread();
     bool elabTimerTimeout;
-    bool startCalled;
     QString tag;
+    void restart();
+    void createElabLastMinute();
+    int previousMinute;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;

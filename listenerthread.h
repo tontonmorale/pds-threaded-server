@@ -36,6 +36,7 @@ public:
     void newPacket(QString line);
     void signalsConnection(QThread *thread);
     QString getId();
+    QString getMac();
     bool getEndPacketSent();
     ~ListenerThread();
     bool endPacketSent;
@@ -50,13 +51,14 @@ public slots:
 signals:
     void ready(ListenerThread *);
     void finished(QString);
-    void log(QString message);
+    void log(QString message, QString color);
     void endPackets();
     void beforeDestructionSig();
 
 
 private:
     QString id;
+    QString mac;
     QMutex* mutex;
     QMap<QString, Packet> *packetsMap;
     QMap<QString, int> *packetsDetectionMap;

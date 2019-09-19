@@ -84,7 +84,7 @@ void DBThread::run() {
     begintime = old_timestamp.toString("yyyy/MM/dd_hh:mm");
     getChartDataFromDb(begintime, endtime);
 
-    emit logSig(tag + ": Db connection established");
+    emit logSig("- Db connection established", "green");
     emit dbConnectedSig();
 
     return;
@@ -148,10 +148,11 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
 //    qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
         qDebug() << tag << " : INSERT in Timestamp ok";
+        emit logSig("TIMESTAMP tab updated", "green");
     }
     else{
         qDebug() << tag << " : INSERT in Timestamp fallita";
-        emit logSig(tag + ": INSERT in tabella Timestamp fallita");
+        emit logSig("TIMESTAMP tab not updated", "red");
     }
 
     if(peopleMap.size()!=0){
@@ -168,9 +169,11 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
 //        qDebug().noquote() << "query: " + queryString;
         if (query.exec(queryString)) {
             qDebug() << tag << " : Query di inserzione delle persone nella tabella LPStats andata a buon fine";
+            emit logSig("LPSTATS tab updated", "green");
         }
         else{
             qDebug() << "Query di inserzione delle persone nella tabella LPStats fallita";
+            emit logSig("LPSTATS tab not updated", "red");
             return;
         }
     }

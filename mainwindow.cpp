@@ -97,7 +97,7 @@ void MainWindow::drawMapSlot(QList<QPointF> devicesCoords, QPointF maxEspCoords,
         mapView->setRenderHint(QPainter::Antialiasing);
         mapView->setChart(chart);
     }catch (...) {
-        printToLogSlot("Problemi nella drawMapSlot");
+        printToLogSlot("Problemi nella drawMapSlot", "red");
     }
 }
 
@@ -115,7 +115,8 @@ void MainWindow::serverListenSlot(){
     }
 
 //    printToLogSlot("[ server ] Server started: ip = 192.168.1.172, port = 9999\n\n Waiting for incoming connections...\n");
-    printToLogSlot("[ server ] Server started: ip = 192.168.43.97, port = 9999\n\n Waiting for incoming connections...\n");
+    printToLogSlot("- Server started: ip = 192.168.43.97, port = 9999", "green");
+    printToLogSlot("Waiting for incoming connections...\n", "orange");
 }
 
 void MainWindow::fatalErrorSlot(QString message){
@@ -124,8 +125,13 @@ void MainWindow::fatalErrorSlot(QString message){
     QCoreApplication::exit(-1);
 }
 
-void MainWindow::printToLogSlot(QString message){
-    ui->log->appendPlainText(message);
+void MainWindow::printToLogSlot(QString message, QString color){
+    QString s = "<font color=";
+    s += color;
+    s += ">";
+    s += message;
+    s += "</font>";
+    ui->log->appendHtml(s);
 }
 
 void MainWindow::drawChartSlot(QMap<QString, int> chartDataToDrawMap) {
@@ -183,7 +189,7 @@ void MainWindow::drawChartSlot(QMap<QString, int> chartDataToDrawMap) {
             ui->noChartData->show();
         }
     }catch (...) {
-        printToLogSlot("Problemi nella drawChartSlot");
+        printToLogSlot("Problemi nella drawChartSlot", "red");
     }
 }
 
@@ -269,7 +275,7 @@ void MainWindow::submitDatesForLPStatsSlot() {
             emit getLPStatsSig(begintime, endtime);
         }
     }catch (...) {
-        printToLogSlot("Problemi nella submitDateForLPsStatsSlot");
+        printToLogSlot("Problemi nella submitDateForLPsStatsSlot", "red");
     }
     //prendi begin time ed end time dalle tendine che ci sono sul grafico
     //    QList<QPointF> *list = server.DrawOldCountMap(begintime, endtime);

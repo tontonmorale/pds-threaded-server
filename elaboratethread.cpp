@@ -11,7 +11,7 @@ ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packet
                                  QMutex *mutex,
                                  int connectedClients,
                                  QMap<QString, Person> *peopleMap,
-                                 int* currMinute,
+                                 int currMinute,
                                  QMap<QString, Esp> *espMap,
                                  QPointF maxEspCoords,
                                  QList<QPointF> *devicesCoords):
@@ -37,28 +37,20 @@ void ElaborateThread::work() {
     try {
         mutex->lock();
         manageCurrentMinute();
-        (*currMinute)++;
-        if(*currMinute<=MAX_MINUTES)
-            emit log(tag + ": Current minute = " + QString::number(*currMinute));
-        emit setMinuteSig(*currMinute);
         mutex->unlock();
     } catch (exception e) {
-        emit log(tag + " : " + e.what());
+        emit log(tag + " : manageCurrentMinute()", "red");
         mutex->unlock();
         throw e;
     }
 
     // ultimo minuto
     mutex->lock();
-    if(*currMinute >= MAX_MINUTES+1){
-        *currMinute = 1;
-        emit setMinuteSig(*currMinute);
-        emit log(tag + ": Current minute = " + QString::number(*currMinute));
-        //        emit ready(); // manda start alle schede per nuovo timeslot
+    if(currMinute >= MAX_MINUTES){
         try {
             manageLastMinute();
         } catch (exception e) {
-            emit log(tag + " : " + e.what());
+            emit log(tag + " : manageLastMinute()", "red");
             mutex->unlock();
             throw e;
         }

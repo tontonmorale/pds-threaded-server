@@ -9,15 +9,15 @@ using namespace std;
 #define ESP_FILE_PATH "C:/Users/tonio/Desktop/pds-threaded-server/esp.txt"
 
 MyServer::MyServer(QObject *parent):
-    QTcpServer (parent),
-    connectedClients(0),
+    QTcpServer (parent),    
+    connectedClients(0),    
     totClients(1),
     currMinute(0),
     DBinitialized(false),
-    firstStart(true),
+    firstStart(true),    
     elabTimerTimeout(false),
-    startCalled(false),
-    tag("MyServer") {
+    tag("MyServer"),
+    previousMinute(0){
 
     try {
         espMap = new QMap<QString, Esp>();
@@ -32,20 +32,10 @@ MyServer::MyServer(QObject *parent):
         connect(&elaborateTimer, &QTimer::timeout, this, &MyServer::createElaborateThread);
     } catch (bad_alloc e) {
         fatalErrorSig("Errore nell'acquisizione delle risorse del server");
-        exit(-3);
+        return;
     }
 
 }
-
-//void MyServer::timeout(){
-
-//    // todo: distruggere i thread che non hanno mandato end packet
-//    for(auto t : listenerThreadPool.values()){
-//        if(!t->endPacketSent)
-//            emit closeConnectionSig();
-//    }
-//    createElaborateThread();
-//}
 
 /**
  * @brief MyServer::setMaxEspCoords
@@ -77,7 +67,7 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
 void MyServer::init(){
     firstStart = true;
     confFromFile();
-    emit logSig(tag + ": Esp configuration acquired from file");
+    emit logSig("- Esp configuration acquired from file", "green");
     maxEspCoords = setMaxEspCoords(espMap);
     if(maxEspCoords.x() > maxEspCoords.y())
         maxSignal = Utility::metersToDb(maxEspCoords.y());
@@ -92,19 +82,16 @@ void MyServer::init(){
         emit drawMapSig(QList<QPointF>(), maxEspCoords, QMap<QString, Person>(), espMap);
     } catch (bad_alloc e) {
         fatalErrorSig("Errore nell'inizializzazione delle risorse per il dbThread (bad_alloc)");
-        exit(-3);
+        return;
     } catch (exception e) {
         fatalErrorSig("Errore nella fase di inizializzazione del dbThread: " + QString(e.what()));
+        return;
     }
 }
 
 void MyServer::dbConnectedSlot(){
     emit dbConnectedSig();
 }
-
-//void MyServer::drawMapSlot(){
-//    emit drawMapSig(devicesCoords, maxEspCoords);
-//}
 
 /**
  * @brief MyServer::incomingConnection
@@ -121,7 +108,7 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
 
         thread->start();
     } catch (exception e) {
-        emit logSig(tag + ": Errore nell'inizializzazione di un listener thread: " + QString(e.what()));
+        emit logSig(tag + ": Errore nell'inizializzazione di un listener thread: " + QString(e.what()), "red");
     }
 }
 
@@ -131,25 +118,28 @@ void MyServer::incomingConnection(qintptr socketDescriptor){
  * @param lt -> nuovo thread da aggiungere
  */
 void MyServer::addListenerThreadSlot(ListenerThread* lt){
+    mutex->lock();
     QString newId = lt->getId();
+    QString mac = lt->getMac();
     auto it = listenerThreadPool.find(newId);
 
     if( it != listenerThreadPool.end()){
         listenerThreadPool.erase(it);
         connectedClients--;
-        emit logSig("---------------------------------------------------------------------------------------");
-        emit logSig(tag + ": Reconnection");
-        emit logSig("client info: id = " + newId);
+        emit logSig("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------", "black");
+        emit logSig("Reconnection", "orange");
+        emit logSig("client info: id = " + newId + ", mac = " + mac, "black");
     }
     else{
-        emit logSig("---------------------------------------------------------------------------------------");
-        emit logSig(tag + ": New connection");
-        emit logSig("client info: id = " + newId);
+        emit logSig("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------", "black");
+        emit logSig("New connection", "orange");
+        emit logSig("client info: id = " + newId + ", mac = " + mac, "black");
     }
 
     connectedClients++;
     listenerThreadPool.insert(newId, lt);
     emit setClientsSig(connectedClients);
+    mutex->unlock();
 }
 
 /**
@@ -163,19 +153,7 @@ void MyServer::createElaborateThreadSlot(){
 
     endPkClients ++;
 
-    // se ultimo minuto e arrivati tutti gli end packet fai partire i nuovi 5 minuti
-    if(currMinute>=MAX_MINUTES && endPkClients==connectedClients){
-//        currMinute = 0;
-        mutex->unlock();
-        startToClientsSlot();
-        mutex->lock();
-    }
-
     if(endPkClients==connectedClients){
-        qDebug() << tag << ": createElaborateThreadSlot, currMinute = " << currMinute << ", endPkClients: " << endPkClients;
-        if(elaborateTimer.isActive()){
-            elaborateTimer.stop();
-        }
         mutex->unlock();
         createElaborateThread();
     }
@@ -183,33 +161,62 @@ void MyServer::createElaborateThreadSlot(){
         mutex->unlock();
 }
 
+void MyServer::restart(){
+    mutex->lock();
+    connectedClients = 0;
+    emit setClientsSig(connectedClients);
+    firstStart = true;
+    mutex->unlock();
+}
+
 void MyServer::setMinuteSlot(int minute){
     emit setMinuteSig(minute);
 }
 
 void MyServer::createElaborateThread(){
-    mutex->lock();
-    endPkClients = 0;
-    startCalled = false;
-
     try {
+        mutex->lock();
+        endPkClients = 0;
+
+        elaborateTimer.stop();
+        qDebug() << tag << ": createElaborateThreadSlot, currMinute = " << currMinute-1 << ", endPkClients: " << endPkClients;
+
         QThread *thread = new QThread();
         ElaborateThread *et = new ElaborateThread(this, packetsMap, packetsDetectionMap, mutex, connectedClients,
-                                                  peopleMap, &currMinute, espMap, maxEspCoords, devicesCoords);
+                                                  peopleMap, currMinute-1, espMap, maxEspCoords, devicesCoords);
         et->moveToThread(thread);
         et->signalsConnection(thread);
         thread->start();
-    } catch (bad_alloc e) {
-        emit logSig(tag + ": Exception in allocating Elaborate thread, skipping elaboration of current minute.");
-    } catch(exception e) {
-        emit logSig(tag + ": " + e.what());
-    }
-    mutex->unlock();
 
+        emit logSig("Elaboration minute " +  QString::number(currMinute-1), "orange");
+        emit logSig("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------", "black");
+        if((currMinute-1)<MAX_MINUTES){
+            emit logSig("Minute " + QString::number(currMinute) +  ": waiting packets...", "orange");
+            mutex->unlock();
+        }
+        else{
+            if(connectedClients!=0){
+                emit logSig("Minute 1 : waiting packets...", "orange");
+                currMinute = 0;
+                mutex->unlock();
+                startToClientsSlot();
+            }
+            else{
+                mutex->unlock();
+                restart();
+            }
+        }
+    } catch (bad_alloc e) {
+        emit logSig(tag + ": Exception in allocating Elaborate thread, skipping elaboration of current minute", "orange");
+        mutex->unlock();
+    } catch(exception e) {
+        emit logSig(tag + ": error in elaboration thread, skipping current minute", "orange");
+        mutex->unlock();
+    }
 }
 
-void MyServer::emitLogSlot(QString message){
-    emit logSig(message);
+void MyServer::emitLogSlot(QString message, QString color){
+    emit logSig(message, color);
 }
 
 /**
@@ -218,23 +225,22 @@ void MyServer::emitLogSlot(QString message){
  * -> se ricevuto da tutti gli esp, manda segnale di start del blocco di N minuti
  */
 void MyServer::readyFromClientSlot(ListenerThread *lt){
-
     //inserisco nuovo thread nella lista e aggiorno connectedClients
     addListenerThreadSlot(lt);
 
-    QString s = "Connected clients: ";
-    s += QString::number(connectedClients);
-    logSig(s);
-
+    mutex->lock();
     if(connectedClients==totClients && firstStart){
-        currMinute = 1;
+        emit logSig("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------", "black");
+        emit logSig("Start to clients...", "green");
+        emit logSig("Minute 1 : waiting packets...", "orange");
+        currMinute = 0;
         endPkClients = 0;
-        emit setMinuteSig(currMinute);
-        emit logSig(tag + ": Current minute = " + QString::number(currMinute));
+        mutex->unlock();
         // inizio blocco N minuti
-        qDebug() << tag << ": readyFromClientSlot(), currMinute = " << currMinute;
         startToClientsSlot();
     }
+    else
+        mutex->unlock();
 }
 
 /**
@@ -246,35 +252,31 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
 void MyServer::startToClientsSlot(){
     mutex->lock();
 
-//    if(connectedClients >= 2){
-        qDebug() << tag + ": Start to clients\n";
-//        currMinute++;
-//        emit setMinuteSig(currMinute);
-        startCalled = true;
+    currMinute++;
 
-        if(!firstStart){
-            elaborateTimer.start(MyServer::elaborateTime);
-            qDebug() << "";
-        }
-        else{
-            firstStart = false;
-        }
+    if(!firstStart){
+        elaborateTimer.start(MyServer::elaborateTime);
+    }
+    else{
+        firstStart = false;
+    }
 
-        if(currMinute >= MAX_MINUTES){
-            mutex->unlock();
-            return;
-        }
-//        emit logSig("---------------------------------------------------------------------------------------");
-//        emit logSig(tag + ": Current minute = " + QString::number(currMinute) + ": sending start...\n");
-        emit start2ClientsSig(currMinute);
-        startTimer.start(MyServer::intervalTime);
+    if(currMinute > MAX_MINUTES){
+        mutex->unlock();
+        return;
+    }
 
-//    }
+    emit setMinuteSig(currMinute);
+    qDebug() << tag + ": startToClientsSlot, minute=" + QString::number(currMinute);
+
+    emit start2ClientsSig(currMinute);
+    startTimer.start(MyServer::intervalTime);
+
     mutex->unlock();
 }
 
 void MyServer::disconnectClientSlot(QString espId){
-    mutex->lock();
+//    mutex->lock();
     auto it = listenerThreadPool.find(espId);
 
     if(it!=listenerThreadPool.end()){
@@ -285,9 +287,9 @@ void MyServer::disconnectClientSlot(QString espId){
         QString s = "Client ";
         s += espId;
         s += " disconnected";
-        logSig(s);
+        logSig(s, "orange");
     }
-    mutex->unlock();
+//    mutex->unlock();
 }
 
 void MyServer::errorFromThreadSlot(QString errorMsg){
@@ -327,8 +329,6 @@ void MyServer::confFromFile(){
             if (!retry) {
                 qDebug() << tag << ": Errore apertura file";
                 emit fatalErrorSig(tag + ": Impossibile aprire il file degli esp");
-                this->~MyServer();
-                exit(-2);
             }
         }
     }
@@ -345,7 +345,6 @@ void MyServer::onChartDataReadySlot(){
         mutex->lock();
         // pulisce le strutture dati per il time slot successivo
         packetsMap->clear();
-    //    packetsMap = new QMap<QString, Packet>(); // todo: da rivedere
         packetsDetectionMap->clear();
 
         //emetto segnale verso dbthread
