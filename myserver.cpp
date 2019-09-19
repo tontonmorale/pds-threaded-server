@@ -89,6 +89,7 @@ void MyServer::init(){
         dbthread->moveToThread(thread);
         dbthread->signalsConnection(thread);
         thread->start();
+        emit drawMapSig(QList<QPointF>(), maxEspCoords, QMap<QString, Person>(), espMap);
     } catch (bad_alloc e) {
         fatalErrorSig("Errore nell'inizializzazione delle risorse per il dbThread (bad_alloc)");
         exit(-3);
@@ -245,8 +246,8 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
  */
 void MyServer::startToClientsSlot(){
     mutex->lock();
-    //TODO: vedere 2
-    if(connectedClients >= 2){
+
+//    if(connectedClients >= 2){
         qDebug() << tag + ": Start to clients\n";
 //        currMinute++;
 //        emit setMinuteSig(currMinute);
@@ -269,11 +270,7 @@ void MyServer::startToClientsSlot(){
         emit start2ClientsSig(currMinute);
         startTimer.start(MyServer::intervalTime);
 
-    }
-    else {
-        // todo: meno di 2 client connessi => ?????
-        // faccio partire timer di reboot
-    }
+//    }
     mutex->unlock();
 }
 
@@ -282,8 +279,7 @@ void MyServer::disconnectClientSlot(QString espId){
     auto it = listenerThreadPool.find(espId);
 
     if(it!=listenerThreadPool.end()){
-//        delete it.value();
-        listenerThreadPool.erase(it); //TODO: testare
+        listenerThreadPool.erase(it);
         closeConnectionSig(espId);
         connectedClients--;
         emit setClientsSig(connectedClients);
@@ -399,8 +395,6 @@ MyServer::~MyServer() {
     mutex->lock();
     qDebug() << tag << ": Distruttore MyServer";
 
-//    qDeleteAll(listenerThreadPool.begin(), listenerThreadPool.end()); // TODO: errore nel distruttore dei listener thread
-//    listenerThreadPool.clear();
     for(auto i : listenerThreadPool){
         emit closeConnectionSig(i->getId());
     }
@@ -415,7 +409,6 @@ MyServer::~MyServer() {
     peopleMap = nullptr;
     delete devicesCoords;
     devicesCoords = nullptr;
-    //TODO: elaborate thread
 
     mutex->unlock();
     delete mutex;

@@ -106,7 +106,10 @@ QString ListenerThread::getId(){
 }
 
 void ListenerThread::beforeClosingSlot(){
-    emit finished(id);
+    if(id.compare("")==0)
+        this->deleteLater();
+    else
+        emit finished(id);
 }
 
 /**
@@ -155,6 +158,7 @@ void ListenerThread::clientSetup(){
         hello2Client = "ciao " + id +"\r\n"; // invio "ciao <id>\r\n"
         msg = hello2Client.toStdString().c_str();
         socket->write(msg);
+        disconnectionTimer->start(3*MyServer::intervalTime);
     } catch (out_of_range e) {
         emit log(tag + ": problemi di out of range nella clientSetUp");
         mutex->unlock();
@@ -283,7 +287,7 @@ void ListenerThread::newPacket(QString line){
         timestamp = sl.at(4);
         espId = sl.at(5);
 
-        if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
+//        if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
             emit log(tag + ": " + "[esp " + espId + "] " + line);
 
         //scarto pacchetto se valore intensità segnale sballata
@@ -298,7 +302,7 @@ void ListenerThread::newPacket(QString line){
         mutex->lock();
 
         // nuovo pacchetto
-    //    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid"); // !!! controlla se i pacchetti rimangono nella mappa una volta uscito dalla funzione !!!
+    //    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid");
         (*packetsMap)[key] = Packet(hash, mac, timestamp, signal, espId, "ssid");
 
         // aggiorna packetsDetectionMap, aggiorna il conto di quante schede hanno rilevato ogni pacchetto

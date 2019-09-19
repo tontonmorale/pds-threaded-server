@@ -9,18 +9,31 @@ Callout::Callout(QChart *chart):
     QGraphicsItem(chart),
     m_chart(chart)
 {
-    m_anchor = {100000, 100000};
+    m_anchor = {1000000.0, 1000000.0};
 }
 
 QRectF Callout::boundingRect() const
 {
-    QPointF anchor = mapFromParent(m_chart->mapToPosition(m_anchor));
+    QPointF anchor;
+    if (m_anchor.x() == 1000000.0 && m_anchor.y() == 1000000.0)
+        anchor = m_anchor;
+    else
+        anchor = mapFromParent(m_chart->mapToPosition(m_anchor));
     QRectF rect;
-    rect.setLeft(qMin(m_rect.left(), anchor.x()));
     rect.setRight(qMax(m_rect.right(), anchor.x()));
-    rect.setTop(qMin(m_rect.top(), anchor.y()));
     rect.setBottom(qMax(m_rect.bottom(), anchor.y()));
+    if (m_anchor.x() == 1000000.0 && m_anchor.y() == 1000000.0)
+        anchor = {-m_anchor.x(), -m_anchor.y()};
+    rect.setLeft(qMin(m_rect.left(), anchor.x()));
+    rect.setTop(qMin(m_rect.top(), anchor.y()));
+
     return rect;
+//    QPointF anchor = mapFromParent(m_chart->mapToPosition(m_anchor));
+//    QRectF rect;
+//    rect.setLeft(qMin(m_rect.left(), anchor.x()));
+//    rect.setRight(qMax(m_rect.right(), anchor.x()));
+//    rect.setTop(qMin(m_rect.top(), anchor.y()));
+//    rect.setBottom(qMax(m_rect.bottom(), anchor.y()));
 }
 
 void Callout::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

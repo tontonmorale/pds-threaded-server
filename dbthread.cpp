@@ -186,19 +186,9 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     getChartDataFromDb(begintime, timestamp);
 }
 
-// TODO: cambio slot da 5 min a 1 min e ripeto 4 minuti invece che 5. Da ricambiare nella versione finale
 QDateTime DBThread::calculateTimestamp(){
     QDateTime timestamp = QDateTime::currentDateTime();
-//    begintime = timestamp.toString("yyyy/MM/dd_hh:mm");
-//    int minute = timestamp.toString("mm").toInt();
-//    QDateTime correct_timestamp;
-//    if (int resto = (minute % 5 != 0)){
-//        correct_timestamp = QDateTime(QDate(timestamp.date()), QTime(timestamp.time().hour(), timestamp.time().minute()-resto));
-//        return correct_timestamp;
-//    }
-//    else {
-//        return timestamp;
-//    }
+
     return timestamp;
 }
 
@@ -309,7 +299,6 @@ void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
 
     qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
-        qDebug().noquote() << "Funge";
         while(query.next()) {
             macList.append(query.value(0).toString());
         }
@@ -321,7 +310,6 @@ void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
                            "ORDER BY timestamp;";
             qDebug().noquote() << "query: " + queryString2;
             if (query.exec(queryString2)) {
-                qDebug().noquote() << "Funge 2";
                 while (query.next()) {
                     if (map.find(mac)==map.end()){
                         QList<QString> list;
