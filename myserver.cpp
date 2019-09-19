@@ -161,7 +161,6 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
 void MyServer::createElaborateThreadSlot(){
     mutex->lock();
 
-    // todo: controllare che l'esp che ha mandato l'end packet non sia disconnesso
     endPkClients ++;
 
     // se ultimo minuto e arrivati tutti gli end packet fai partire i nuovi 5 minuti
