@@ -30,11 +30,16 @@ MyServer::MyServer(QObject *parent):
 
         connect(&startTimer, &QTimer::timeout, this, &MyServer::startToClientsSlot);
         connect(&elaborateTimer, &QTimer::timeout, this, &MyServer::createElaborateThread);
+//        connect(&elaborateTimer, &QTimer::timeout, this, &MyServer::timeoutSlot);
     } catch (bad_alloc e) {
         fatalErrorSig("Errore nell'acquisizione delle risorse del server");
         return;
     }
 
+}
+
+void MyServer::timeoutSlot(){
+    emit logSig("Elaborate timer timeout", "red");
 }
 
 /**
@@ -127,12 +132,12 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
         listenerThreadPool.erase(it);
         connectedClients--;
         emit logSig("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------", "black");
-        emit logSig("Reconnection", "orange");
+        emit logSig("Reconnection", "green");
         emit logSig("client info: id = " + newId + ", mac = " + mac, "black");
     }
     else{
         emit logSig("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------", "black");
-        emit logSig("New connection", "orange");
+        emit logSig("New connection", "green");
         emit logSig("client info: id = " + newId + ", mac = " + mac, "black");
     }
 
@@ -164,7 +169,11 @@ void MyServer::createElaborateThreadSlot(){
 void MyServer::restart(){
     mutex->lock();
     connectedClients = 0;
+    currMinute = 0;
     emit setClientsSig(connectedClients);
+    emit logSig("No clients connected", "red");
+    emit logSig("Waiting for incoming connections...\n", "orange");
+    elaborateTimer.stop();
     firstStart = true;
     mutex->unlock();
 }
@@ -195,6 +204,7 @@ void MyServer::createElaborateThread(){
             mutex->unlock();
         }
         else{
+            // nuovo ciclo
             if(connectedClients!=0){
                 emit logSig("Minute 1 : waiting packets...", "orange");
                 currMinute = 0;
@@ -251,10 +261,11 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
  */
 void MyServer::startToClientsSlot(){
     mutex->lock();
+    startTimer.stop();
 
     currMinute++;
 
-    if(!firstStart){
+    if(!firstStart && currMinute!=1){
         elaborateTimer.start(MyServer::elaborateTime);
     }
     else{
@@ -287,7 +298,7 @@ void MyServer::disconnectClientSlot(QString espId){
         QString s = "Client ";
         s += espId;
         s += " disconnected";
-        logSig(s, "orange");
+        logSig(s, "red");
     }
 //    mutex->unlock();
 }

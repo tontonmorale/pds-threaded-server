@@ -8,13 +8,10 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     MainWindow w;
 
-
-//    uint curr_timestamp = QDateTime::currentDateTime().toTime_t();
-//    QString endtime = QString::number(curr_timestamp);
-
     w.serverInit();
     w.show();
 
+//    qDebug().noquote() << QString::number(Utility::dbToMeters(-35));
 
     return a.exec();
 }

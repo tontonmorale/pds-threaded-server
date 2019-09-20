@@ -63,7 +63,8 @@ public slots:
     void LPStatsSlot(QMap<QString, QList<QString>>);
     void setMinuteSlot(int minute);
 //    void drawMapSlot();
-//    void timeout();
+    void timeoutSlot();
+
 
 private:
     QMutex *mutex;

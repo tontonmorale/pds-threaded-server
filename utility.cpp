@@ -1,6 +1,6 @@
 #include "utility.h"
 
-#define TXPOWER -40
+#define TXPOWER -50
 #define N 2.0
 
 Utility::Utility()

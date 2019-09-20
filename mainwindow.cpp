@@ -114,7 +114,7 @@ void MainWindow::serverListenSlot(){
         return;
     }
 
-//    printToLogSlot("[ server ] Server started: ip = 192.168.1.172, port = 9999\n\n Waiting for incoming connections...\n");
+//    printToLogSlot("- Server started: ip = 192.168.1.172, port = 9999\n\n Waiting for incoming connections...\n", "green");
     printToLogSlot("- Server started: ip = 192.168.43.97, port = 9999", "green");
     printToLogSlot("Waiting for incoming connections...\n", "orange");
 }
