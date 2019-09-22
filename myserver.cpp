@@ -22,7 +22,6 @@ MyServer::MyServer(QObject *parent):
     try {
         espMap = new QMap<QString, Esp>();
         mutex = new QMutex();
-    //    listenerThreadList = new QList<ListenerThread*>();
         packetsMap = new QMap<QString, Packet>;
         packetsDetectionMap = new QMap<QString, int>;
         peopleMap = new QMap<QString, Person>;
@@ -30,7 +29,6 @@ MyServer::MyServer(QObject *parent):
 
         connect(&startTimer, &QTimer::timeout, this, &MyServer::startToClientsSlot);
         connect(&elaborateTimer, &QTimer::timeout, this, &MyServer::createElaborateThread);
-//        connect(&elaborateTimer, &QTimer::timeout, this, &MyServer::timeoutSlot);
     } catch (bad_alloc e) {
         fatalErrorSig("Errore nell'acquisizione delle risorse del server");
         return;
@@ -67,7 +65,7 @@ QPointF MyServer::setMaxEspCoords(QMap<QString, Esp> *espMap) {
 
 /**
  * @brief MyServer::init
- * legge le posizioni degli esp da file, cerca le loro coord max e inizializza il db
+ * legge le posizioni degli esp da file, cerca le loro coord max, inizializza il db, manda segnale per primo disegno mappa
  */
 void MyServer::init(){
     firstStart = true;
@@ -149,9 +147,7 @@ void MyServer::addListenerThreadSlot(ListenerThread* lt){
 
 /**
  * @brief MyServer::createElaborateThread
- * -> controlla se ha ricevuto il segnale di "pacchetti ricevuti" da tutti i listenerThread
- * -> genera l'elaborateThread per ottenere i device nell'area nel minuto passato
- * -> se minuto 5 allora manda segnale di start per il nuovo minuto
+ * alla ricezione dell'ultimo end dalle schede connesse chiama funzione di generazione thread di elaborazione
  */
 void MyServer::createElaborateThreadSlot(){
     mutex->lock();
@@ -166,6 +162,7 @@ void MyServer::createElaborateThreadSlot(){
         mutex->unlock();
 }
 
+// setta variabili a una condizione precedente al primo start
 void MyServer::restart(){
     mutex->lock();
     connectedClients = 0;
@@ -182,6 +179,7 @@ void MyServer::setMinuteSlot(int minute){
     emit setMinuteSig(minute);
 }
 
+// crea thread di elaborazione, richiamata allo scadere del timer di attesa degli end
 void MyServer::createElaborateThread(){
     try {
         mutex->lock();
@@ -255,9 +253,7 @@ void MyServer::readyFromClientSlot(ListenerThread *lt){
 
 /**
  * @brief MyServer::startToClients
- * manda start agli esp se:
-    -> inizialmente tutti i client sono connessi
-    -> le volte successive se almeno 3 client connessi
+ * manda segnale di start ai listener thread, setta timer per start successivo
  */
 void MyServer::startToClientsSlot(){
     mutex->lock();
@@ -286,12 +282,14 @@ void MyServer::startToClientsSlot(){
     mutex->unlock();
 }
 
+// toglie il client disconnesso dall'elenco e distrugge il thread che lo gestiva
 void MyServer::disconnectClientSlot(QString espId){
-//    mutex->lock();
+    mutex->lock();
     auto it = listenerThreadPool.find(espId);
 
     if(it!=listenerThreadPool.end()){
         listenerThreadPool.erase(it);
+        // segnale di distruzione al listener thread
         closeConnectionSig(espId);
         connectedClients--;
         emit setClientsSig(connectedClients);
@@ -300,7 +298,7 @@ void MyServer::disconnectClientSlot(QString espId){
         s += " disconnected";
         logSig(s, "red");
     }
-//    mutex->unlock();
+    mutex->unlock();
 }
 
 void MyServer::errorFromThreadSlot(QString errorMsg){

@@ -19,6 +19,7 @@ DBThread::DBThread(MyServer* server) :
     tag("DBThread") {
 }
 
+// connessione db, creazione tabelle, query per il primo disegno del grafico
 void DBThread::run() {
 
     if (!dbConnect()){
@@ -37,9 +38,6 @@ void DBThread::run() {
             "PRIMARY KEY (timestamp)"
             ");";
 
-
-//    qDebug().noquote() << "query: " + queryString;
-
     if (query.exec(queryString)) {
         qDebug() << tag << " : CREATE tabella Timestamps ok";
     }
@@ -50,15 +48,11 @@ void DBThread::run() {
         return;
     }
 
-    //LPStats = long period statistics
-    // ts = timestamp
     queryString = "CREATE TABLE IF NOT EXISTS LPStats ("
             "timestamp VARCHAR(255) NOT NULL, "
             "mac VARCHAR(255) NOT NULL, "
             "PRIMARY KEY (timestamp, mac)"
             ");";
-
-//    qDebug().noquote() << "query: " + queryString;
 
     if (query.exec(queryString)) {
         qDebug() << tag << " : Create timestamp ok";
@@ -70,7 +64,7 @@ void DBThread::run() {
         return;
     }
 
-    // dati per il primo disegno del chart
+    // dati per il primo disegno del grafico
     QString begintime, endtime;
     QDateTime curr_timestamp = QDateTime::currentDateTime();
     endtime = curr_timestamp.toString("yyyy/MM/dd_hh:mm");
@@ -90,6 +84,7 @@ void DBThread::run() {
     return;
 }
 
+// connessione segnali con MyServer
 void DBThread::signalsConnection(QThread *thread){
 
     qDebug().noquote() << tag << " : signalsConnection()";
@@ -117,6 +112,7 @@ void DBThread::signalsConnection(QThread *thread){
 
 }
 
+// inserimento nuovi dati in tabelle TIMESTAMPS E LPSTATS
 void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
 {
     int size = peopleMap.size();
@@ -132,7 +128,7 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
         return;
     }
 
-    // calcola timestamp unico per lo slot attuale di 5 minuti
+    // calcola timestamp unico per lo slot attuale
     QDateTime timestampDT = calculateTimestamp();
     QString timestamp = timestampDT.toString("yyyy/MM/dd_hh:mm");
 
@@ -145,7 +141,6 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     if (DBThread::db.open())
         qDebug().noquote() << tag << " : il db è open";
 
-//    qDebug().noquote() << "query: " + queryString;
     if (query.exec(queryString)) {
         qDebug() << tag << " : INSERT in Timestamp ok";
         emit logSig("TIMESTAMP tab updated", "green");
@@ -163,10 +158,9 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
             queryString += "('" + timestamp + "', '" + pm.key() + "'),";
         }
         //tolgo l'ultima virgola
-        queryString = queryString.left(queryString.length()-1); //da verificare
+        queryString = queryString.left(queryString.length()-1);
         queryString += ";";
 
-//        qDebug().noquote() << "query: " + queryString;
         if (query.exec(queryString)) {
             qDebug() << tag << " : Query di inserzione delle persone nella tabella LPStats andata a buon fine";
             emit logSig("LPSTATS tab updated", "green");
@@ -189,12 +183,14 @@ void DBThread::sendChartDataToDbSlot(QMap<QString, Person> peopleMap)
     getChartDataFromDb(begintime, timestamp);
 }
 
+// timestamp dell'ora corrente
 QDateTime DBThread::calculateTimestamp(){
     QDateTime timestamp = QDateTime::currentDateTime();
 
     return timestamp;
 }
 
+// disconnessione db e chiusura thread
 void DBThread::dbDisconnect(){
     if(db.isOpen())
         db.close();
@@ -205,6 +201,7 @@ bool DBThread::isDbOpen(){
     return db.isOpen();
 }
 
+// connessione al db mysql
 bool DBThread::dbConnect() {
     this->db = QSqlDatabase::addDatabase("QMYSQL", "connection");
     this->db.setHostName("localhost");
@@ -222,7 +219,8 @@ bool DBThread::dbConnect() {
     }
 }
 
-//NOTA: assumo che il begintime e l'endtime siano timestamp correttamente costruiti a partire da data e ora prese in input dall'utente
+// get dati dal db per popolare il grafico.
+// numero di persone in ogni slot tra begintime e endtime
 void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
     QMap<QString, int> chartDataToDrawMap;
     QSqlQuery query(QSqlDatabase::database("connection"));
@@ -232,7 +230,6 @@ void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
                   "FROM Timestamps "
                   "WHERE timestamp > '" + begintime + "' AND timestamp <= '" + endtime + "';";
 
-//    qDebug().noquote() << tag << " : query: " + queryString;
     if (query.exec(queryString)) {
         //popolo la mappa delle persone
         qDebug() << tag << " : Query di select dalla tabella Timestamps good";
@@ -258,16 +255,7 @@ void DBThread::getChartDataFromDb(QString begintime, QString endtime) {
     }
 }
 
-//QList<QPointF> DBThread::drawOldContMap(QList<QPointF> *peopleCounter) {
-//    QPointF point;
-//    QList<QPointF> peopleCounter;
-//    for (QMap<QString, int>::iterator i = oldCountMap->begin(); i != oldCountMap->end(); i++) {
-//        point = QPointF(i.key().toInt(), i.value()); //Verifica che funziona la conversione da timestamp stringa a timestamp intero
-//        peopleCounter.append(point);
-//    }
-//    return peopleCounter;
-//}
-
+// get timestamp più vecchio per le statistiche di lungo periodo
 void DBThread::getMinDateForLPSTATSSlot() {
     QSqlQuery query(QSqlDatabase::database("connection"));
     QString queryString;
@@ -286,6 +274,7 @@ void DBThread::getMinDateForLPSTATSSlot() {
     }
 }
 
+//get dati da LPSTATS
 void DBThread::GetLPSFromDB(QString begintime, QString endtime) {
     QSqlQuery query(QSqlDatabase::database("connection"));
     QString queryString, queryString2;

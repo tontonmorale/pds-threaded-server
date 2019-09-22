@@ -46,7 +46,6 @@ signals:
     void LPStatsSig(QMap<QString, QList<QString>>);
 
 public slots:
-//    void onClientConnection();
     void startToClientsSlot();
     void emitLogSlot(QString message, QString color);
     void createElaborateThreadSlot();
@@ -62,14 +61,11 @@ public slots:
     void getLPStatsSlot(QString, QString);
     void LPStatsSlot(QMap<QString, QList<QString>>);
     void setMinuteSlot(int minute);
-//    void drawMapSlot();
     void timeoutSlot();
 
 
 private:
     QMutex *mutex;
-//    void onClientConnection(qintptr socketDescriptor);
-//    QPlainTextEdit *log;
     QMap<QString, Packet> *packetsMap;
     QMap<QString, int> *packetsDetectionMap;
     QMap<QString, Esp> *espMap;
@@ -79,7 +75,6 @@ private:
     int totClients;
     int endPkClients;
     int currMinute;
-//    QList<ListenerThread*> listenerThreadList;
     QMap<QString, ListenerThread*> listenerThreadPool;
     DBThread *dbthread;
     bool DBinitialized;

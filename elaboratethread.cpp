@@ -30,7 +30,8 @@ ElaborateThread::ElaborateThread(MyServer* server, QMap<QString, Packet> *packet
 
 /**
  * @brief ElaborateThread::work
- * chiamata all'avvio del thread
+ * gestione minuto corrente
+ * gestione ultimo minuto se necessario
  */
 void ElaborateThread::work() {
     // minuto attuale
@@ -85,7 +86,8 @@ void ElaborateThread::signalsConnection(QThread *thread){
 
 /**
  * @brief ElaborateThread::manageCurrentMinute
- * aggiunge in peopleMap le nuove persone rilevate da tutti gli esp nel minuto corrente
+ * cerca pacchetti rilevati da tutte le schede, converte da potenza segnale a metri, trilatera
+ * e aggiunge in peopleMap le nuove persone rilevate
  */
 void ElaborateThread::manageCurrentMinute(){
 
@@ -98,8 +100,6 @@ void ElaborateThread::manageCurrentMinute(){
 
                 QString shortKey = i.key(); // shortKey = "pktHash-mac"
                 QString mac = shortKey.split('-').at(1);
-
-                //            if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 ){ // andrà tolto
 
                 auto person = peopleMap->find(mac);
                 if(person == peopleMap->end()){
@@ -148,12 +148,11 @@ void ElaborateThread::manageCurrentMinute(){
                     }
                 }
 
+                //trilaterazione
                 QPointF pos = Utility::trilateration(d1, d2, d3, posA, posB, posC);
                 if(packet->getMac().compare("30:74:96:94:e3:2d")==0 || packet->getMac().compare("94:65:2d:41:f7:8c")==0)
                     qDebug() << tag << ": posx: " + QString::number(pos.x()) + " posy: " + QString::number(pos.y());
                 person->addPosition(pos);
-
-                //            }
             }
         }
         packetsMap->clear();
@@ -175,7 +174,7 @@ void ElaborateThread::manageCurrentMinute(){
 
 /**
  * @brief ElaborateThread::manageLastMinute
- * chiama funzione calcolo posizionidei device nell'area
+ * media le posizioni calcolate per ogni dispositivo
  */
 void ElaborateThread::manageLastMinute() {
 
@@ -201,13 +200,13 @@ void ElaborateThread::calculateAvgPosition(){
             QList<QPointF> positionsList = person->getPositionsList();
             QPointF avg = {NAN, NAN};
             for(auto pos : positionsList){
+                // considero punto nel calcolo se non è fuori dall' area
                 if ((pos.x()>=min.x() && pos.x()<=max.x()) && (pos.y()>=min.y() && pos.y()<=max.y())){
                     if (isnan(avg.x()) && isnan(avg.y()))
                         avg = {0.0,0.0};
                     avg += pos;
                 }
             }
-//            emit log(person.key() + " : " + QString::number(avg.x()) + ", " + QString::number(avg.y()));
             qDebug() << person.key() << " : " + QString::number(avg.x()) + ", " + QString::number(avg.y());
             if (!isnan(avg.x()) && !isnan(avg.y())) {
                 avg /= positionsList.length();
@@ -231,15 +230,11 @@ void ElaborateThread::calculateAvgPosition(){
         qDebug().noquote() << tag << " problema nella calculateAvgPosition: " << e.what();
         throw e;
     }
-    // media trilaterazioni
 }
 
 /**
- * @brief ElaborateThread::updatePacketsSet
- * aggiorna il set di pacchetti (è sempre lo stesso pacchetto, stessa shortkey, ma rilevato da esp diversi) usato come rappresentativo di un device
- * per capire dove si trova
- * @param p: device considerato
- * @param shortKey: identifica un pacchetto (quindi un device)
+ * @brief ElaborateThread::getPacketsList
+ * cerca pacchetti con quella shortKey nella lista di pacchetti
  */
 QList<Packet> ElaborateThread::getPacketsList(QString shortKey){
     //qui no try catch perchè è una funzione che viene chiamata dentro manageCurrentMinute

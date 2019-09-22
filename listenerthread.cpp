@@ -53,13 +53,6 @@ void ListenerThread::signalsConnection(QThread *thread){
     connect(this, &ListenerThread::finished, server, &MyServer::disconnectClientSlot);
 
     connect(thread, &QThread::finished, thread, &QThread::quit);
-
-    // esempi
-//    connect(this, &ElaborateThread::finish, this, &ElaborateThread::deleteLater);
-//    connect(this, &ElaborateThread::finish, thread, &QThread::deleteLater);
-
-//    connect(thread, &QThread::finished, this, &ElaborateThread::deleteLater);
-//    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 }
 
 /**
@@ -219,9 +212,7 @@ bool ListenerThread::getEndPacketSent(){
 void ListenerThread::readFromClient(){
     QString line, firstWord, hash, timestamp, mac, signal, microsec_str, espId, ssid;
     QStringList sl, tsSplit, macList;
-//    Packet p;
 
-//    socketTimerMap[conn]->start(MAX_WAIT+5000);
     QString toLog = "disconnectionTimer scheda " + id;
     toLog += " time left: ";
     toLog += QString::number(disconnectionTimer->remainingTime());
@@ -262,7 +253,7 @@ void ListenerThread::readFromClient(){
 
 /**
  * @brief ListenerThread::newPacket
- * ricezione di un nuovo pacchetto
+ * estrae dati dal nuovo pacchetto ricevuto
  * @param line: stringa ricevuta dall'esp
  */
 void ListenerThread::newPacket(QString line){
@@ -287,22 +278,15 @@ void ListenerThread::newPacket(QString line){
         timestamp = sl.at(4);
         espId = sl.at(5);
 
-//        if(mac.compare("30:74:96:94:e3:2d")==0 || mac.compare("94:65:2d:41:f7:8c")==0 )
-            emit log(tag + ": " + "[esp " + espId + "] " + line, "black");
-
-        //scarto pacchetto se valore intensità segnale sballata
-    //    if(abs(signal) > abs(maxSignal)){
-    //        return;
-    //    }
+        emit log(tag + ": " + "[esp " + espId + "] " + line, "black");
 
         key = hash + "-" + mac + "-" + espId; // key = "pktHash-mac-espId"
         shortKey = hash + "-" + mac; // shortKey = "pktHash-mac"
 
-        // --- inserisci nuovo pacchetto ---
+        // inserisci nuovo pacchetto
         mutex->lock();
 
         // nuovo pacchetto
-    //    pkt = Packet(hash, mac, timestamp, signal, espId, "ssid");
         (*packetsMap)[key] = Packet(hash, mac, timestamp, signal, espId, "ssid");
 
         // aggiorna packetsDetectionMap, aggiorna il conto di quante schede hanno rilevato ogni pacchetto
@@ -318,9 +302,9 @@ void ListenerThread::newPacket(QString line){
     }
 
     mutex->unlock();
-    // --- inserisci nuovo pacchetto ---
 }
 
+// chiude connessione: ferma timer e distrugge socket
 void ListenerThread::closeConnection(QString id){
     try{
         if(this->id.compare(id)==0){
