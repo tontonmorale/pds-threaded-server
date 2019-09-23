@@ -9,7 +9,7 @@ Callout::Callout(QChart *chart):
     QGraphicsItem(chart),
     m_chart(chart)
 {
-    m_anchor = {1000000.0, 1000000.0};
+    m_anchor = {-10,-10};
 }
 
 QRectF Callout::boundingRect() const
@@ -102,10 +102,10 @@ void Callout::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void Callout::setText(const QString &text)
 {
     m_text = text;
-    QFont font("times", 14);
+    QFont font("times", 8);
     QFontMetrics metrics(font);
     m_textRect = metrics.boundingRect(QRect(0, 0, 150, 150), Qt::AlignLeft, m_text);
-    m_textRect.translate(5, 5);
+    m_textRect.translate(-60, 5);
     prepareGeometryChange();
     m_rect = m_textRect.adjusted(-5, -5, 5, 5);
 }

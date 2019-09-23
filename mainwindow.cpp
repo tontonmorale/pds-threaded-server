@@ -204,7 +204,7 @@ void MainWindow::LPStatsWindowCreationSlot(QString minDate, QString maxDate) {
     }
     else {
         this->newWindow = new QWidget;
-        newWindow->resize(800, 800);
+        newWindow->resize(1200, 800);
 
         QGridLayout *layout = new QGridLayout, *mainlayout = new QGridLayout;
         QGroupBox *box = new QGroupBox(tr("LPStats"));
@@ -328,6 +328,10 @@ void MainWindow::drawLPStatsSlot(QMap<QString, QList<QString>> map) {
     }
     else
         delta = (timestamps.front() - timestamps.back())/8;
+
+    mac1->setMarkerSize(10);
+    mac2->setMarkerSize(10);
+    mac3->setMarkerSize(10);
 
     QChart *chart = new QChart();
     chart->addSeries(mac1);
