@@ -264,10 +264,10 @@ void MainWindow::submitDatesForLPStatsSlot() {
         QDateTimeEdit *maxDateTimePicker = newWindow->findChild<QDateTimeEdit *>("maxDateTimePicker");
 
         if (minDateTimePicker->dateTime().toMSecsSinceEpoch() >= maxDateTimePicker->dateTime().toMSecsSinceEpoch()) {
-            emit fatalErrorSig("La data di inizio intervallo deve essere minore della data di fine intervallo.");
+            QMessageBox::critical(this, "", "La data di inizio intervallo deve essere minore della data di fine intervallo.");
         }
         else if (maxDateTimePicker->dateTime().toMSecsSinceEpoch() <= minDateTimePicker->dateTime().toMSecsSinceEpoch()) {
-            emit fatalErrorSig("La data di fine intervallo deve essere maggiore della data di inizio intervallo.");
+            QMessageBox::critical(this, "", "La data di fine intervallo deve essere maggiore della data di inizio intervallo.");
         }
         else {
             begintime = minDateTimePicker->dateTime().toString("yyyy/MM/dd_HH:mm");
